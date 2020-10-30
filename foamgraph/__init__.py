@@ -7,6 +7,9 @@ Copyright (C) Jun Zhu. All rights reserved.
 """
 from PyQt5.QtWidgets import QApplication
 
+from .pyqtgraph import setConfigOptions
+
+from .config import config
 from .aesthetics import *
 from .image_views import *
 from .plot_widgets import *
@@ -19,6 +22,13 @@ __all__ += plot_widgets.__all__
 __all__ += smart_widgets.__all__
 
 __version__ = "0.0.1"
+
+
+setConfigOptions(
+    imageAxisOrder="row-major",
+    foreground=config["FOREGROUND_COLOR"],
+    background=config["BACKGROUND_COLOR"],
+)
 
 
 def mkQApp(args=None):
