@@ -1,0 +1,47 @@
+import os.path as osp
+import re
+from setuptools import setup, find_packages
+
+
+def find_version():
+    with open(osp.join('foamgraph', '__init__.py')) as fp:
+        for line in fp:
+            m = re.search(r'^__version__ = "(\d+\.\d+\.\d[a-z]*\d*)"', line, re.M)
+            if m is None:
+                # could be a hotfix
+                m = re.search(r'^__version__ = "(\d.){3}\d"', line, re.M)
+            if m is not None:
+                return m.group(1)
+        raise RuntimeError("Unable to find version string.")
+
+
+setup(
+    name='foamgraph',
+    version=find_version(),
+    author='Jun Zhu',
+    author_email='zhujun981661@gmail.com',
+    description='',
+    long_description='',
+    url='',
+    packages=find_packages(),
+    tests_require=['pytest'],
+    install_requires=[
+        'numpy>=1.16.1',
+        'PyQt5==5.13.2',
+    ],
+    extras_require={
+        'test': [
+            'pytest',
+            'pytest-cov',
+        ],
+    },
+    python_requires='>=3.6',
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+    ]
+)
