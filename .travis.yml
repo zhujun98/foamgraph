@@ -10,9 +10,9 @@ services:
 jobs:
   include:
     - os: linux
-      env: PYTHON_VERSION="3.7.5" BENCHMARK=1
+      env: PYTHON_VERSION="3.7" BENCHMARK=1
     - os: linux
-      env: PYTHON_VERSION="3.6.9"
+      env: PYTHON_VERSION="3.8"
 
 before_install:
   - sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
@@ -24,7 +24,7 @@ before_install:
 
 install:
   - conda install -y python=$PYTHON_VERSION
-  - echo $PYTHON_VERSION
+  - python --version
   - pip install -e .[test]
 
 before_script:
