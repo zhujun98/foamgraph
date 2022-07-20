@@ -19,7 +19,7 @@ app = mkQApp()
 
 
 class BenchmarkImageViewSpeed:
-    def __init__(self):
+    def __init__(self, *, pyqtgraph=False):
         self._dt = deque(maxlen=60)
 
         self._timer = QTimer()
@@ -28,8 +28,13 @@ class BenchmarkImageViewSpeed:
         self._data = np.random.normal(size=(50, 1024, 1280))
         self._prev_t = None
         self._count = 0
+        self._fps = None
 
-        self._view = ImageViewF()
+        if pyqtgraph:
+            import pyqtgraph as pg
+            self._view = pg.ImageView()
+        else:
+            self._view = ImageViewF()
         self._view.show()
 
     def start(self):
@@ -47,25 +52,36 @@ class BenchmarkImageViewSpeed:
         now = time.time()
         self._dt.append(now - self._prev_t)
         self._prev_t = now
-        fps = len(self._dt) / sum(self._dt)
+        self._fps = len(self._dt) / sum(self._dt)
 
-        self._view.setTitle(f"{fps:.2f} fps")
+        try:
+            self._view.setTitle(f"{self._fps:.2f} fps")
+        except AttributeError:
+            pass
 
         app.processEvents()  # force complete redraw for every plot
+
+    def callback(self):
+        print(f"{self._fps:.2f} fps")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--single_shot', action='store_true')
+    parser.add_argument('--pyqtgraph', action='store_true')
 
     args = parser.parse_args()
 
-    bench = BenchmarkImageViewSpeed()
+    bench = BenchmarkImageViewSpeed(pyqtgraph=args.pyqtgraph)
     bench.start()
 
     timer = QTimer()
     if args.single_shot:
         timer.timeout.connect(bench.close)
     timer.start(1000)
+
+    timer2 = QTimer()
+    timer2.timeout.connect(bench.callback)
+    timer2.start(1000)
 
     app.exec_()
