@@ -8,6 +8,7 @@ Copyright (C) European X-Ray Free-Electron Laser Facility GmbH.
 All rights reserved.
 """
 import abc
+from typing import final
 
 import numpy as np
 
@@ -21,7 +22,6 @@ from .config import config
 from .graphics_widgets import HistogramLUTItem
 from .plot_widgets import PlotWidgetF
 from .image_items import ImageItem, RectROI
-from .typing import final
 
 __all__ = [
     'ImageViewF',
