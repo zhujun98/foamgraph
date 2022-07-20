@@ -41,7 +41,7 @@ class BenchmarkImageViewSpeed:
         self._view.close()
 
     def update(self):
-        self._view.setImage(self._data[self._count % 10])
+        self._view.setImage(self._data[self._count % len(self._data)])
         self._count += 1
 
         now = time.time()

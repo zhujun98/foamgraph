@@ -19,7 +19,7 @@ app = mkQApp()
 
 
 class BenchmarkPlotItemSpeed:
-    def __init__(self):
+    def __init__(self, plot_type, n_pts):
         self._dt = deque(maxlen=60)
 
         self._timer = QTimer()
@@ -28,19 +28,6 @@ class BenchmarkPlotItemSpeed:
         self._widget = PlotWidgetF()
         self._widget.addLegend()
 
-        self.set_plot("scatter", 5000)
-
-        self._prev_t = None
-        self._count = 0
-
-        self._widget.show()
-
-    def set_plot(self, plot_type, n_pts):
-        self._widget.removeAllItems()
-
-        self._plot_type = plot_type
-
-        self._n_pts = n_pts
         self._x = np.arange(n_pts)
         self._data = 100 * np.random.normal(size=(50, n_pts))
 
@@ -57,6 +44,12 @@ class BenchmarkPlotItemSpeed:
             self._graph = self._widget.plotScatter(name=plot_type)
         else:
             raise ValueError(f"Unknown plot type: {plot_type}")
+        self._plot_type = plot_type
+
+        self._prev_t = None
+        self._count = 0
+
+        self._widget.show()
 
     def start(self):
         self._prev_t = time.time()
@@ -67,7 +60,7 @@ class BenchmarkPlotItemSpeed:
         self._widget.close()
 
     def update(self):
-        idx = self._count % 10
+        idx = self._count % len(self._data)
         if self._plot_type == "statistics_bar":
             self._graph.setData(self._x, self._data[idx],
                                 y_min=self._y_min[idx], y_max=self._y_max[idx])
@@ -94,8 +87,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    bench = BenchmarkPlotItemSpeed()
-    bench.set_plot(args.plot_type, args.pts)
+    bench = BenchmarkPlotItemSpeed(args.plot_type, args.pts)
     bench.start()
 
     timer = QTimer()
