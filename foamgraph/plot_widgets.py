@@ -9,6 +9,7 @@ All rights reserved.
 """
 import abc
 from string import Template
+from typing import final
 
 import numpy as np
 
@@ -22,7 +23,6 @@ from .graphics_widgets import PlotArea
 from .plot_items import (
     BarGraphItem, CurvePlotItem, ScatterPlotItem, StatisticsBarItem
 )
-from .typing import final
 
 __all__ = [
     'PlotWidgetF',
