@@ -40,7 +40,7 @@ class TestImageView:
                 getattr(widget, method)()
                 mocked.assert_called_once()
 
-    @pytest.mark.parametrize("dtype", [np.uint8, np.int, np.float32])
+    @pytest.mark.parametrize("dtype", [np.uint8, int, np.float32])
     def testSetImage(self, dtype):
         widget = ImageViewF(has_roi=True)
 
