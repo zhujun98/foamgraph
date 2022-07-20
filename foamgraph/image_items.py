@@ -15,9 +15,9 @@ import numpy as np
 from PyQt5.QtGui import QPainter, QPicture, QTransform
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 
-from . import pyqtgraph as pg
-from .pyqtgraph import Point
-from .pyqtgraph import functions as fn
+from . import pyqtgraph_be as pg
+from .pyqtgraph_be import Point
+from .pyqtgraph_be import functions as fn
 
 from .aesthetics import FoamColor
 from .algorithms import quick_min_max

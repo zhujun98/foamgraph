@@ -10,8 +10,8 @@ All rights reserved.
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QColor, QPen, QPalette
 
-from .pyqtgraph import ColorMap
-from .pyqtgraph.graphicsItems.GradientEditorItem import Gradients
+from .pyqtgraph_be import ColorMap
+from .pyqtgraph_be.graphicsItems.GradientEditorItem import Gradients
 
 from .config import config
 

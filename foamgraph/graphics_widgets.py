@@ -19,9 +19,9 @@ from PyQt5.QtWidgets import (
     QSlider, QWidget, QWidgetAction
 )
 
-from . import pyqtgraph as pg
-from .pyqtgraph import Point
-from .pyqtgraph import functions as fn
+from . import pyqtgraph_be as pg
+from .pyqtgraph_be import Point
+from .pyqtgraph_be import functions as fn
 from .plot_items import CurvePlotItem
 from .aesthetics import FoamColor
 

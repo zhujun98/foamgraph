@@ -14,7 +14,7 @@ import numpy as np
 from PyQt5.QtCore import pyqtSlot, Qt, QTimer
 from PyQt5.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
-from . import pyqtgraph as pg
+from . import pyqtgraph_be as pg
 
 from .aesthetics import colorMapFactory, FoamColor
 from .config import config
