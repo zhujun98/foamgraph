@@ -17,8 +17,8 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtCore import QByteArray, QDataStream, QRectF
 
-from . import pyqtgraph as pg
-from .pyqtgraph import functions as fn
+from . import pyqtgraph_be as pg
+from .pyqtgraph_be import functions as fn
 
 from .aesthetics import FoamColor
 

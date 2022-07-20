@@ -7,7 +7,7 @@ Copyright (C) Jun Zhu. All rights reserved.
 """
 from PyQt5.QtWidgets import QApplication
 
-from .pyqtgraph import setConfigOptions
+from .pyqtgraph_be import setConfigOptions
 
 from .config import config
 from .aesthetics import *

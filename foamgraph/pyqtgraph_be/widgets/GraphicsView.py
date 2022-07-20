@@ -16,7 +16,7 @@ except ImportError:
 from ..Point import Point
 import sys
 import warnings
-from foamgraph.pyqtgraph.GraphicsScene import GraphicsScene
+from ..GraphicsScene import GraphicsScene
 import numpy as np
 from .. import functions as fn
 from .. import getConfigOption

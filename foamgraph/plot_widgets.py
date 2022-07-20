@@ -15,7 +15,7 @@ import numpy as np
 from PyQt5.QtCore import pyqtSlot, QTimer
 from PyQt5.QtWidgets import QSizePolicy
 
-from . import pyqtgraph as pg
+from . import pyqtgraph_be as pg
 
 from .config import config
 from .graphics_widgets import PlotArea

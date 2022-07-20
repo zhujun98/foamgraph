@@ -9,7 +9,7 @@ from foamgraph.image_items import ImageItem, RectROI
 from foamgraph.plot_items import (
     CurvePlotItem, BarGraphItem, ScatterPlotItem, StatisticsBarItem
 )
-from foamgraph import pyqtgraph as pg
+from foamgraph import pyqtgraph_be as pg
 
 
 app = mkQApp()
@@ -287,8 +287,8 @@ class TestPlotArea(unittest.TestCase):
         self.assertEqual(0, area._n_vis_annotation_items)
 
         # test TextItem call
-        with patch("foamgraph.pyqtgraph.TextItem.setPos") as mocked_pos:
-            with patch("foamgraph.pyqtgraph.TextItem.setText") as mocked_value:
+        with patch("foamgraph.pyqtgraph_be.TextItem.setPos") as mocked_pos:
+            with patch("foamgraph.pyqtgraph_be.TextItem.setText") as mocked_value:
                 area.setAnnotationList([1, 2, 3], [4, 5, 6])
                 mocked_pos.assert_called_with(3, 6)
                 mocked_value.assert_called_with("3.0000")
