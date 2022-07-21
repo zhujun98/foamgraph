@@ -7,7 +7,7 @@ from foamgraph import mkQApp
 from foamgraph.graphics_widgets import HistogramLUTItem, PlotArea
 from foamgraph.image_items import ImageItem, RectROI
 from foamgraph.plot_items import (
-    CurvePlotItem, BarGraphItem, ScatterPlotItem, StatisticsBarItem
+    CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
 )
 from foamgraph import pyqtgraph_be as pg
 
@@ -94,8 +94,8 @@ class TestPlotArea(unittest.TestCase):
         area.addItem(RectROI(0))
         bar_graph_item = BarGraphItem(name="bar")
         area.addItem(bar_graph_item, y2=True)
-        statistics_bar_item = StatisticsBarItem()
-        area.addItem(statistics_bar_item)
+        errorbar_item = ErrorbarItem()
+        area.addItem(errorbar_item)
 
         area.addLegend()  # add legend when there are already added PlotItems
 
@@ -148,7 +148,7 @@ class TestPlotArea(unittest.TestCase):
 
         # remove a PlotItem which does not has a name and hence was not added
         # into the legend
-        area.removeItem(statistics_bar_item)
+        area.removeItem(errorbar_item)
         self.assertEqual(2, len(area._legend.items))
 
         with self.assertRaisesRegex(RuntimeError, "not allowed to be removed"):
@@ -251,7 +251,7 @@ class TestPlotArea(unittest.TestCase):
         # add some items to simulate the practical situation
         area.addItem(ImageItem())
         area.addItem(BarGraphItem())
-        area.addItem(StatisticsBarItem())
+        area.addItem(ErrorbarItem())
 
         # add some items
         area.setAnnotationList([1, 2, 3], [4, 5, 6])

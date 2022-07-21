@@ -21,7 +21,7 @@ from . import pyqtgraph_be as pg
 from .config import config
 from .graphics_widgets import PlotArea
 from .plot_items import (
-    BarGraphItem, CurvePlotItem, ScatterPlotItem, StatisticsBarItem
+    BarGraphItem, CurvePlotItem, ScatterPlotItem, ErrorbarItem
 )
 
 __all__ = [
@@ -120,8 +120,8 @@ class PlotWidgetF(pg.GraphicsView):
         self._plot_area.addItem(item, y2=y2)
         return item
 
-    def plotStatisticsBar(self, *args, y2=False, **kwargs):
-        item = StatisticsBarItem(*args, **kwargs)
+    def plotErrorbar(self, *args, y2=False, **kwargs):
+        item = ErrorbarItem(*args, **kwargs)
         self._plot_area.addItem(item, y2=y2)
         return item
 
