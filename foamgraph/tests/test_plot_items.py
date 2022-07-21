@@ -6,7 +6,7 @@ from PyQt5.QtCore import QByteArray, QDataStream, QIODevice, QPointF, QRectF
 
 from foamgraph import mkQApp, PlotWidgetF
 from foamgraph.plot_items import (
-    CurvePlotItem, BarGraphItem, ScatterPlotItem, StatisticsBarItem
+    CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
 )
 
 from . import _display
@@ -139,12 +139,12 @@ class TestPlotItems:
         assert isinstance(item._y, np.ndarray)
         _display()
 
-    def testStatisticsBarItem(self, dtype=np.float32):
+    def testErrorbarItem(self, dtype=np.float32):
         x = np.arange(10).astype(dtype)
         y = np.arange(10).astype(dtype)
 
         # x and y are lists
-        item = StatisticsBarItem(x.tolist(), y.tolist(), name='statistics bar')
+        item = ErrorbarItem(x.tolist(), y.tolist(), name='errorbar')
         self._widget.addItem(item)
         self._widget.addLegend()
         assert isinstance(item._x, np.ndarray)

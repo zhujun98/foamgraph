@@ -168,8 +168,8 @@ class BarGraphItem(pg.PlotItem):
         p.drawRect(QRectF(2, 2, 18, 18))
 
 
-class StatisticsBarItem(pg.PlotItem):
-    """StatisticsBarItem."""
+class ErrorbarItem(pg.PlotItem):
+    """ErrorbarItem."""
 
     def __init__(self, x=None, y=None, *, y_min=None, y_max=None, beam=None,
                  line=False, pen=None,

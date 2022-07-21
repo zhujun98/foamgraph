@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 
 from foamgraph import mkQApp, HistWidgetF, PlotWidgetF, TimedPlotWidgetF
-from foamgraph.plot_items import StatisticsBarItem
+from foamgraph.plot_items import ErrorbarItem
 
 from . import _display
 
@@ -21,7 +21,7 @@ class TestPlotWidget(unittest.TestCase):
         cls._curve1 = widget.plotCurve(name="curve1")
         cls._scatter1 = widget.plotScatter(name="scatter1")
         cls._bar2 = widget.plotBar(name="bar2", y2=True)
-        cls._statistics2 = widget.plotStatisticsBar(name="statistics2", y2=True)
+        cls._statistics2 = widget.plotErrorbar(name="errorbar2", y2=True)
         cls._widget1 = widget
         if _display():
             cls._widget1.show()
@@ -29,7 +29,7 @@ class TestPlotWidget(unittest.TestCase):
         # test addLegend after adding plot items
         widget = PlotWidgetF()
         cls._bar1 = widget.plotBar(name="bar1")
-        cls._statistics1 = widget.plotStatisticsBar(name="statistics1")
+        cls._statistics1 = widget.plotErrorbar(name="errorbar1")
         cls._curve2 = widget.plotCurve(name="curve2", y2=True)
         cls._scatter2 = widget.plotScatter(name="scatter2", y2=True)
         widget.addLegend()
@@ -77,7 +77,7 @@ class TestPlotWidget(unittest.TestCase):
             x = np.arange(20)
             y = np.random.rand(20)
             y[-i-1:-1] = np.nan
-            if isinstance(plot, StatisticsBarItem):
+            if isinstance(plot, ErrorbarItem):
                 plot.setData(x, y, y - 0.1, y + 0.1)
             else:
                 plot.setData(x, y)
@@ -98,7 +98,7 @@ class TestPlotWidget(unittest.TestCase):
             x = np.arange(20)
             y = np.random.rand(20)
             y[-i-1:-1] = np.nan
-            if isinstance(plot, StatisticsBarItem):
+            if isinstance(plot, ErrorbarItem):
                 plot.setData(x, y, y - 0.1, y + 0.1)
             else:
                 plot.setData(x, y)
