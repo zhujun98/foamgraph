@@ -19,7 +19,7 @@ from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
 from .pyqtgraph_be import functions as fn
 
-from .aesthetics import FoamColor
+from .aesthetics import FColor
 from .algorithms import quick_min_max
 
 
@@ -412,11 +412,11 @@ class GeometryItem(pg.GraphicsObject):
         super().__init__(parent=parent)
 
         if pen is None and brush is None:
-            self._pen = FoamColor.mkPen('b')
-            self._brush = FoamColor.mkBrush(None)
+            self._pen = FColor.mkPen('b')
+            self._brush = FColor.mkBrush(None)
         else:
-            self._pen = FoamColor.mkPen(None) if pen is None else pen
-            self._brush = FoamColor.mkBrush(None) if brush is None else brush
+            self._pen = FColor.mkPen(None) if pen is None else pen
+            self._brush = FColor.mkBrush(None) if brush is None else brush
 
         self._picture = None
 

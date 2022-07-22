@@ -15,11 +15,6 @@ from .pyqtgraph_be.graphicsItems.GradientEditorItem import Gradients
 
 from .config import config
 
-__all__ = [
-    'FoamColor',
-    'set_button_color',
-]
-
 
 class QualitativeColor:
 
@@ -59,7 +54,7 @@ class QualitativeColor:
         return QBrush(QColor(*getattr(cls, c), alpha))
 
 
-FoamColor = QualitativeColor
+FColor = QualitativeColor
 
 
 class SequentialColor:

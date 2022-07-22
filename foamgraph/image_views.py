@@ -17,16 +17,11 @@ from PyQt5.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from . import pyqtgraph_be as pg
 
-from .aesthetics import colorMapFactory, FoamColor
+from .aesthetics import colorMapFactory, FColor
 from .config import config
 from .graphics_widgets import HistogramLUTItem
 from .plot_widgets import PlotWidgetF
 from .image_items import ImageItem, RectROI
-
-__all__ = [
-    'ImageViewF',
-    'TimedImageViewF',
-]
 
 
 class HistogramLUTWidget(pg.GraphicsView):
@@ -142,7 +137,7 @@ class ImageViewF(QWidget):
             roi = RectROI(i + 1,
                           pos=(pos[0] + 10*i, pos[1] + 10*i),
                           size=size,
-                          pen=FoamColor.mkPen(color, width=2, style=Qt.SolidLine))
+                          pen=FColor.mkPen(color, width=2, style=Qt.SolidLine))
             roi.hide()
             self._rois.append(roi)
 

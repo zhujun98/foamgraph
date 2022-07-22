@@ -199,3 +199,11 @@ def parse_slice_inv(text):
             return f"{s0}:{s1}:{s2}"
 
     raise ValueError(err_msg)
+
+
+def invert_dict(mapping):
+    """Return a dictionary with key and value swapped."""
+    ret = dict()
+    for k, v in mapping.items():
+        ret[v] = k
+    return ret

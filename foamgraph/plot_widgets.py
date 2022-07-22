@@ -24,12 +24,6 @@ from .plot_items import (
     BarGraphItem, CurvePlotItem, ScatterPlotItem, ErrorbarItem
 )
 
-__all__ = [
-    'PlotWidgetF',
-    'TimedPlotWidgetF',
-    'HistWidgetF',
-]
-
 
 class PlotWidgetF(pg.GraphicsView):
     """PlotWidget base class.

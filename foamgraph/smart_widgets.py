@@ -11,16 +11,8 @@ from PyQt5.QtCore import pyqtSignal, QRegExp, Qt
 from PyQt5.QtGui import QRegExpValidator, QValidator
 from PyQt5.QtWidgets import QLineEdit
 
-from .aesthetics import FoamColor
+from .aesthetics import FColor
 from .utilities import parse_boundary, parse_id, parse_slice
-
-__all__ = [
-    'SmartLineEdit',
-    'SmartStringLineEdit',
-    'SmartBoundaryLineEdit',
-    'SmartIdLineEdit',
-    'SmartSliceLineEdit',
-]
 
 
 class SmartLineEdit(QLineEdit):
@@ -47,7 +39,7 @@ class SmartLineEdit(QLineEdit):
     def onTextChanged(self):
         if not self._text_modified:
             self.setStyleSheet(
-                f"QLineEdit {{ background: rgb{FoamColor.o}}}")
+                f"QLineEdit {{ background: rgb{FColor.o}}}")
             self._text_modified = True
 
     def setText(self, text):

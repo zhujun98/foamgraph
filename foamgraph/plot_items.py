@@ -20,7 +20,7 @@ from PyQt5.QtCore import QByteArray, QDataStream, QRectF
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import functions as fn
 
-from .aesthetics import FoamColor
+from .aesthetics import FColor
 
 
 class CurvePlotItem(pg.PlotItem):
@@ -34,7 +34,7 @@ class CurvePlotItem(pg.PlotItem):
         self._x = None
         self._y = None
 
-        self._pen = FoamColor.mkPen('g') if pen is None else pen
+        self._pen = FColor.mkPen('g') if pen is None else pen
 
         self._check_finite = check_finite
 
@@ -113,11 +113,11 @@ class BarGraphItem(pg.PlotItem):
         self._width = width
 
         if pen is None and brush is None:
-            self._pen = FoamColor.mkPen(None)
-            self._brush = FoamColor.mkBrush('b')
+            self._pen = FColor.mkPen(None)
+            self._brush = FColor.mkBrush('b')
         else:
-            self._pen = FoamColor.mkPen(None) if pen is None else pen
-            self._brush = FoamColor.mkBrush(None) if brush is None else brush
+            self._pen = FColor.mkPen(None) if pen is None else pen
+            self._brush = FColor.mkBrush(None) if brush is None else brush
 
         self.setData(x, y)
 
@@ -187,7 +187,7 @@ class ErrorbarItem(pg.PlotItem):
 
         self._beam = 0.0 if beam is None else beam
         self._line = line
-        self._pen = FoamColor.mkPen('p') if pen is None else pen
+        self._pen = FColor.mkPen('p') if pen is None else pen
 
         self.setData(x, y, y_min=y_min, y_max=y_max)
 
@@ -350,11 +350,11 @@ class ScatterPlotItem(pg.PlotItem):
         self._bounds = [None, None]
 
         if pen is None and brush is None:
-            self._pen = FoamColor.mkPen(None)
-            self._brush = FoamColor.mkBrush('b')
+            self._pen = FColor.mkPen(None)
+            self._brush = FColor.mkBrush('b')
         else:
-            self._pen = FoamColor.mkPen(None) if pen is None else pen
-            self._brush = FoamColor.mkBrush(None) if brush is None else brush
+            self._pen = FColor.mkPen(None) if pen is None else pen
+            self._brush = FColor.mkBrush(None) if brush is None else brush
 
         self._size = size
 
