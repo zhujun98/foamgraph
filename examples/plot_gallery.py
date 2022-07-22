@@ -1,13 +1,13 @@
 from collections import deque
 
-import zmq
-
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QFrame, QGridLayout
 
 from foamgraph import (
     AbstractScene, FColor, mkQApp, PlotWidgetF, TimedPlotWidgetF
 )
+
+from consumer import Consumer
 
 app = mkQApp()
 
@@ -201,28 +201,6 @@ class PlotGalleryScene(AbstractScene):
         self._cw = QFrame()
         self._cw.setLayout(layout)
         self.setCentralWidget(self._cw)
-
-
-class Consumer:
-    def __init__(self, queue: deque):
-        self._ctx = zmq.Context()
-        self._socket = self._ctx.socket(zmq.SUB)
-        self._socket.connect("tcp://localhost:5555")
-        self._socket.setsockopt(zmq.SUBSCRIBE, b"")
-
-        self._deque = queue
-
-        from threading import Thread
-        self._thread = Thread(target=self._consume, daemon=True)
-
-    def _consume(self):
-        import pickle
-        while True:
-            data = pickle.loads(self._socket.recv())
-            queue.append(data)
-
-    def start(self):
-        self._thread.start()
 
 
 if __name__ == "__main__":
