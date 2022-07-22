@@ -55,20 +55,20 @@ class ImageViewF(QWidget):
 
     """
     def __init__(self, *,
-                 has_roi=False,
-                 hide_axis=True,
+                 has_roi: bool = False,
+                 hide_axis: bool = True,
                  color_map=None,
-                 roi_position=(0, 0),
-                 roi_size=(100, 100),
+                 roi_position: tuple = (0, 0),
+                 roi_size: tuple = (100, 100),
                  parent=None):
         """Initialization.
 
-        :param bool has_roi: True for adding 4 ROIs on top of the other
+        :param has_roi: True for adding 4 ROIs on top of the other
             plot items.
-        :param bool hide_axis: True for hiding left and bottom axes.
-        :param tuple roi_position: Initial upper-left corner position (x, y)
+        :param hide_axis: True for hiding left and bottom axes.
+        :param roi_position: Initial upper-left corner position (x, y)
             of the first ROI.
-        :param tuple roi_size: Initial size (w, h) of all ROIs.
+        :param roi_size: Initial size (w, h) of all ROIs.
         """
         super().__init__(parent=parent)
 
@@ -124,13 +124,14 @@ class ImageViewF(QWidget):
     def reset(self):
         self.clear()
 
+    @abc.abstractmethod
     def updateF(self, data):
         """This method is called by the parent window.
 
         The subclass should re-implement this method and call self.setImage
         in this method.
         """
-        pass
+        raise NotImplementedError
 
     def _initializeROIs(self, pos, size):
         for i, color in enumerate(config["ROI_COLORS"], 0):
