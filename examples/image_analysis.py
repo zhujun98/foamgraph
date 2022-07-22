@@ -1,5 +1,3 @@
-from collections import deque
-
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QFrame, QVBoxLayout
 
@@ -53,13 +51,15 @@ class ImageAnalysisScene(AbstractScene):
         self._cw.setLayout(layout)
         self.setCentralWidget(self._cw)
 
+    def initConnections(self):
+        """Override."""
+        ...
+
 
 if __name__ == "__main__":
-    queue = deque(maxlen=5)
+    scene = ImageAnalysisScene()
 
-    scene = ImageAnalysisScene(queue)
-
-    consumer = Consumer(queue)
+    consumer = Consumer(scene.queue)
     consumer.start()
 
     app.exec_()
