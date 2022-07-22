@@ -23,7 +23,7 @@ from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
 from .pyqtgraph_be import functions as fn
 from .plot_items import CurvePlotItem
-from .aesthetics import FoamColor
+from .aesthetics import FColor
 
 
 class HistogramLUTItem(pg.GraphicsWidget):
@@ -50,7 +50,7 @@ class HistogramLUTItem(pg.GraphicsWidget):
         lri.lines[1].addMarker('|>', 0.5)
         self._lri = lri
 
-        self._hist = CurvePlotItem(pen=FoamColor.mkPen('k'))
+        self._hist = CurvePlotItem(pen=FColor.mkPen('k'))
         self._hist.rotate(90)
 
         vb = pg.ViewBox(parent=self)
@@ -574,7 +574,7 @@ class PlotArea(pg.GraphicsWidget):
         n_items = len(a_items)
         if n_items < n_pts:
             for i in range(n_pts - n_items):
-                item = pg.TextItem(color=FoamColor.mkColor('b'), anchor=(0.5, 2))
+                item = pg.TextItem(color=FColor.mkColor('b'), anchor=(0.5, 2))
                 self.addItem(item)
                 a_items.append(item)
 
