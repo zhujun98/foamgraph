@@ -10,15 +10,19 @@ import abc
 from collections import deque
 from weakref import WeakKeyDictionary
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QObject, Qt
 from PyQt5.QtWidgets import QMainWindow, QWidget
 
 
-class _SceneMixin:
+class _SceneMeta(type(QObject), abc.ABCMeta):
+    ...
+
+
+class _SceneMixin(metaclass=_SceneMeta):
     @abc.abstractmethod
     def initUI(self):
         """Initialization of UI."""
-        raise NotImplementedError
+        ...
 
     @abc.abstractmethod
     def initConnections(self):
@@ -28,12 +32,12 @@ class _SceneMixin:
     @abc.abstractmethod
     def reset(self):
         """Reset data in all the widgets."""
-        raise NotImplementedError
+        ...
 
     @abc.abstractmethod
     def updateWidgetsF(self):
         """Update all the widgets."""
-        raise NotImplementedError
+        ...
 
 
 class AbstractScene(QMainWindow, _SceneMixin):
@@ -41,8 +45,9 @@ class AbstractScene(QMainWindow, _SceneMixin):
     _title = ""
 
     _SPLITTER_HANDLE_WIDTH = 5
+    _QUEUE_SIZE = 5
 
-    def __init__(self, queue: deque, *, parent=None):
+    def __init__(self, *, parent=None):
         """Initialization."""
         super().__init__(parent=parent)
         self.setAttribute(Qt.WA_DeleteOnClose, True)
@@ -63,7 +68,11 @@ class AbstractScene(QMainWindow, _SceneMixin):
 
         self.show()
 
-        self._queue = queue
+        self._queue = deque(maxlen=self._QUEUE_SIZE)
+
+    @property
+    def queue(self):
+        return self._queue
 
     def reset(self):
         """Override."""
