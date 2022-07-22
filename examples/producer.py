@@ -41,6 +41,9 @@ if __name__ == "__main__":
                 "x": np.arange(50),
                 "y": np.random.random(50),
                 "y2": np.random.random(50)
+            },
+            "image": {
+                "data": np.random.random((1024, 768))
             }
         }
 
