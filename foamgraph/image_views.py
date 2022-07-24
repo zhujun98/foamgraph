@@ -45,26 +45,22 @@ class ImageViewF(QWidget):
 
     A widget used for displaying 2D image data.
 
-    * Four ROIs are included in this widget by default.
-
     Note: it is different from the ImageView in pyqtgraph!
 
     Attributes:
         _image_item (pyqtgraph.ImageItem): This object will be used to
             display the image.
-
     """
     def __init__(self, *,
-                 has_roi: bool = False,
                  hide_axis: bool = True,
                  color_map=None,
+                 n_rois: int = 0,
                  roi_position: tuple = (0, 0),
                  roi_size: tuple = (100, 100),
                  parent=None):
         """Initialization.
 
-        :param has_roi: True for adding 4 ROIs on top of the other
-            plot items.
+        :param n_roi: Number of ROIs included.
         :param hide_axis: True for hiding left and bottom axes.
         :param roi_position: Initial upper-left corner position (x, y)
             of the first ROI.
@@ -75,8 +71,10 @@ class ImageViewF(QWidget):
         self._mouse_hover_v_rounding_decimals = 1
 
         self._rois = []
-        if has_roi:
-            self._initializeROIs(roi_position, roi_size)
+        self._roi_colors = ['b', 'r', 'g', 'o']
+        if n_rois > 4:
+            raise ValueError("Maximum number of ROIs is 4.")
+        self._initializeROIs(n_rois, roi_position, roi_size)
 
         self._plot_widget = PlotWidgetF(enable_meter=False,
                                         enable_transform=False)
@@ -133,12 +131,12 @@ class ImageViewF(QWidget):
         """
         raise NotImplementedError
 
-    def _initializeROIs(self, pos, size):
-        for i, color in enumerate(config["ROI_COLORS"], 0):
+    def _initializeROIs(self, n, pos, size):
+        for i in range(n):
             roi = RectROI(i + 1,
                           pos=(pos[0] + 10*i, pos[1] + 10*i),
                           size=size,
-                          pen=FColor.mkPen(color, width=2, style=Qt.SolidLine))
+                          color=self._roi_colors[i])
             roi.hide()
             self._rois.append(roi)
 
