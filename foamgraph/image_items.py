@@ -371,14 +371,21 @@ class RectROI(pg.ROI):
 
     Note: the widget is slightly different from pyqtgraph.RectROI
     """
-    def __init__(self, idx, *, pos=(0, 0), size=(1, 1), pen=None, parent=None):
+    def __init__(self, idx: int, *,
+                 pos: tuple = (0, 0),
+                 size: tuple = (1, 1),
+                 color: str = 'k',
+                 parent=None):
         """Initialization.
 
-        :param int idx: index of the ROI.
-        :param tuple pos: (x, y) of the left-upper corner.
-        :param tuple size: (w, h) of the ROI.
-        :param None/QPen pen: QPen to draw the ROI.
+        :param idx: index of the ROI.
+        :param pos: (x, y) of the left-upper corner.
+        :param size: (w, h) of the ROI.
+        :param color: ROI display color.
         """
+        # TODO: make 'color' an attribute of the parent class
+        self._color = color
+        pen = FColor.mkPen(color, width=2, style=Qt.SolidLine)
         super().__init__(pos, size,
                          translateSnap=True,
                          scaleSnap=True,
@@ -390,6 +397,10 @@ class RectROI(pg.ROI):
     @property
     def index(self):
         return self._index
+
+    @property
+    def color(self):
+        return self._color
 
     def setLocked(self, locked):
         if locked:

@@ -43,7 +43,7 @@ if __name__ == "__main__":
                 "y2": np.random.random(50)
             },
             "image": {
-                "data": np.random.random((1024, 768))
+                "data": np.random.random((768, 1024))
             }
         }
 

@@ -14,7 +14,7 @@ app = mkQApp()
 
 class TestImageView:
     def testComponents(self):
-        widget = ImageViewF(has_roi=True)
+        widget = ImageViewF(n_rois=4)
         items = widget._plot_widget._plot_area._vb.addedItems
         assert isinstance(items[0], ImageItem)
         for i in range(1, 5):
@@ -32,7 +32,7 @@ class TestImageView:
         assert menu[0].title() == "Grid"
 
     def testForwardMethod(self):
-        widget = ImageViewF(has_roi=True)
+        widget = ImageViewF(n_rois=4)
 
         for method in ["setAspectLocked", "setLabel", "setTitle", "addItem",
                        "removeItem", "invertX", "invertY", "autoRange"]:
@@ -42,7 +42,7 @@ class TestImageView:
 
     @pytest.mark.parametrize("dtype", [np.uint8, int, np.float32])
     def testSetImage(self, dtype):
-        widget = ImageViewF(has_roi=True)
+        widget = ImageViewF(n_rois=4)
 
         if _display():
             widget.show()
