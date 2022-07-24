@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QFrame, QVBoxLayout
 from foamgraph import (
     AbstractScene, mkQApp, ImageViewF
 )
+from foamgraph.ctrl_widgets import RoiCtrlWidgetGroup
 
 from consumer import Consumer
 
@@ -24,13 +25,16 @@ class ImageAnalysis(ImageViewF):
 class ImageAnalysisScene(AbstractScene):
     _title = "Image Analysis"
 
-    _TOTAL_W, _TOTAL_H = 1920, 1080
+    _TOTAL_W, _TOTAL_H = 900, 600
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, n_rois: int = 0, *args, **kwargs):
         """Initialization."""
         super().__init__(*args, **kwargs)
 
-        self._image = ImageAnalysis(parent=self)
+        self._image = ImageAnalysis(n_rois=n_rois, parent=self)
+        self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
+        for roi in self._image.rois:
+            self._roi_ctrl.addRoi(roi)
 
         self.initUI()
         self.initConnections()
@@ -46,6 +50,7 @@ class ImageAnalysisScene(AbstractScene):
         """Override."""
         layout = QVBoxLayout()
         layout.addWidget(self._image)
+        layout.addWidget(self._roi_ctrl)
 
         self._cw = QFrame()
         self._cw.setLayout(layout)
@@ -57,7 +62,7 @@ class ImageAnalysisScene(AbstractScene):
 
 
 if __name__ == "__main__":
-    scene = ImageAnalysisScene()
+    scene = ImageAnalysisScene(n_rois=2)
 
     consumer = Consumer(scene.queue)
     consumer.start()

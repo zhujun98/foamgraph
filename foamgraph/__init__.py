@@ -14,7 +14,7 @@ from .scenes import AbstractScene
 from .aesthetics import FColor
 from .image_views import ImageViewF, TimedImageViewF
 from .plot_widgets import PlotWidgetF, TimedPlotWidgetF, HistWidgetF
-from .smart_widgets import (
+from .ctrl_widgets import (
     SmartLineEdit, SmartStringLineEdit, SmartBoundaryLineEdit,
     SmartIdLineEdit, SmartSliceLineEdit
 )
