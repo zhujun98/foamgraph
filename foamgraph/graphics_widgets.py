@@ -188,7 +188,10 @@ class PlotArea(pg.GraphicsWidget):
     _MAX_ANNOTATION_ITEMS = 10
 
     def __init__(self, name=None, *,
-                 enable_meter=True, enable_transform=True, parent=None):
+                 enable_meter: bool = True,
+                 enable_grid: bool = True,
+                 enable_transform: bool = True,
+                 parent=None):
         super().__init__(parent=parent)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -225,9 +228,10 @@ class PlotArea(pg.GraphicsWidget):
         self._log_x_cb = QCheckBox("Log X")
         self._log_y_cb = QCheckBox("Log Y")
 
-        self._menu = None
-        self._enable_transform = enable_transform
+        self._menus = []
         self._enable_meter = enable_meter
+        self._enable_grid = enable_grid
+        self._enable_transform = enable_transform
 
         self._show_meter = False
 
@@ -280,41 +284,53 @@ class PlotArea(pg.GraphicsWidget):
         self._log_x_cb.toggled.connect(self._onLogXChanged)
         self._log_y_cb.toggled.connect(self._onLogYChanged)
 
-    def _initContextMenu(self):
-        self._menu = [
-            QMenu("Meter"),
-            QMenu("Grid"),
-            QMenu("Transform")
-        ]
+    def _initMeterManu(self):
+        menu = QMenu("Meter")
+        self._menus.append(menu)
 
-        meter_menu = self._menu[0]
-        cross_act = QWidgetAction(meter_menu)
+        cross_act = QWidgetAction(menu)
         cross_act.setDefaultWidget(self._show_cross_cb)
-        meter_menu.addAction(cross_act)
+        menu.addAction(cross_act)
 
-        grid_menu = self._menu[1]
-        show_x_act = QWidgetAction(grid_menu)
+    def _initGridMenu(self):
+        menu = QMenu("Grid")
+        self._menus.append(menu)
+
+        show_x_act = QWidgetAction(menu)
         show_x_act.setDefaultWidget(self._show_x_grid_cb)
-        grid_menu.addAction(show_x_act)
-        show_y_act = QWidgetAction(grid_menu)
+        menu.addAction(show_x_act)
+        show_y_act = QWidgetAction(menu)
         show_y_act.setDefaultWidget(self._show_y_grid_cb)
-        grid_menu.addAction(show_y_act)
-        opacity_act = QWidgetAction(grid_menu)
+        menu.addAction(show_y_act)
+        opacity_act = QWidgetAction(menu)
         widget = QWidget()
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Opacity"))
         layout.addWidget(self._grid_opacity_sld)
         widget.setLayout(layout)
         opacity_act.setDefaultWidget(widget)
-        grid_menu.addAction(opacity_act)
+        menu.addAction(opacity_act)
 
-        transform_menu = self._menu[2]
-        log_x_act = QWidgetAction(transform_menu)
+    def _initTransformMenu(self):
+        menu = QMenu("Transform")
+        self._menus.append(menu)
+
+        log_x_act = QWidgetAction(menu)
         log_x_act.setDefaultWidget(self._log_x_cb)
-        transform_menu.addAction(log_x_act)
-        log_y_act = QWidgetAction(transform_menu)
+        menu.addAction(log_x_act)
+        log_y_act = QWidgetAction(menu)
         log_y_act.setDefaultWidget(self._log_y_cb)
-        transform_menu.addAction(log_y_act)
+        menu.addAction(log_y_act)
+
+    def _initContextMenu(self):
+        if self._enable_meter:
+            self._initMeterManu()
+
+        if self._enable_grid:
+            self._initGridMenu()
+
+        if self._enable_transform:
+            self._initTransformMenu()
 
     def _initAxisItems(self):
         for orient, pos in (('top', (2, 1)),
@@ -459,13 +475,7 @@ class PlotArea(pg.GraphicsWidget):
 
     def getContextMenus(self, event):
         """Override."""
-        start = 0
-        end = len(self._menu)
-        if not self._enable_transform:
-            end -= 1
-        if not self._enable_meter:
-            start += 1
-        return self._menu[start:end]
+        return self._menus
 
     def getAxis(self, axis):
         """Return the specified AxisItem.
