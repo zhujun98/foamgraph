@@ -38,7 +38,7 @@ class ScatterPlot(PlotWidgetF):
         self.setLabel('bottom', "x (arb. u.)")
         self.setLabel('left', "y (arb. u.)")
 
-        self._plot = self.plotScatter()
+        self._plot = self.plotScatter(brush=FColor.mkBrush('b', alpha=150))
 
     def updateF(self, data):
         """Override."""
@@ -130,6 +130,7 @@ class DoubleYPlot(PlotWidgetF):
         self.setLabel('right', "y2 (arg. u.)")
 
         self._plot = self.plotCurve(name="Data", pen=FColor.mkPen('w'))
+        self._plot1 = self.plotScatter(symbol='x', pen=FColor.mkPen('w'))
         self._plot2 = self.plotBar(
             name="Count", y2=True, brush=FColor.mkBrush('i', alpha=150))
         self.addLegend()
@@ -142,6 +143,7 @@ class DoubleYPlot(PlotWidgetF):
             return
 
         self._plot.setData(data['x'], data['y'])
+        self._plot1.setData(data['x'], data['y'])
         self._plot2.setData(data['x'], data['y2'])
 
 
