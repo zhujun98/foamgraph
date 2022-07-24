@@ -54,7 +54,7 @@ class AbstractScene(QMainWindow, _SceneMixin):
         if parent is not None:
             parent.registerWindow(self)
 
-        self._ctrl_widgets = []
+        self._ctrl_widgets = WeakKeyDictionary()
         self._plot_widgets = WeakKeyDictionary()  # book-keeping plot widgets
 
         try:
@@ -112,10 +112,11 @@ class AbstractScene(QMainWindow, _SceneMixin):
         for widget in self._ctrl_widgets:
             widget.loadMetaData()
 
-    def createCtrlWidget(self, widget_class):
-        widget = widget_class(parent=self)
-        self._ctrl_widgets.append(widget)
-        return widget
+    def registerCtrlWidget(self, instance):
+        self._ctrl_widgets[instance] = 1
+
+    def unregisterCtrlWidget(self, instance):
+        del self._ctrl_widgets[instance]
 
     def registerPlotWidget(self, instance):
         self._plot_widgets[instance] = 1

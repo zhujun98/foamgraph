@@ -11,8 +11,8 @@ from PyQt5.QtCore import pyqtSignal, QRegExp, Qt
 from PyQt5.QtGui import QRegExpValidator, QValidator
 from PyQt5.QtWidgets import QLineEdit
 
-from .aesthetics import FColor
-from .utilities import parse_boundary, parse_id, parse_slice
+from foamgraph.aesthetics import FColor
+from foamgraph.utilities import parse_boundary, parse_id, parse_slice
 
 
 class SmartLineEdit(QLineEdit):
