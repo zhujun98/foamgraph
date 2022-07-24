@@ -198,15 +198,18 @@ class PlotWidgetF(pg.GraphicsView):
 
 class TimedPlotWidgetF(PlotWidgetF):
 
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
+    def __init__(self, interval: int = 1000, *args, **kwargs):
+        """Initialization.
+
+        :param interval: Plot updating interval in milliseconds.
+        """
         super().__init__(*args, **kwargs)
 
         self._data = None
 
         self._timer = QTimer()
         self._timer.timeout.connect(self._refresh_imp)
-        self._timer.start(config["PLOT_WIDGET_TIMER"])
+        self._timer.start(interval)
 
     @abc.abstractmethod
     def refresh(self):

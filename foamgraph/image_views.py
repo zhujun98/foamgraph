@@ -279,15 +279,18 @@ class ImageViewF(QWidget):
 
 
 class TimedImageViewF(ImageViewF):
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
+    def __init__(self, interval: int = 1000, *args, **kwargs):
+        """Initialization.
+
+        :param interval: Image updating interval in milliseconds.
+        """
         super().__init__(*args, **kwargs)
 
         self._data = None
 
         self._timer = QTimer()
         self._timer.timeout.connect(self._refresh_imp)
-        self._timer.start(config["IMAGE_VIEW_TIMER"])
+        self._timer.start(interval)
 
     @abc.abstractmethod
     def refresh(self):
