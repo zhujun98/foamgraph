@@ -19,9 +19,6 @@ class _Config(abc.Mapping):
         # yellowy, bipolar, spectrum, cyclic, greyclip, grey, viridis,
         # inferno, plasma, magma
         "COLOR_MAP": 'plasma',
-        # interval for timed plot widgets and image views, in milliseconds
-        "PLOT_WIDGET_TIMER": 1000,
-        "IMAGE_VIEW_TIMER": 1000,
     }
 
     def __init__(self):
