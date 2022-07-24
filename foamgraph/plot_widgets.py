@@ -39,6 +39,7 @@ class PlotWidgetF(pg.GraphicsView):
     def __init__(self, parent=None, *,
                  background='default',
                  enable_meter=True,
+                 enable_grid=True,
                  enable_transform=True):
         """Initialization."""
         super().__init__(parent, background=background)
@@ -49,6 +50,7 @@ class PlotWidgetF(pg.GraphicsView):
         self._title = ""
 
         self._plot_area = PlotArea(enable_meter=enable_meter,
+                                   enable_grid=enable_grid,
                                    enable_transform=enable_transform)
         self.setCentralWidget(self._plot_area)
         self._plot_area.cross_toggled_sgn.connect(self.onCrossToggled)

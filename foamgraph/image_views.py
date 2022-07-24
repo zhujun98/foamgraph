@@ -77,6 +77,7 @@ class ImageViewF(QWidget):
         self._initializeROIs(n_rois, roi_position, roi_size)
 
         self._plot_widget = PlotWidgetF(enable_meter=False,
+                                        enable_grid=False,
                                         enable_transform=False)
 
         self._cached_title = None
