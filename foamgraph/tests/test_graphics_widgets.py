@@ -235,16 +235,10 @@ class TestPlotArea(unittest.TestCase):
                 self.assertTrue(plot_item5._log_y_mode)
                 self.assertFalse(plot_item6._log_y_mode)
 
-        area._enable_meter = False
-        menus = self._area.getContextMenus(event)
-        self.assertEqual(2, len(menus))
-        self.assertEqual("Grid", menus[0].title())
-        self.assertEqual("Transform", menus[1].title())
-
-        area._enable_transform = False
-        menus = self._area.getContextMenus(event)
-        self.assertEqual(1, len(menus))
-        self.assertEqual("Grid", menus[0].title())
+        another_area = PlotArea(
+            enable_meter=False, enable_transform=False, enable_grid=False)
+        menus = another_area.getContextMenus(event)
+        self.assertEqual(0, len(menus))
 
     def testSetAnnotationList(self):
         area = self._area

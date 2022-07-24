@@ -28,8 +28,7 @@ class TestImageView:
 
         # test log X/Y menu is disabled
         menu = widget._plot_widget._plot_area.getContextMenus(None)
-        assert len(menu) == 1
-        assert menu[0].title() == "Grid"
+        assert len(menu) == 0
 
     def testForwardMethod(self):
         widget = ImageViewF(n_rois=4)
