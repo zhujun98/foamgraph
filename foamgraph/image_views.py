@@ -123,6 +123,10 @@ class ImageViewF(QWidget):
     def reset(self):
         self.clear()
 
+    def addRoiController(self, controller):
+        for roi in self._rois:
+            controller.addRoi(roi)
+
     @abc.abstractmethod
     def updateF(self, data):
         """This method is called by the parent window.

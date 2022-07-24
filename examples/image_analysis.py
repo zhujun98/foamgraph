@@ -2,7 +2,7 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QFrame, QVBoxLayout
 
 from foamgraph import (
-    AbstractScene, mkQApp, ImageViewF
+    AbstractScene, ImageViewF, mkQApp, PlotWidgetF
 )
 from foamgraph.ctrl_widgets import RoiCtrlWidgetGroup
 
@@ -33,8 +33,7 @@ class ImageAnalysisScene(AbstractScene):
 
         self._image = ImageAnalysis(n_rois=n_rois, parent=self)
         self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
-        for roi in self._image.rois:
-            self._roi_ctrl.addRoi(roi)
+        self._image.addRoiController(self._roi_ctrl)
 
         self.initUI()
         self.initConnections()
