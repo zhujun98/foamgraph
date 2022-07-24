@@ -62,6 +62,27 @@ class DoubleYPlotData:
                 "y2": self._count + np.random.randint(20, size=n)}
 
 
+class ImageData:
+    def __init__(self):
+        self._h, self._w = 1024, 1024
+
+    def next(self):
+        spot_w = 200
+        spot_h = 120
+
+        yc = int(self._h / 2) - int(spot_h / 2) + np.random.randint(10)
+        xc = int(self._w / 2) - int(spot_w / 2) + np.random.randint(10)
+
+        x = np.arange(spot_w) - int(spot_w / 2)
+        y = np.arange(spot_h) - int(spot_h / 2)
+        xx, yy = np.meshgrid(x, y)
+        spot_i = 2 * np.exp(-0.5 * (xx ** 2 / (spot_w / 8) ** 2 + yy ** 2 / (spot_h / 8) ** 2))
+
+        data = np.random.random((self._h, self._w))
+        data[yc:yc + spot_h, xc:xc + spot_w] += spot_i
+        return {'data': data}
+
+
 if __name__ == "__main__":
 
     ctx = zmq.Context()
@@ -71,6 +92,7 @@ if __name__ == "__main__":
     scatter_plot_data = ScatterPlotData(500)
     multi_line_plot_data = MultiLinePlotData(1000)
     double_y_plot_data = DoubleYPlotData(100)
+    image_data = ImageData()
     counter = 0
     while True:
         data = {
@@ -91,9 +113,7 @@ if __name__ == "__main__":
             },
             "multi-line": multi_line_plot_data.next(),
             "double-y": double_y_plot_data.next(),
-            "image": {
-                "data": np.random.random((768, 1024))
-            }
+            "image": image_data.next()
         }
 
         socket.send(pickle.dumps(data))
