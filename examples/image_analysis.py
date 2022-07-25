@@ -1,3 +1,5 @@
+import numpy as np
+
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QFrame, QVBoxLayout
 
@@ -14,12 +16,37 @@ app = mkQApp()
 class ImageAnalysis(ImageViewF):
     def updateF(self, data):
         """Override."""
-        try:
-            data = data["image"]
-        except KeyError:
+        self.setImage(data['image']['data'])
+
+
+# FIXME
+class RoiProjectionMonitor(PlotWidgetF):
+    def __init__(self, *, parent=None):
+        super().__init__(parent=parent)
+
+        self._roi_geom = None
+
+        self._plot = self.plotCurve()
+
+    def onRoiGeometryChange(self, value: tuple):
+        idx, activated, _, x, y, w, h = value
+        if idx != 1:
             return
 
-        self.setImage(data['data'])
+        if activated:
+            self._roi_geom = (x, y, w, h)
+        else:
+            self._roi_geom = None
+
+    def updateF(self, data):
+        """override."""
+        if self._roi_geom is None:
+            self.reset()
+            return
+
+        x, y, w, h = self._roi_geom
+        data = data['image']["data"][y:y+h, x:x+w]
+        self._plot.setData(np.arange(w), np.mean(data, axis=0))
 
 
 class ImageAnalysisScene(AbstractScene):
@@ -34,6 +61,7 @@ class ImageAnalysisScene(AbstractScene):
         self._image = ImageAnalysis(n_rois=n_rois, parent=self)
         self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
         self._image.addRoiController(self._roi_ctrl)
+        self._roi_monitor = RoiProjectionMonitor(parent=self)
 
         self.initUI()
         self.initConnections()
@@ -50,6 +78,7 @@ class ImageAnalysisScene(AbstractScene):
         layout = QVBoxLayout()
         layout.addWidget(self._image)
         layout.addWidget(self._roi_ctrl)
+        layout.addWidget(self._roi_monitor)
 
         self._cw = QFrame()
         self._cw.setLayout(layout)
@@ -57,7 +86,9 @@ class ImageAnalysisScene(AbstractScene):
 
     def initConnections(self):
         """Override."""
-        ...
+        # FIXME:
+        self._roi_ctrl.mediator.roi_geometry_change_sgn.connect(
+            self._roi_monitor.onRoiGeometryChange)
 
 
 if __name__ == "__main__":

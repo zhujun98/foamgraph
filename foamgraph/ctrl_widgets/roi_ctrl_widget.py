@@ -6,7 +6,7 @@ Author: Jun Zhu <jun.zhu@xfel.eu>
 Copyright (C) European X-Ray Free-Electron Laser Facility GmbH.
 All rights reserved.
 """
-from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
     QCheckBox, QHBoxLayout, QLabel, QVBoxLayout
@@ -30,18 +30,14 @@ class RoiCtrlWidget(AbstractCtrlWidget):
     _pos_validator = QIntValidator(-10000, 10000)
     _size_validator = QIntValidator(1, 10000)
 
-    class _Mediator:
-        def onRoiGeometryChange(self, value: tuple):
-            ...
-
     def __init__(self, roi: RectROI, *,
-                 mediator=None, enable_lock: bool = True, **kwargs):
+                 mediator, enable_lock: bool = True, **kwargs):
         super().__init__(**kwargs)
 
         self._roi = roi
         roi.setLocked(False)
 
-        self._mediator = self._Mediator() if mediator is None else mediator
+        self._mediator = mediator
 
         self._activate_cb = QCheckBox(f"ROI{self._roi.index}")
         palette = self._activate_cb.palette()
@@ -218,10 +214,18 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 class RoiCtrlWidgetGroup(AbstractGroupBoxCtrlWidget):
     """Widget for controlling a group of ROIs."""
 
+    # FIXME
+    class _Mediator(QObject):
+        roi_geometry_change_sgn = pyqtSignal(object)
+
+        def onRoiGeometryChange(self, value):
+            self.roi_geometry_change_sgn.emit(value)
+
     def __init__(self, *args, **kwargs):
         super().__init__("ROI control", *args, **kwargs)
-
         self._widgets = []
+
+        self.mediator = self._Mediator()
 
         self.initUI()
         self.initConnections()
@@ -247,7 +251,7 @@ class RoiCtrlWidgetGroup(AbstractGroupBoxCtrlWidget):
         ...
 
     def addRoi(self, roi: RectROI):
-        widget = RoiCtrlWidget(roi, with_frame=False)
+        widget = RoiCtrlWidget(roi, mediator=self.mediator, with_frame=False)
         self._widgets.append(widget)
         self.layout().addWidget(widget)
         widget.notifyRoiParams()
