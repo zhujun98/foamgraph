@@ -77,6 +77,7 @@ class BenchmarkPlotItemSpeed:
 
         self._prev_t = None
         self._count = 0
+        self._fps = 0
 
         self._widget.show()
 
@@ -103,18 +104,22 @@ class BenchmarkPlotItemSpeed:
         now = time.time()
         self._dt.append(now - self._prev_t)
         self._prev_t = now
-        fps = len(self._dt) / sum(self._dt)
+        self._fps = len(self._dt) / sum(self._dt)
 
-        self._widget.setTitle(f"{fps:.2f} fps")
+        self._widget.setTitle(f"{self._fps:.2f} fps")
 
         app.processEvents()  # force complete redraw for every plot
+
+    def callback(self):
+        print(f"{self._fps:.2f} fps")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('plot_type', type=str, default='scatter')
     parser.add_argument('pts', type=int, default=10)
-    parser.add_argument('--single_shot', action='store_true')
+    parser.add_argument('--timeout', type=int, default=6,
+                        help="Run time in seconds")
     parser.add_argument('--pyqtgraph', action='store_true')
 
     args = parser.parse_args()
@@ -124,8 +129,11 @@ if __name__ == '__main__':
     bench.start()
 
     timer = QTimer()
-    if args.single_shot:
-        timer.timeout.connect(bench.close)
-    timer.start(1000)
+    timer.timeout.connect(bench.close)
+    timer.start(args.timeout * 1000)
+
+    timer2 = QTimer()
+    timer2.timeout.connect(bench.callback)
+    timer2.start(1000)
 
     app.exec_()
