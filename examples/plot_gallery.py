@@ -22,11 +22,7 @@ class LinePlot(PlotWidgetF):
 
     def updateF(self, data):
         """Override."""
-        try:
-            data = data["line"]
-        except KeyError:
-            return
-
+        data = data['line']
         self._plot.setData(data['x'], data['y'])
 
 
@@ -42,11 +38,7 @@ class ScatterPlot(PlotWidgetF):
 
     def updateF(self, data):
         """Override."""
-        try:
-            data = data["scatter"]
-        except KeyError:
-            return
-
+        data = data['scatter']
         self._plot.setData(data['x'], data['y'])
 
 
@@ -63,11 +55,7 @@ class BarPlot(PlotWidgetF):
 
     def updateF(self, data):
         """Override."""
-        try:
-            data = data["bar"]
-        except KeyError:
-            return
-
+        data = data['bar']
         self._plot.setData(data['x'], data['y'])
 
 
@@ -83,11 +71,7 @@ class ErrorbarPlot(PlotWidgetF):
 
     def updateF(self, data):
         """Override."""
-        try:
-            data = data["errorbar"]
-        except KeyError:
-            return
-
+        data = data['errorbar']
         self._plot.setData(data['x'], data['y'], data['y_min'], data['y_max'])
 
 
@@ -110,11 +94,7 @@ class MultiLinePlot(PlotWidgetF):
 
     def updateF(self, data):
         """Override."""
-        try:
-            data = data["multi-line"]
-        except KeyError:
-            return
-
+        data = data['multi-line']
         self._plot1.setData(data['x'], data['y1'])
         self._plot2.setData(data['x'], data['y2'])
         self._plot3.setData(data['x'], data['y3'])
@@ -137,11 +117,7 @@ class DoubleYPlot(PlotWidgetF):
 
     def updateF(self, data):
         """Override."""
-        try:
-            data = data["double-y"]
-        except KeyError:
-            return
-
+        data = data['double-y']
         self._plot.setData(data['x'], data['y'])
         self._plot1.setData(data['x'], data['y'])
         self._plot2.setData(data['x'], data['y2'])
