@@ -67,18 +67,17 @@ class BenchmarkImageViewSpeed:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--single_shot', action='store_true')
     parser.add_argument('--pyqtgraph', action='store_true')
-
+    parser.add_argument('--timeout', type=int, default=6,
+                        help="Run time in seconds")
     args = parser.parse_args()
 
     bench = BenchmarkImageViewSpeed(pyqtgraph=args.pyqtgraph)
     bench.start()
 
     timer = QTimer()
-    if args.single_shot:
-        timer.timeout.connect(bench.close)
-    timer.start(1000)
+    timer.timeout.connect(bench.close)
+    timer.start(args.timeout * 1000)
 
     timer2 = QTimer()
     timer2.timeout.connect(bench.callback)
