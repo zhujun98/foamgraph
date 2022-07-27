@@ -1,7 +1,7 @@
 foamgraph
 =========
 
-[![Build Status](https://travis-ci.com/zhujun98/foamgraph.svg?branch=master)](https://travis-ci.com/zhujun98/foamgraph)
+![Build status](https://github.com/zhujun98/foamgraph/actions/workflows/python-package.yml/badge.svg)
 
 **Motivations** 
 

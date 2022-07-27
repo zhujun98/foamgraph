@@ -1,0 +1,46 @@
+name: Python package
+
+on:
+  push:
+    branches: [ "master", "dev" ]
+  pull_request:
+    branches: [ "master", "dev" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    env:
+      DISPLAY: ":99.0"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install OS dependencies
+      run: |
+        sudo apt-get -q update
+        sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
+            libxkbcommon-x11-0 x11-apps libgl1-mesa-glx qtbase5-dev xvfb
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install .
+        python -m pip install '.[test]'
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Test with pytest
+      run: |
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1400x900x24
+        sleep 3
+        pytest foamgraph -v
