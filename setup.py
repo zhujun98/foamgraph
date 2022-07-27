@@ -26,6 +26,7 @@ setup(
     packages=find_packages(),
     tests_require=['pytest'],
     install_requires=[
+        'numpy>=1.21.5',
         'PyQt5==5.15.2',
     ],
     extras_require={
