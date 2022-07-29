@@ -1,3 +1,10 @@
+"""
+Distributed under the terms of the MIT License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Copyright (C) Jun Zhu. All rights reserved.
+"""
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QFrame, QGridLayout
 

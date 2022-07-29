@@ -1,12 +1,11 @@
 """
-Distributed under the terms of the BSD 3-Clause License.
+Distributed under the terms of the MIT License.
+
 The full license is in the file LICENSE, distributed with this software.
 
-Author: Jun Zhu <jun.zhu@xfel.eu>
-Copyright (C) European X-Ray Free-Electron Laser Facility GmbH.
-All rights reserved.
+Copyright (C) Jun Zhu. All rights reserved.
 """
-from PyQt5.QtCore import QObject, Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
     QCheckBox, QHBoxLayout, QLabel, QVBoxLayout
@@ -30,14 +29,11 @@ class RoiCtrlWidget(AbstractCtrlWidget):
     _pos_validator = QIntValidator(-10000, 10000)
     _size_validator = QIntValidator(1, 10000)
 
-    def __init__(self, roi: RectROI, *,
-                 mediator, enable_lock: bool = True, **kwargs):
+    def __init__(self, roi: RectROI, *, enable_lock: bool = True, **kwargs):
         super().__init__(**kwargs)
 
         self._roi = roi
         roi.setLocked(False)
-
-        self._mediator = mediator
 
         self._activate_cb = QCheckBox(f"ROI{self._roi.index}")
         palette = self._activate_cb.palette()
@@ -85,7 +81,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
     def initConnections(self):
         """Override."""
         self.roi_geometry_change_sgn.connect(
-            self._mediator.onRoiGeometryChange)
+            self.parent().roi_geometry_change_sgn)
 
         self._width_le.value_changed_sgn.connect(self.onRoiSizeEdited)
         self._height_le.value_changed_sgn.connect(self.onRoiSizeEdited)
@@ -143,6 +139,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         x, y = [int(v) for v in self._roi.pos()]
         w, h = [int(v) for v in self._roi.size()]
         if self.sender() == self._width_le:
+            # FIXME: use value here
             w = int(self._width_le.text())
         elif self.sender() == self._height_le:
             h = int(self._height_le.text())
@@ -163,8 +160,8 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         """Connect to the signal from an ROI object."""
         x, y = [int(v) for v in roi.pos()]
         w, h = [int(v) for v in roi.size()]
-        self.updateParameters(x, y, w, h)
-        # inform widgets outside this window
+        self._updateParameters(x, y, w, h)
+        # inform other widgets
         self.roi_geometry_change_sgn.emit(
             (roi.index, self._activate_cb.isChecked(), 0, x, y, w, h))
 
@@ -172,14 +169,14 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         # fill the QLineEdit(s) and Redis
         self._roi.sigRegionChangeFinished.emit(self._roi)
 
-    def updateParameters(self, x, y, w, h):
+    def _updateParameters(self, x, y, w, h):
         self.roi_geometry_change_sgn.disconnect()
         self._px_le.setText(str(x))
         self._py_le.setText(str(y))
         self._width_le.setText(str(w))
         self._height_le.setText(str(h))
         self.roi_geometry_change_sgn.connect(
-           self._mediator.onRoiGeometryChange)
+           self.parent().roi_geometry_change_sgn)
 
     def reloadRoiParams(self, cfg):
         state, _, x, y, w, h = [v.strip() for v in cfg.split(',')]
@@ -190,7 +187,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         self._width_le.setText(w)
         self._height_le.setText(h)
         self.roi_geometry_change_sgn.connect(
-            self._mediator.onRoiGeometryChange)
+            self.parent().roi_geometry_change_sgn)
         self._activate_cb.setChecked(bool(int(state)))
 
     def setEditable(self, editable):
@@ -214,18 +211,12 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 class RoiCtrlWidgetGroup(AbstractGroupBoxCtrlWidget):
     """Widget for controlling a group of ROIs."""
 
-    # FIXME
-    class _Mediator(QObject):
-        roi_geometry_change_sgn = pyqtSignal(object)
 
-        def onRoiGeometryChange(self, value):
-            self.roi_geometry_change_sgn.emit(value)
+    roi_geometry_change_sgn = pyqtSignal(object)
 
     def __init__(self, *args, **kwargs):
         super().__init__("ROI control", *args, **kwargs)
         self._widgets = []
-
-        self.mediator = self._Mediator()
 
         self.initUI()
         self.initConnections()
@@ -251,7 +242,7 @@ class RoiCtrlWidgetGroup(AbstractGroupBoxCtrlWidget):
         ...
 
     def addRoi(self, roi: RectROI):
-        widget = RoiCtrlWidget(roi, mediator=self.mediator, with_frame=False)
+        widget = RoiCtrlWidget(roi, with_frame=False, parent=self)
         self._widgets.append(widget)
         self.layout().addWidget(widget)
         widget.notifyRoiParams()
