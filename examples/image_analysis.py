@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QFrame, QVBoxLayout
 from foamgraph import (
     AbstractScene, ImageViewF, mkQApp, PlotWidgetF
 )
+from foamgraph.algorithms import extract_rect_roi
 from foamgraph.ctrl_widgets import RoiCtrlWidgetGroup
 
 from consumer import Consumer
@@ -51,9 +52,12 @@ class RoiProjectionMonitor(PlotWidgetF):
             self.reset()
             return
 
-        x, y, w, h = self._roi_geom
-        data = data['image']["data"][y:y+h, x:x+w]
-        self._plot.setData(np.arange(w), np.mean(data, axis=0))
+        roi = extract_rect_roi(data['image']['data'], self._roi_geom)
+        if roi is None:
+            self._plot.setData(None, None)
+        else:
+            proj = np.mean(roi, axis=0)
+            self._plot.setData(np.arange(len(proj)), proj)
 
 
 class ImageAnalysisScene(AbstractScene):
