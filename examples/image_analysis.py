@@ -1,3 +1,10 @@
+"""
+Distributed under the terms of the MIT License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Copyright (C) Jun Zhu. All rights reserved.
+"""
 import numpy as np
 
 from PyQt5.QtCore import QTimer
@@ -86,8 +93,7 @@ class ImageAnalysisScene(AbstractScene):
 
     def initConnections(self):
         """Override."""
-        # FIXME:
-        self._roi_ctrl.mediator.roi_geometry_change_sgn.connect(
+        self._roi_ctrl.roi_geometry_change_sgn.connect(
             self._roi_monitor.onRoiGeometryChange)
 
 

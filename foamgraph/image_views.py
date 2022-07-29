@@ -123,7 +123,8 @@ class ImageViewF(QWidget):
     def reset(self):
         self.clear()
 
-    def addRoiController(self, controller):
+    def addRoiController(self, controller: QWidget):
+        """Add control widget for the ROIs."""
         for roi in self._rois:
             controller.addRoi(roi)
 
