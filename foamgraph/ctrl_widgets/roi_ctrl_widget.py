@@ -118,9 +118,9 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         w, h = [int(v) for v in self._roi.size()]
 
         if self.sender() == self._px_le:
-            x = int(self._px_le.text())
+            x = value
         elif self.sender() == self._py_le:
-            y = int(self._py_le.text())
+            y = value
 
         # If 'update' == False, the state change will be remembered
         # but not processed and no signals will be emitted.
@@ -139,10 +139,9 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         x, y = [int(v) for v in self._roi.pos()]
         w, h = [int(v) for v in self._roi.size()]
         if self.sender() == self._width_le:
-            # FIXME: use value here
-            w = int(self._width_le.text())
+            w = value
         elif self.sender() == self._height_le:
-            h = int(self._height_le.text())
+            h = value
 
         # If 'update' == False, the state change will be remembered
         # but not processed and no signals will be emitted.
@@ -211,7 +210,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 class RoiCtrlWidgetGroup(AbstractGroupBoxCtrlWidget):
     """Widget for controlling a group of ROIs."""
 
-
+    # forward the signal from RoiCtrlWidget
     roi_geometry_change_sgn = pyqtSignal(object)
 
     def __init__(self, *args, **kwargs):
