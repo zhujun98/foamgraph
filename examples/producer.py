@@ -23,6 +23,29 @@ class ScatterPlotData:
                 "y": self._y[:self._counter]}
 
 
+class ErrorBarPlotData:
+    def __init__(self, n: int):
+        self._x = np.arange(n)
+        size = 2000
+        self._data = np.random.randn(size * n).reshape(n, size)
+        self._scale = np.random.random(n)
+
+        self._counter = 0
+
+    def next(self):
+        if self._counter == len(self._x):
+            self._counter = 0
+        self._counter += 1
+
+        data_slice = self._data[:, :self._counter]
+        y = np.mean(data_slice, axis=1)
+        err = np.std(data_slice, axis=1) * self._scale
+        return {"x": self._x,
+                "y": y,
+                "y_min": y - err,
+                "y_max": y + err}
+
+
 class MultiLinePlotData:
     def __init__(self, n: int):
         self._x = np.arange(n)
@@ -90,6 +113,7 @@ if __name__ == "__main__":
     socket.bind(f"tcp://*:5555")
 
     scatter_plot_data = ScatterPlotData(500)
+    errorbar_plot_data = ErrorBarPlotData(50)
     multi_line_plot_data = MultiLinePlotData(1000)
     double_y_plot_data = DoubleYPlotData(100)
     image_data = ImageData()
@@ -105,12 +129,7 @@ if __name__ == "__main__":
                 "x": np.arange(50),
                 "y": 100 * np.random.random(50)
             },
-            "errorbar": {
-                "x": np.arange(30),
-                "y": 100 * np.random.random(30),
-                "y_min": 100 * np.random.random(30),
-                "y_max": 100 * np.random.random(30)
-            },
+            "errorbar": errorbar_plot_data.next(),
             "multi-line": multi_line_plot_data.next(),
             "double-y": double_y_plot_data.next(),
             "image": image_data.next()

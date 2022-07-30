@@ -41,7 +41,7 @@ class ScatterPlot(PlotWidgetF):
         self.setLabel('bottom', "x (arb. u.)")
         self.setLabel('left', "y (arb. u.)")
 
-        self._plot = self.plotScatter(brush=FColor.mkBrush('b', alpha=150))
+        self._plot = self.plotScatter(brush=FColor.mkBrush('p', alpha=150))
 
     def updateF(self, data):
         """Override."""
@@ -66,20 +66,23 @@ class BarPlot(PlotWidgetF):
         self._plot.setData(data['x'], data['y'])
 
 
-class ErrorbarPlot(PlotWidgetF):
+class ErrorbarPlot(TimedPlotWidgetF):
     def __init__(self, *, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(1000, parent=parent)
 
-        self.setTitle('Error-bar plot')
+        self.setTitle('Timed error-bar plot')
         self.setLabel('bottom', "x (arb. u.)")
         self.setLabel('left', "y (arb. u.)")
 
-        self._plot = self.plotErrorbar(beam=1)
+        self._plot1 = self.plotErrorbar(
+            beam=1, pen=FColor.mkPen('o'))
+        self._plot2 = self.plotCurve(pen=FColor.mkPen('o', width=2))
 
-    def updateF(self, data):
+    def refresh(self):
         """Override."""
-        data = data['errorbar']
-        self._plot.setData(data['x'], data['y'], data['y_min'], data['y_max'])
+        data = self._data['errorbar']
+        self._plot1.setData(data['x'], data['y'], data['y_min'], data['y_max'])
+        self._plot2.setData(data['x'], data['y'])
 
 
 class MultiLinePlot(PlotWidgetF):
@@ -95,7 +98,7 @@ class MultiLinePlot(PlotWidgetF):
         self._plot2 = self.plotCurve(
             name='Line B', pen=FColor.mkPen('b', width=2))
         self._plot3 = self.plotCurve(
-            name='Line C', pen=FColor.mkPen('o', width=2))
+            name='Line C', pen=FColor.mkPen('c', width=2))
 
         self.addLegend()
 
@@ -130,25 +133,10 @@ class DoubleYPlot(PlotWidgetF):
         self._plot2.setData(data['x'], data['y2'])
 
 
-class TimedScatterPlot(TimedPlotWidgetF):
-    def __init__(self, *, parent=None):
-        super().__init__(parent=parent)
-
-        self.setTitle('Timed scatter plot')
-        self.setLabel('bottom', "x (arb. u.)")
-        self.setLabel('left', "y (arb. u.)")
-
-        self._plot = self.plotScatter()
-
-    def refresh(self):
-        """Override."""
-        ...
-
-
 class PlotGalleryScene(AbstractScene):
     _title = "Plot gallery"
 
-    _TOTAL_W, _TOTAL_H = 1920, 1080
+    _TOTAL_W, _TOTAL_H = 1440, 720
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
