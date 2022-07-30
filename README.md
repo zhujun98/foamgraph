@@ -32,5 +32,10 @@ python examples/producer.py
 
 ```sh
 python examples/plot_gallery.py &
+```
+
+```sh
 python examples/image_analysis.py
 ```
+
+![](examples/image_analysis.gif)
