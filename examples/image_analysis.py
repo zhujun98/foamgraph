@@ -8,7 +8,7 @@ Copyright (C) Jun Zhu. All rights reserved.
 import numpy as np
 
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QFrame, QVBoxLayout
+from PyQt5.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 
 from foamgraph import (
     AbstractScene, ImageViewF, mkQApp, PlotWidgetF
@@ -29,8 +29,11 @@ class ImageAnalysis(ImageViewF):
 
 # FIXME
 class RoiProjectionMonitor(PlotWidgetF):
-    def __init__(self, *, parent=None):
+    def __init__(self, idx: int, *, parent=None):
         super().__init__(parent=parent)
+
+        self._idx = idx
+        self.setTitle(f"ROI{idx}")
 
         self._roi_geom = None
 
@@ -38,7 +41,7 @@ class RoiProjectionMonitor(PlotWidgetF):
 
     def onRoiGeometryChange(self, value: tuple):
         idx, activated, _, x, y, w, h = value
-        if idx != 1:
+        if idx != self._idx:
             return
 
         if activated:
@@ -63,7 +66,7 @@ class RoiProjectionMonitor(PlotWidgetF):
 class ImageAnalysisScene(AbstractScene):
     _title = "Image Analysis"
 
-    _TOTAL_W, _TOTAL_H = 900, 600
+    _TOTAL_W, _TOTAL_H = 640, 800
 
     def __init__(self, n_rois: int = 0, *args, **kwargs):
         """Initialization."""
@@ -72,7 +75,9 @@ class ImageAnalysisScene(AbstractScene):
         self._image = ImageAnalysis(n_rois=n_rois, parent=self)
         self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
         self._image.addRoiController(self._roi_ctrl)
-        self._roi_monitor = RoiProjectionMonitor(parent=self)
+        self._roi_monitors = [
+            RoiProjectionMonitor(i + 1, parent=self) for i in range(2)
+        ]
 
         self.initUI()
         self.initConnections()
@@ -86,10 +91,14 @@ class ImageAnalysisScene(AbstractScene):
 
     def initUI(self):
         """Override."""
+        h_layout = QHBoxLayout()
+        for mon in self._roi_monitors:
+            h_layout.addWidget(mon)
+
         layout = QVBoxLayout()
         layout.addWidget(self._image)
         layout.addWidget(self._roi_ctrl)
-        layout.addWidget(self._roi_monitor)
+        layout.addLayout(h_layout)
 
         self._cw = QFrame()
         self._cw.setLayout(layout)
@@ -97,8 +106,9 @@ class ImageAnalysisScene(AbstractScene):
 
     def initConnections(self):
         """Override."""
-        self._roi_ctrl.roi_geometry_change_sgn.connect(
-            self._roi_monitor.onRoiGeometryChange)
+        for mon in self._roi_monitors:
+            self._roi_ctrl.roi_geometry_change_sgn.connect(
+                mon.onRoiGeometryChange)
 
 
 if __name__ == "__main__":

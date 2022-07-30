@@ -118,9 +118,9 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         w, h = [int(v) for v in self._roi.size()]
 
         if self.sender() == self._px_le:
-            x = value
+            x = int(value)
         elif self.sender() == self._py_le:
-            y = value
+            y = int(value)
 
         # If 'update' == False, the state change will be remembered
         # but not processed and no signals will be emitted.
@@ -139,9 +139,9 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         x, y = [int(v) for v in self._roi.pos()]
         w, h = [int(v) for v in self._roi.size()]
         if self.sender() == self._width_le:
-            w = value
+            w = int(value)
         elif self.sender() == self._height_le:
-            h = value
+            h = int(value)
 
         # If 'update' == False, the state change will be remembered
         # but not processed and no signals will be emitted.
@@ -223,7 +223,8 @@ class RoiCtrlWidgetGroup(AbstractGroupBoxCtrlWidget):
     def initUI(self):
         """Override."""
         layout = QVBoxLayout()
-        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         self.setLayout(layout)
 
     def initConnections(self):
@@ -244,4 +245,5 @@ class RoiCtrlWidgetGroup(AbstractGroupBoxCtrlWidget):
         widget = RoiCtrlWidget(roi, with_frame=False, parent=self)
         self._widgets.append(widget)
         self.layout().addWidget(widget)
+        self.setFixedHeight(self.minimumSizeHint().height())
         widget.notifyRoiParams()
