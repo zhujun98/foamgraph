@@ -1,24 +1,34 @@
 foamgraph
 =========
 
+[![PyPi](https://img.shields.io/pypi/v/foamgraph.svg)](https://pypi.org/project/foamgraph/)
 ![Build status](https://github.com/zhujun98/foamgraph/actions/workflows/python-package.yml/badge.svg)
 
-**Motivations** 
+![Language](https://img.shields.io/badge/language-python-blue)
+[![Qt 5](https://img.shields.io/badge/Qt-5-brightgreen)](https://doc.qt.io/qt-5/)
 
-* Fast display (> 10 Hz) for XFEL experiments (https://github.com/European-XFEL/EXtra-foam/pull/422#issue-1130537145).
-* Customized plots and interactive analysis for photon experiments.
-* Reduce the redundant functionalities (for photon experiments) from pyqtgraph and simplify API.
+`foamgraph` was originally developed as part of the online analysis framework 
+[EXtra-foam](https://github.com/European-XFEL/EXtra-foam.git)
+to provide fast display (10 Hz) and interactive data analysis for photon science
+experiments at the state-of-art free-electron laser (FEL) facility - European XFEL.
+It was implemented on top of the famous Python graphics and GUI library
+[PyQtGraph](https://github.com/pyqtgraph/pyqtgraph). The following features make 
+`foamgraph` stand out:
 
-**Architecture**
+- The widgets and graphics objects are dedicated for photon science experiments.
+- The performance has been significantly improved.
+- It trades flexibility for an easy-to-use and unified API.
 
-* Qt's GraphicsView framework
+It must be emphasized that `foamgraph` is only a GUI library. It does not provide
+any interfaces for data and metadata exchange between the backend and the GUI because
+it is facility and experiment specific.
 
-**Challenges**
-
-* When integrating GUI into a real-time data analysis pipeline, there are a couple of things to be taken into account:
-    - The GUI in principle should not perform any number crunching jobs, otherwise it will be slowed down because it is written in Python.
-    - Light computation tasks can be performed in a Python thread and the communication between the GUI and the processor can still be fulfilled using Qt's signal-slot connections.
-    - Heavy computation tasks must be carried out in other processes (servers) and one needs to think about how to synchronize the parameters.
+Nevertheless, when integrating GUI into a real-time data analysis pipeline, 
+there are a couple of things to be taken into account:
+- The GUI in principle should not perform any number crunching jobs, otherwise it 
+will be slowed down because it is written in Python.
+- Light computation tasks can be performed in a Python thread and the communication 
+between the GUI and the processor can still be fulfilled using Qt's signal-slot connections.
 
 ## Examples
 
@@ -28,11 +38,15 @@ foamgraph
 python examples/producer.py
 ```
 
-* Open another terminal and start the galleries
+* Open another terminal and start the plot gallery example
 
 ```sh
-python examples/plot_gallery.py &
+python examples/plot_gallery.py
 ```
+
+![](examples/plot_gallery.gif)
+
+* Open another terminal and start the image analysis example
 
 ```sh
 python examples/image_analysis.py
