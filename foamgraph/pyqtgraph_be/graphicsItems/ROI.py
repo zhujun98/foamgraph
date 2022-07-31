@@ -642,7 +642,7 @@ class ROI(GraphicsObject):
         """Remove a handle from this ROI. Argument may be either a Handle 
         instance or the integer index of the handle."""
         index = self.indexOfHandle(handle)
-            
+
         handle = self.handles[index]['item']
         self.handles.pop(index)
         handle.disconnectROI(self)

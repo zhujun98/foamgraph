@@ -7,9 +7,9 @@ from foamgraph import mkQApp
 from foamgraph.graphics_widgets import HistogramLUTItem, PlotArea
 from foamgraph.image_items import ImageItem, RectROI
 from foamgraph.plot_items import (
-    CurvePlotItem, BarGraphItem, ScatterPlotItem, StatisticsBarItem
+    CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
 )
-from foamgraph import pyqtgraph as pg
+from foamgraph import pyqtgraph_be as pg
 
 
 app = mkQApp()
@@ -94,8 +94,8 @@ class TestPlotArea(unittest.TestCase):
         area.addItem(RectROI(0))
         bar_graph_item = BarGraphItem(name="bar")
         area.addItem(bar_graph_item, y2=True)
-        statistics_bar_item = StatisticsBarItem()
-        area.addItem(statistics_bar_item)
+        errorbar_item = ErrorbarItem()
+        area.addItem(errorbar_item)
 
         area.addLegend()  # add legend when there are already added PlotItems
 
@@ -148,7 +148,7 @@ class TestPlotArea(unittest.TestCase):
 
         # remove a PlotItem which does not has a name and hence was not added
         # into the legend
-        area.removeItem(statistics_bar_item)
+        area.removeItem(errorbar_item)
         self.assertEqual(2, len(area._legend.items))
 
         with self.assertRaisesRegex(RuntimeError, "not allowed to be removed"):
@@ -235,23 +235,17 @@ class TestPlotArea(unittest.TestCase):
                 self.assertTrue(plot_item5._log_y_mode)
                 self.assertFalse(plot_item6._log_y_mode)
 
-        area._enable_meter = False
-        menus = self._area.getContextMenus(event)
-        self.assertEqual(2, len(menus))
-        self.assertEqual("Grid", menus[0].title())
-        self.assertEqual("Transform", menus[1].title())
-
-        area._enable_transform = False
-        menus = self._area.getContextMenus(event)
-        self.assertEqual(1, len(menus))
-        self.assertEqual("Grid", menus[0].title())
+        another_area = PlotArea(
+            enable_meter=False, enable_transform=False, enable_grid=False)
+        menus = another_area.getContextMenus(event)
+        self.assertEqual(0, len(menus))
 
     def testSetAnnotationList(self):
         area = self._area
         # add some items to simulate the practical situation
         area.addItem(ImageItem())
         area.addItem(BarGraphItem())
-        area.addItem(StatisticsBarItem())
+        area.addItem(ErrorbarItem())
 
         # add some items
         area.setAnnotationList([1, 2, 3], [4, 5, 6])
@@ -287,8 +281,8 @@ class TestPlotArea(unittest.TestCase):
         self.assertEqual(0, area._n_vis_annotation_items)
 
         # test TextItem call
-        with patch("foamgraph.pyqtgraph.TextItem.setPos") as mocked_pos:
-            with patch("foamgraph.pyqtgraph.TextItem.setText") as mocked_value:
+        with patch("foamgraph.pyqtgraph_be.TextItem.setPos") as mocked_pos:
+            with patch("foamgraph.pyqtgraph_be.TextItem.setText") as mocked_value:
                 area.setAnnotationList([1, 2, 3], [4, 5, 6])
                 mocked_pos.assert_called_with(3, 6)
                 mocked_value.assert_called_with("3.0000")

@@ -14,7 +14,7 @@ app = mkQApp()
 
 class TestImageView:
     def testComponents(self):
-        widget = ImageViewF(has_roi=True)
+        widget = ImageViewF(n_rois=4)
         items = widget._plot_widget._plot_area._vb.addedItems
         assert isinstance(items[0], ImageItem)
         for i in range(1, 5):
@@ -28,11 +28,10 @@ class TestImageView:
 
         # test log X/Y menu is disabled
         menu = widget._plot_widget._plot_area.getContextMenus(None)
-        assert len(menu) == 1
-        assert menu[0].title() == "Grid"
+        assert len(menu) == 0
 
     def testForwardMethod(self):
-        widget = ImageViewF(has_roi=True)
+        widget = ImageViewF(n_rois=4)
 
         for method in ["setAspectLocked", "setLabel", "setTitle", "addItem",
                        "removeItem", "invertX", "invertY", "autoRange"]:
@@ -40,9 +39,9 @@ class TestImageView:
                 getattr(widget, method)()
                 mocked.assert_called_once()
 
-    @pytest.mark.parametrize("dtype", [np.uint8, np.int, np.float32])
+    @pytest.mark.parametrize("dtype", [np.uint8, int, np.float32])
     def testSetImage(self, dtype):
-        widget = ImageViewF(has_roi=True)
+        widget = ImageViewF(n_rois=4)
 
         if _display():
             widget.show()

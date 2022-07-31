@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "foamgraph"
+version = "0.1.0"
+description = "Fast visualization library for oneline analysis"
+authors = [
+    {name = "Jun Zhu", email="zhujun981661@gmail.com"},
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+    'numpy>=1.21.5',
+    'PyQt5==5.15.2',
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+
+[project.urls]
+repository = "https://https://github.com/zhujun98/foamgraph"

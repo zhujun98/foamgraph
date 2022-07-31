@@ -15,11 +15,11 @@ import numpy as np
 from PyQt5.QtGui import QPainter, QPicture, QTransform
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 
-from . import pyqtgraph as pg
-from .pyqtgraph import Point
-from .pyqtgraph import functions as fn
+from . import pyqtgraph_be as pg
+from .pyqtgraph_be import Point
+from .pyqtgraph_be import functions as fn
 
-from .aesthetics import FoamColor
+from .aesthetics import FColor
 from .algorithms import quick_min_max
 
 
@@ -273,7 +273,7 @@ class ImageItem(pg.GraphicsObject):
             # step >= 1
             step = np.ceil((ub - lb) / n_bins)
             # len(bins) >= 2
-            bins = np.arange(lb, ub + 0.01 * step, step, dtype=np.int)
+            bins = np.arange(lb, ub + 0.01 * step, step, dtype=int)
         else:
             # for float data, let numpy select the bins.
             bins = np.linspace(lb, ub, n_bins)
@@ -371,14 +371,21 @@ class RectROI(pg.ROI):
 
     Note: the widget is slightly different from pyqtgraph.RectROI
     """
-    def __init__(self, idx, *, pos=(0, 0), size=(1, 1), pen=None, parent=None):
+    def __init__(self, idx: int, *,
+                 pos: tuple = (0, 0),
+                 size: tuple = (1, 1),
+                 color: str = 'k',
+                 parent=None):
         """Initialization.
 
-        :param int idx: index of the ROI.
-        :param tuple pos: (x, y) of the left-upper corner.
-        :param tuple size: (w, h) of the ROI.
-        :param None/QPen pen: QPen to draw the ROI.
+        :param idx: index of the ROI.
+        :param pos: (x, y) of the left-upper corner.
+        :param size: (w, h) of the ROI.
+        :param color: ROI display color.
         """
+        # TODO: make 'color' an attribute of the parent class
+        self._color = color
+        pen = FColor.mkPen(color, width=2, style=Qt.SolidLine)
         super().__init__(pos, size,
                          translateSnap=True,
                          scaleSnap=True,
@@ -390,6 +397,10 @@ class RectROI(pg.ROI):
     @property
     def index(self):
         return self._index
+
+    @property
+    def color(self):
+        return self._color
 
     def setLocked(self, locked):
         if locked:
@@ -412,11 +423,11 @@ class GeometryItem(pg.GraphicsObject):
         super().__init__(parent=parent)
 
         if pen is None and brush is None:
-            self._pen = FoamColor.mkPen('b')
-            self._brush = FoamColor.mkBrush(None)
+            self._pen = FColor.mkPen('b')
+            self._brush = FColor.mkBrush(None)
         else:
-            self._pen = FoamColor.mkPen(None) if pen is None else pen
-            self._brush = FoamColor.mkBrush(None) if brush is None else brush
+            self._pen = FColor.mkPen(None) if pen is None else pen
+            self._brush = FColor.mkBrush(None) if brush is None else brush
 
         self._picture = None
 

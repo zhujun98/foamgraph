@@ -9,26 +9,20 @@ All rights reserved.
 """
 import abc
 from string import Template
+from typing import final
 
 import numpy as np
 
 from PyQt5.QtCore import pyqtSlot, QTimer
 from PyQt5.QtWidgets import QSizePolicy
 
-from . import pyqtgraph as pg
+from . import pyqtgraph_be as pg
 
 from .config import config
 from .graphics_widgets import PlotArea
 from .plot_items import (
-    BarGraphItem, CurvePlotItem, ScatterPlotItem, StatisticsBarItem
+    BarGraphItem, CurvePlotItem, ScatterPlotItem, ErrorbarItem
 )
-from .typing import final
-
-__all__ = [
-    'PlotWidgetF',
-    'TimedPlotWidgetF',
-    'HistWidgetF',
-]
 
 
 class PlotWidgetF(pg.GraphicsView):
@@ -45,6 +39,7 @@ class PlotWidgetF(pg.GraphicsView):
     def __init__(self, parent=None, *,
                  background='default',
                  enable_meter=True,
+                 enable_grid=True,
                  enable_transform=True):
         """Initialization."""
         super().__init__(parent, background=background)
@@ -55,6 +50,7 @@ class PlotWidgetF(pg.GraphicsView):
         self._title = ""
 
         self._plot_area = PlotArea(enable_meter=enable_meter,
+                                   enable_grid=enable_grid,
                                    enable_transform=enable_transform)
         self.setCentralWidget(self._plot_area)
         self._plot_area.cross_toggled_sgn.connect(self.onCrossToggled)
@@ -120,8 +116,8 @@ class PlotWidgetF(pg.GraphicsView):
         self._plot_area.addItem(item, y2=y2)
         return item
 
-    def plotStatisticsBar(self, *args, y2=False, **kwargs):
-        item = StatisticsBarItem(*args, **kwargs)
+    def plotErrorbar(self, *args, y2=False, **kwargs):
+        item = ErrorbarItem(*args, **kwargs)
         self._plot_area.addItem(item, y2=y2)
         return item
 
@@ -202,15 +198,18 @@ class PlotWidgetF(pg.GraphicsView):
 
 class TimedPlotWidgetF(PlotWidgetF):
 
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
+    def __init__(self, interval: int = 1000, *args, **kwargs):
+        """Initialization.
+
+        :param interval: Plot updating interval in milliseconds.
+        """
         super().__init__(*args, **kwargs)
 
         self._data = None
 
         self._timer = QTimer()
         self._timer.timeout.connect(self._refresh_imp)
-        self._timer.start(config["PLOT_WIDGET_TIMER"])
+        self._timer.start(interval)
 
     @abc.abstractmethod
     def refresh(self):

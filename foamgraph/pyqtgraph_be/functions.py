@@ -16,7 +16,7 @@ from .python2_3 import asUnicode, basestring
 from .Qt import QtGui, QtCore, QT_LIB
 from . import getConfigOption, setConfigOptions
 from . import debug, reload
-from foamgraph.pyqtgraph.metaarray import MetaArray
+from .metaarray import MetaArray
 
 
 Colors = {

@@ -1,10 +1,12 @@
 """
 Distributed under the terms of the MIT License.
 
-The full license is in the file BSD_LICENSE, distributed with this software.
+The full license is in the file LICENSE, distributed with this software.
 
 Copyright (C) Jun Zhu. All rights reserved.
 """
+from typing import Optional
+
 import numpy as np
 
 
@@ -38,3 +40,21 @@ def quick_min_max(x, q=None):
     # caveat: nanquantile is about 30 times slower than nanmin/nanmax
     return (np.nanquantile(x, 1 - q, interpolation='nearest'),
             np.nanquantile(x, q, interpolation='nearest'))
+
+
+def intersection(rect1: tuple, rect2: tuple) -> tuple:
+    """Calculate the intersection area of two rectangles."""
+    x = max(rect1[0], rect2[0])
+    xx = min(rect1[0] + rect1[2], rect2[0] + rect2[2])
+    y = max(rect1[1], rect2[1])
+    yy = min(rect1[1] + rect1[3], rect2[1] + rect2[3])
+    return x, y, xx - x, yy - y  # (x, y, w, h)
+
+
+def extract_rect_roi(img: np.ndarray, rect: tuple) \
+        -> Optional[np.ndarray]:
+    """Extract rectangular ROI from an image."""
+    x, y, w, h = intersection((0, 0, img.shape[1], img.shape[0]), rect)
+    if w <= 0 or h <= 0:
+        return
+    return img[y:y+h, x:x+w]

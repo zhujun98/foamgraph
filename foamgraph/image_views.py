@@ -8,25 +8,20 @@ Copyright (C) European X-Ray Free-Electron Laser Facility GmbH.
 All rights reserved.
 """
 import abc
+from typing import final
 
 import numpy as np
 
 from PyQt5.QtCore import pyqtSlot, Qt, QTimer
 from PyQt5.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
-from . import pyqtgraph as pg
+from . import pyqtgraph_be as pg
 
-from .aesthetics import colorMapFactory, FoamColor
+from .aesthetics import colorMapFactory, FColor
 from .config import config
 from .graphics_widgets import HistogramLUTItem
 from .plot_widgets import PlotWidgetF
 from .image_items import ImageItem, RectROI
-from .typing import final
-
-__all__ = [
-    'ImageViewF',
-    'TimedImageViewF',
-]
 
 
 class HistogramLUTWidget(pg.GraphicsView):
@@ -50,40 +45,39 @@ class ImageViewF(QWidget):
 
     A widget used for displaying 2D image data.
 
-    * Four ROIs are included in this widget by default.
-
     Note: it is different from the ImageView in pyqtgraph!
 
     Attributes:
         _image_item (pyqtgraph.ImageItem): This object will be used to
             display the image.
-
     """
     def __init__(self, *,
-                 has_roi=False,
-                 hide_axis=True,
+                 hide_axis: bool = True,
                  color_map=None,
-                 roi_position=(0, 0),
-                 roi_size=(100, 100),
+                 n_rois: int = 0,
+                 roi_position: tuple = (0, 0),
+                 roi_size: tuple = (100, 100),
                  parent=None):
         """Initialization.
 
-        :param bool has_roi: True for adding 4 ROIs on top of the other
-            plot items.
-        :param bool hide_axis: True for hiding left and bottom axes.
-        :param tuple roi_position: Initial upper-left corner position (x, y)
+        :param n_roi: Number of ROIs included.
+        :param hide_axis: True for hiding left and bottom axes.
+        :param roi_position: Initial upper-left corner position (x, y)
             of the first ROI.
-        :param tuple roi_size: Initial size (w, h) of all ROIs.
+        :param roi_size: Initial size (w, h) of all ROIs.
         """
         super().__init__(parent=parent)
 
         self._mouse_hover_v_rounding_decimals = 1
 
         self._rois = []
-        if has_roi:
-            self._initializeROIs(roi_position, roi_size)
+        self._roi_colors = ['b', 'r', 'g', 'o']
+        if n_rois > 4:
+            raise ValueError("Maximum number of ROIs is 4.")
+        self._initializeROIs(n_rois, roi_position, roi_size)
 
         self._plot_widget = PlotWidgetF(enable_meter=False,
+                                        enable_grid=False,
                                         enable_transform=False)
 
         self._cached_title = None
@@ -129,20 +123,26 @@ class ImageViewF(QWidget):
     def reset(self):
         self.clear()
 
+    def addRoiController(self, controller: QWidget):
+        """Add control widget for the ROIs."""
+        for roi in self._rois:
+            controller.addRoi(roi)
+
+    @abc.abstractmethod
     def updateF(self, data):
         """This method is called by the parent window.
 
         The subclass should re-implement this method and call self.setImage
         in this method.
         """
-        pass
+        raise NotImplementedError
 
-    def _initializeROIs(self, pos, size):
-        for i, color in enumerate(config["ROI_COLORS"], 0):
+    def _initializeROIs(self, n, pos, size):
+        for i in range(n):
             roi = RectROI(i + 1,
                           pos=(pos[0] + 10*i, pos[1] + 10*i),
                           size=size,
-                          pen=FoamColor.mkPen(color, width=2, style=Qt.SolidLine))
+                          color=self._roi_colors[i])
             roi.hide()
             self._rois.append(roi)
 
@@ -284,15 +284,18 @@ class ImageViewF(QWidget):
 
 
 class TimedImageViewF(ImageViewF):
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
+    def __init__(self, interval: int = 1000, *args, **kwargs):
+        """Initialization.
+
+        :param interval: Image updating interval in milliseconds.
+        """
         super().__init__(*args, **kwargs)
 
         self._data = None
 
         self._timer = QTimer()
         self._timer.timeout.connect(self._refresh_imp)
-        self._timer.start(config["IMAGE_VIEW_TIMER"])
+        self._timer.start(interval)
 
     @abc.abstractmethod
     def refresh(self):
