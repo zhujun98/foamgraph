@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "foamgraph"
 version = "0.1.0"
-description = "Fast visualization library for oneline analysis"
+description = "Fast visualization library for interactive online analysis at scientific user facilities"
 authors = [
     {name = "Jun Zhu", email="zhujun981661@gmail.com"},
 ]
@@ -34,4 +34,4 @@ test = [
 ]
 
 [project.urls]
-repository = "https://https://github.com/zhujun98/foamgraph"
+repository = "https://github.com/zhujun98/foamgraph"
