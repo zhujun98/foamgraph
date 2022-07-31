@@ -19,9 +19,6 @@ from .ctrl_widgets import (
     SmartIdLineEdit, SmartSliceLineEdit
 )
 
-__version__ = "0.0.1"
-
-
 setConfigOptions(
     imageAxisOrder="row-major",
     foreground=config["FOREGROUND_COLOR"],
