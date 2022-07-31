@@ -1,7 +1,11 @@
 foamgraph
 =========
 
+[![PyPi](https://img.shields.io/pypi/v/foamgraph.svg)](https://pypi.org/project/foamgraph/)
 ![Build status](https://github.com/zhujun98/foamgraph/actions/workflows/python-package.yml/badge.svg)
+
+![Language](https://img.shields.io/badge/language-python-blue)
+[![Qt 5](https://img.shields.io/badge/Qt-5-brightgreen)](https://doc.qt.io/qt-5/)
 
 **Motivations** 
 
