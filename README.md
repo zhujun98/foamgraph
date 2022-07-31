@@ -30,6 +30,48 @@ will be slowed down because it is written in Python.
 - Light computation tasks can be performed in a Python thread and the communication 
 between the GUI and the processor can still be fulfilled using Qt's signal-slot connections.
 
+## Getting started
+
+Every plot widget should inherit from `PlotWidgetF`. The following code snippet
+shows how to create a double-y plot with a title, axis labels and a legend:
+
+```py
+from foamgraph import FColor, PlotWidgetF
+
+
+class DoubleYPlot(PlotWidgetF):
+    def __init__(self, *, parent=None):
+        super().__init__(parent=parent)
+
+        self.setTitle('Double-y plot')
+        self.setLabel('bottom', "x (arb. u.)")
+        self.setLabel('left', "y (arb. u.)")
+        self.setLabel('right', "y2 (arg. u.)")
+
+        self._plot = self.plotCurve(name="Data", pen=FColor.mkPen('w'))
+        self._plot2 = self.plotBar(
+            name="Count", y2=True, brush=FColor.mkBrush('i', alpha=150))
+        self.addLegend()
+
+    def updateF(self, data):
+        """Override."""
+        self._plot.setData(data['x'], data['y'])
+        self._plot2.setData(data['x'], data['y2'])
+```
+
+Every widget for image analysis should inherit from `ImageViewF`. The following
+code snippet shows how to create a simple widget for displaying an image:
+
+```py
+from foamgraph import ImageViewF
+
+
+class ImageAnalysis(ImageViewF):
+    def updateF(self, data):
+        """Override."""
+        self.setImage(data['image']['data'])
+```
+
 ## Examples
 
 * Open a terminal and start the producer:
