@@ -44,6 +44,8 @@ python examples/producer.py
 python examples/plot_gallery.py
 ```
 
+![](examples/plot_gallery.gif)
+
 * Open another terminal and start the image analysis example
 
 ```sh
