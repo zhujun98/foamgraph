@@ -3,6 +3,8 @@ foamgraph
 
 [![PyPi](https://img.shields.io/pypi/v/foamgraph.svg)](https://pypi.org/project/foamgraph/)
 ![Build status](https://github.com/zhujun98/foamgraph/actions/workflows/python-package.yml/badge.svg)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/zhujun98/foamgraph.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zhujun98/foamgraph/alerts/)
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/zhujun98/foamgraph.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zhujun98/foamgraph/context:python)
 
 ![Language](https://img.shields.io/badge/language-python-blue)
 [![Qt 5](https://img.shields.io/badge/Qt-5-brightgreen)](https://doc.qt.io/qt-5/)
