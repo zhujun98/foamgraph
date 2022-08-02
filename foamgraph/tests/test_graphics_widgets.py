@@ -4,7 +4,7 @@ from unittest.mock import patch
 from . import QtTest
 
 from foamgraph import mkQApp
-from foamgraph.graphics_widgets import HistogramLUTItem, PlotArea
+from foamgraph.graphics_widgets import ImageHistogramEditor, PlotArea
 from foamgraph.image_items import ImageItem, RectROI
 from foamgraph.plot_items import (
     CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
@@ -291,7 +291,7 @@ class TestPlotArea(unittest.TestCase):
                 mocked_value.assert_called_with("2.0000")
 
 
-class TestHistogramLUTItem(unittest.TestCase):
+class TestImageHistogramEditor(unittest.TestCase):
     def testGeneral(self):
         image_item = ImageItem()
-        item = HistogramLUTItem(image_item, parent=None)
+        item = ImageHistogramEditor(image_item, parent=None)

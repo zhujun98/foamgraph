@@ -26,7 +26,7 @@ from .plot_items import CurvePlotItem
 from .aesthetics import FColor
 
 
-class HistogramLUTItem(pg.GraphicsWidget):
+class ImageHistogramEditor(pg.GraphicsWidget):
     """GraphicsWidget for adjusting the display of an image.
 
     Implemented based on pyqtgraph.HistogramLUTItem.
@@ -164,7 +164,7 @@ class HistogramLUTItem(pg.GraphicsWidget):
         return self._lri.getRegion()
 
     def setLevels(self, levels):
-        """Called by HistogramLUTItem."""
+        """Called by ImageHistogramEditor."""
         self._lri.setRegion(levels)
 
 
