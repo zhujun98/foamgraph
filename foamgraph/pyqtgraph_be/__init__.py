@@ -6,44 +6,16 @@ www.pyqtgraph.org
 
 __version__ = '0.11.0.dev0'
 
-### import all the goodies and add some helper functions for easy CLI use
-
 ## 'Qt' is a local module; it is intended mainly to cover up the differences
 ## between PyQt4 and PySide.
 from .Qt import QtGui, mkQApp
 
-## not really safe--If we accidentally create another QApplication, the process hangs (and it is very difficult to trace the cause)
-#if QtGui.QApplication.instance() is None:
-    #app = QtGui.QApplication([])
-
-## (import here to avoid massive error dump later on if numpy is not available)
-
 import os, sys
-
-## check python version
-## Allow anything >= 2.7
-if sys.version_info[0] < 2 or (sys.version_info[0] == 2 and sys.version_info[1] < 6):
-    raise Exception("Pyqtgraph requires Python version 2.6 or greater (this is %d.%d)" % (sys.version_info[0], sys.version_info[1]))
 
 ## helpers for 2/3 compatibility
 from . import python2_3
 
-## in general openGL is poorly supported with Qt+GraphicsView.
-## we only enable it where the performance benefit is critical.
-## Note this only applies to 2D graphics; 3D graphics always use OpenGL.
-if 'linux' in sys.platform:  ## linux has numerous bugs in opengl implementation
-    useOpenGL = False
-elif 'darwin' in sys.platform: ## openGL can have a major impact on mac, but also has serious bugs
-    useOpenGL = False
-    if QtGui.QApplication.instance() is not None:
-        print('Warning: QApplication was created before pyqtgraph was imported; there may be problems (to avoid bugs, call QApplication.setGraphicsSystem("raster") before the QApplication is created).')
-    if QtGui.QApplication.setGraphicsSystem:
-        QtGui.QApplication.setGraphicsSystem('raster')  ## work around a variety of bugs in the native graphics system 
-else:
-    useOpenGL = False  ## on windows there's a more even performance / bugginess tradeoff. 
-                
 CONFIG_OPTIONS = {
-    'useOpenGL': useOpenGL, ## by default, this is platform-dependent (see widgets/GraphicsView). Set to True or False to explicitly enable/disable opengl.
     'leftButtonPan': True,  ## if false, left button drags a rubber band for zooming in viewbox
     # foreground/background take any arguments to the 'mkColor' in /pyqtgraph/functions.py
     'foreground': 'd',  ## default foreground color for axes, labels, etc.

@@ -14,9 +14,7 @@ import os, sys, re, time, subprocess, warnings
 
 from .python2_3 import asUnicode
 
-PYSIDE = 'PySide'
 PYSIDE2 = 'PySide2'
-PYQT4 = 'PyQt4'
 PYQT5 = 'PyQt5'
 
 QT_LIB = os.getenv('PYQTGRAPH_QT_LIB')
@@ -26,7 +24,7 @@ QT_LIB = os.getenv('PYQTGRAPH_QT_LIB')
 ## This is done by first checking to see whether one of the libraries
 ## is already imported. If not, then attempt to import PyQt4, then PySide.
 if QT_LIB is None:
-    libOrder = [PYQT4, PYSIDE, PYQT5, PYSIDE2]
+    libOrder = [PYQT5, PYSIDE2]
 
     for lib in libOrder:
         if lib in sys.modules:
@@ -43,7 +41,7 @@ if QT_LIB is None:
             pass
 
 if QT_LIB is None:
-    raise Exception("PyQtGraph requires one of PyQt4, PyQt5, PySide or PySide2; none of these packages could be imported.")
+    raise Exception("PyQtGraph requires one of PyQt5, or PySide2; none of these packages could be imported.")
 
 
 class FailedImport(object):
@@ -102,14 +100,11 @@ def _loadUiType(uiFile):
         http://stackoverflow.com/a/8717832
     """
 
-    if QT_LIB == "PYSIDE":
-        import pysideuic
-    else:
-        try:
-            import pyside2uic as pysideuic
-        except ImportError:
-            # later vserions of pyside2 have dropped pysideuic; use the uic binary instead.
-            pysideuic = None
+    try:
+        import pyside2uic as pysideuic
+    except ImportError:
+        # later vserions of pyside2 have dropped pysideuic; use the uic binary instead.
+        pysideuic = None
 
     # get class names from ui file
     import xml.etree.ElementTree as xml
@@ -140,52 +135,7 @@ def _loadUiType(uiFile):
 
     return form_class, base_class
 
-
-if QT_LIB == PYSIDE:
-    from PySide import QtGui, QtCore
-
-    try:
-        from PySide import QtOpenGL
-    except ImportError as err:
-        QtOpenGL = FailedImport(err)
-    try:
-        from PySide import QtSvg
-    except ImportError as err:
-        QtSvg = FailedImport(err)
-
-    try:
-        from PySide import QtTest
-    except ImportError as err:
-        QtTest = FailedImport(err)
-    
-    try:
-        from PySide import shiboken
-        isQObjectAlive = shiboken.isValid
-    except ImportError:
-        # use approximate version
-        isQObjectAlive = _isQObjectAlive
-    
-    import PySide
-    VERSION_INFO = 'PySide ' + PySide.__version__ + ' Qt ' + QtCore.__version__
-    
-elif QT_LIB == PYQT4:
-    from PyQt4 import QtGui, QtCore, uic
-    try:
-        from PyQt4 import QtSvg
-    except ImportError as err:
-        QtSvg = FailedImport(err)
-    try:
-        from PyQt4 import QtOpenGL
-    except ImportError as err:
-        QtOpenGL = FailedImport(err)
-    try:
-        from PyQt4 import QtTest
-    except ImportError as err:
-        QtTest = FailedImport(err)
-
-    VERSION_INFO = 'PyQt4 ' + QtCore.PYQT_VERSION_STR + ' Qt ' + QtCore.QT_VERSION_STR
-
-elif QT_LIB == PYQT5:
+if QT_LIB == PYQT5:
     # We're using PyQt5 which has a different structure so we're going to use a shim to
     # recreate the Qt4 structure for Qt5
     from PyQt5 import QtGui, QtCore, QtWidgets, uic
@@ -299,8 +249,7 @@ if QT_LIB in [PYQT5, PYSIDE2]:
             setattr(QtGui, o, getattr(QtWidgets,o) )
     
 
-# Common to PySide and PySide2
-if QT_LIB in [PYSIDE, PYSIDE2]:
+if QT_LIB in [PYSIDE2]:
     QtVersion = QtCore.__version__
     loadUiType = _loadUiType
         
@@ -316,8 +265,7 @@ if QT_LIB in [PYSIDE, PYSIDE2]:
             QtTest.QTest.qWait = qWait
 
 
-# Common to PyQt4 and 5
-if QT_LIB in [PYQT4, PYQT5]:
+if QT_LIB in [PYQT5]:
     QtVersion = QtCore.QT_VERSION_STR
     
     import sip
@@ -330,8 +278,6 @@ if QT_LIB in [PYQT4, PYQT5]:
     
 
 # USE_XXX variables are deprecated
-USE_PYSIDE = QT_LIB == PYSIDE
-USE_PYQT4 = QT_LIB == PYQT4
 USE_PYQT5 = QT_LIB == PYQT5
 
     

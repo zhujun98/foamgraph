@@ -3,7 +3,7 @@ import abc
 import numpy as np
 
 from ..Qt import QtGui, QtCore, QT_LIB
-if QT_LIB in ['PyQt4', 'PyQt5']:
+if QT_LIB in ['PyQt5']:
     import sip
 from .GraphicsItem import GraphicsItem
 
@@ -40,7 +40,7 @@ class GraphicsObject(GraphicsItem, QtGui.QGraphicsObject):
             
         ## workaround for pyqt bug:
         ## http://www.riverbankcomputing.com/pipermail/pyqt/2012-August/031818.html
-        if QT_LIB in ['PyQt4', 'PyQt5'] and change == self.ItemParentChange and isinstance(ret, QtGui.QGraphicsItem):
+        if QT_LIB in ['PyQt5'] and change == self.ItemParentChange and isinstance(ret, QtGui.QGraphicsItem):
             ret = sip.cast(ret, QtGui.QGraphicsItem)
 
         return ret
