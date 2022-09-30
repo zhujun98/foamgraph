@@ -7,8 +7,8 @@ Author: Jun Zhu <jun.zhu@xfel.eu>
 Copyright (C) European X-Ray Free-Electron Laser Facility GmbH.
 All rights reserved.
 """
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QBrush, QColor, QPen, QPalette
+from .backend.QtCore import Qt
+from .backend.QtGui import QBrush, QColor, QPen, QPalette
 
 from .pyqtgraph_be import ColorMap
 from .pyqtgraph_be.graphicsItems.GradientEditorItem import Gradients
@@ -40,9 +40,9 @@ class QualitativeColor:
         return QColor(*getattr(cls, c), alpha)
 
     @classmethod
-    def mkPen(cls, c, *, alpha=255, width=1, style=Qt.SolidLine):
+    def mkPen(cls, c, *, alpha=255, width=1, style=Qt.PenStyle.SolidLine):
         if c is None:
-            return QPen(QColor(0, 0, 0, 0), width, Qt.NoPen)
+            return QPen(QColor(0, 0, 0, 0), width, Qt.PenStyle.NoPen)
         pen = QPen(QColor(*getattr(cls, c), alpha), width, style)
         pen.setCosmetic(True)
         return pen
@@ -50,7 +50,7 @@ class QualitativeColor:
     @classmethod
     def mkBrush(cls, c, *, alpha=255):
         if c is None:
-            return QBrush(QColor(0, 0, 0, 0), Qt.NoBrush)
+            return QBrush(QColor(0, 0, 0, 0), Qt.BrushStyle.NoBrush)
         return QBrush(QColor(*getattr(cls, c), alpha))
 
 
@@ -114,7 +114,7 @@ class SequentialColor:
             yield QColor(*c, alpha)
 
     @classmethod
-    def mkPen(cls, n, *, alpha=255, width=1, style=Qt.SolidLine):
+    def mkPen(cls, n, *, alpha=255, width=1, style=Qt.PenStyle.SolidLine):
         """Generate n QPens via sequential colors.
 
         The colors will be repeated if n is larger than the number of

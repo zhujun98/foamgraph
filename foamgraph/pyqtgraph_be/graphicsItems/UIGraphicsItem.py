@@ -29,7 +29,7 @@ class UIGraphicsItem(GraphicsObject):
         ============== =============================================================================
         """
         GraphicsObject.__init__(self, parent)
-        self.setFlag(self.ItemSendsScenePositionChanges)
+        self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges)
             
         if bounds is None:
             self._bounds = QtCore.QRectF(0, 0, 1, 1)
@@ -52,35 +52,9 @@ class UIGraphicsItem(GraphicsObject):
         if QT_LIB in ['PyQt5'] and change == self.ItemParentChange and isinstance(ret, QtGui.QGraphicsItem):
             ret = sip.cast(ret, QtGui.QGraphicsItem)
         
-        if change == self.ItemScenePositionHasChanged:
+        if change == self.GraphicsItemChange.ItemScenePositionHasChanged:
             self.setNewBounds()
         return ret
-    
-    #def updateView(self):
-        ### called to see whether this item has a new view to connect to
-        
-        ### check for this item's current viewbox or view widget
-        #view = self.getViewBox()
-        #if view is None:
-            ##print "  no view"
-            #return
-            
-        #if self._connectedView is not None and view is self._connectedView():
-            ##print "  already have view", view
-            #return
-            
-        ### disconnect from previous view
-        #if self._connectedView is not None:
-            #cv = self._connectedView()
-            #if cv is not None:
-                ##print "disconnect:", self
-                #cv.sigRangeChanged.disconnect(self.viewRangeChanged)
-            
-        ### connect to new view
-        ##print "connect:", self
-        #view.sigRangeChanged.connect(self.viewRangeChanged)
-        #self._connectedView = weakref.ref(view)
-        #self.setNewBounds()
 
     def boundingRect(self):
         if self._boundingRect is None:
@@ -112,7 +86,7 @@ class UIGraphicsItem(GraphicsObject):
         self.setNewBounds()
         
     def mouseShape(self):
-        """Return the shape of this item after expanding by 2 pixels"""
+        """Return the shape of this item after Policy.Expanding by 2 pixels"""
         shape = self.shape()
         ds = self.mapToDevice(shape)
         stroker = QtGui.QPainterPathStroker()

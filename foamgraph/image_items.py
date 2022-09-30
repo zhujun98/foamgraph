@@ -12,8 +12,8 @@ from collections.abc import Callable
 
 import numpy as np
 
-from PyQt5.QtGui import QPainter, QPicture, QTransform
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
+from .backend.QtGui import QPainter, QPicture, QTransform
+from .backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
@@ -341,7 +341,7 @@ class ImageItem(pg.GraphicsObject):
 
     def mousePressEvent(self, ev):
         """Override."""
-        if self.drawing and ev.button() == Qt.LeftButton:
+        if self.drawing and ev.button() == Qt.MouseButton.LeftButton:
             ev.accept()
             pos = ev.pos()
             self.draw_started_sgn.emit(int(pos.x()), int(pos.y()))
@@ -359,7 +359,7 @@ class ImageItem(pg.GraphicsObject):
 
     def mouseReleaseEvent(self, ev):
         """Override."""
-        if self.drawing and ev.button() == Qt.LeftButton:
+        if self.drawing and ev.button() == Qt.MouseButton.LeftButton:
             ev.accept()
             self.draw_finished_sgn.emit()
         else:
@@ -385,7 +385,7 @@ class RectROI(pg.ROI):
         """
         # TODO: make 'color' an attribute of the parent class
         self._color = color
-        pen = FColor.mkPen(color, width=2, style=Qt.SolidLine)
+        pen = FColor.mkPen(color, width=2, style=Qt.PenStyle.SolidLine)
         super().__init__(pos, size,
                          translateSnap=True,
                          scaleSnap=True,
@@ -476,7 +476,7 @@ class RingItem(GeometryItem):
         self._picture = QPicture()
 
         p = QPainter(self._picture)
-        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.setPen(self._pen)
         p.setBrush(self._brush)
 

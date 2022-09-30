@@ -6,10 +6,6 @@ www.pyqtgraph.org
 
 __version__ = '0.11.0.dev0'
 
-## 'Qt' is a local module; it is intended mainly to cover up the differences
-## between PyQt4 and PySide.
-from .Qt import QtGui, mkQApp
-
 import os, sys
 
 ## helpers for 2/3 compatibility
@@ -112,62 +108,6 @@ def renamePyc(startDir):
 path = os.path.split(__file__)[0]
 if __version__ is None and not hasattr(sys, 'frozen') and sys.version_info[0] == 2: ## If we are frozen, there's a good chance we don't have the original .py files anymore.
     renamePyc(path)
-
-
-## Import almost everything to make it available from a single namespace
-## don't import the more complex systems--canvas, parametertree, flowchart, dockarea
-## these must be imported separately.
-#from . import frozenSupport
-#def importModules(path, globals, locals, excludes=()):
-    #"""Import all modules residing within *path*, return a dict of name: module pairs.
-    
-    #Note that *path* MUST be relative to the module doing the import.    
-    #"""
-    #d = os.path.join(os.path.split(globals['__file__'])[0], path)
-    #files = set()
-    #for f in frozenSupport.listdir(d):
-        #if frozenSupport.isdir(os.path.join(d, f)) and f not in ['__pycache__', 'tests']:
-            #files.add(f)
-        #elif f[-3:] == '.py' and f != '__init__.py':
-            #files.add(f[:-3])
-        #elif f[-4:] == '.pyc' and f != '__init__.pyc':
-            #files.add(f[:-4])
-        
-    #mods = {}
-    #path = path.replace(os.sep, '.')
-    #for modName in files:
-        #if modName in excludes:
-            #continue
-        #try:
-            #if len(path) > 0:
-                #modName = path + '.' + modName
-            #print( "from .%s import * " % modName)
-            #mod = __import__(modName, globals, locals, ['*'], 1)
-            #mods[modName] = mod
-        #except:
-            #import traceback
-            #traceback.print_stack()
-            #sys.excepthook(*sys.exc_info())
-            #print("[Error importing module: %s]" % modName)
-            
-    #return mods
-
-#def importAll(path, globals, locals, excludes=()):
-    #"""Given a list of modules, import all names from each module into the global namespace."""
-    #mods = importModules(path, globals, locals, excludes)
-    #for mod in mods.values():
-        #if hasattr(mod, '__all__'):
-            #names = mod.__all__
-        #else:
-            #names = [n for n in dir(mod) if n[0] != '_']
-        #for k in names:
-            #if hasattr(mod, k):
-                #globals[k] = getattr(mod, k)
-
-# Dynamic imports are disabled. This causes too many problems.
-#importAll('graphicsItems', globals(), locals())
-#importAll('widgets', globals(), locals(),
-          #excludes=['MatplotlibWidget', 'RawImageWidget', 'RemoteGraphicsView'])
 
 from .graphicsItems.GraphicsWidget import *
 from .graphicsItems.TextItem import *

@@ -12,8 +12,8 @@ from typing import final
 
 import numpy as np
 
-from PyQt5.QtCore import pyqtSlot, Qt, QTimer
-from PyQt5.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
+from .backend.QtCore import pyqtSlot, Qt, QTimer
+from .backend.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from . import pyqtgraph_be as pg
 
@@ -26,14 +26,14 @@ from .image_items import ImageItem, RectROI
 
 class HistogramLUTWidget(pg.GraphicsView):
     def __init__(self, image_item, parent=None):
-        super().__init__(parent, useOpenGL=False)
+        super().__init__(parent)
 
         if not isinstance(image_item, ImageItem):
             raise TypeError
 
         self._item = HistogramLUTItem(image_item)
         self.setCentralWidget(self._item)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.setMinimumWidth(95)
 
     def setColorMap(self, cm):

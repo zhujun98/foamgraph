@@ -12,9 +12,9 @@ from itertools import chain
 
 import numpy as np
 
-from PyQt5.QtGui import QPainter
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
-from PyQt5.QtWidgets import (
+from .backend.QtGui import QPainter
+from .backend.QtCore import pyqtSignal, pyqtSlot, Qt
+from .backend.QtWidgets import (
     QCheckBox, QGraphicsGridLayout, QHBoxLayout, QLabel, QMenu, QSizePolicy,
     QSlider, QWidget, QWidgetAction
 )
@@ -105,7 +105,7 @@ class HistogramLUTItem(pg.GraphicsWidget):
             self, Point(self._vb.viewRect().center().x(), rgn[1]))
 
         rect = self._gradient.mapRectToParent(self._gradient.gradRect.rect())
-        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         for pen in [fn.mkPen((0, 0, 0, 100), width=3), pen]:
             p.setPen(pen)
@@ -194,7 +194,7 @@ class PlotArea(pg.GraphicsWidget):
                  parent=None):
         super().__init__(parent=parent)
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self._items = set()
         self._plot_items = set()
@@ -219,7 +219,7 @@ class PlotArea(pg.GraphicsWidget):
 
         self._show_x_grid_cb = QCheckBox("Show X Grid")
         self._show_y_grid_cb = QCheckBox("Show Y Grid")
-        self._grid_opacity_sld = QSlider(Qt.Horizontal)
+        self._grid_opacity_sld = QSlider(Qt.Orientation.Horizontal)
         self._grid_opacity_sld.setMinimum(0)
         self._grid_opacity_sld.setMaximum(255)
         self._grid_opacity_sld.setValue(160)
@@ -343,7 +343,7 @@ class PlotArea(pg.GraphicsWidget):
             self._axes[orient] = {'item': axis, 'pos': pos}
             self._layout.addItem(axis, *pos)
             axis.setZValue(-1000)
-            axis.setFlag(axis.ItemNegativeZStacksBehindParent)
+            axis.setFlag(axis.GraphicsItemFlag.ItemNegativeZStacksBehindParent)
 
             self.showAxis(orient, orient in ['left', 'bottom'])
 

@@ -74,21 +74,21 @@ class GraphicsView(QtGui.QGraphicsView):
         
         self.setViewport(QtGui.QWidget())
         
-        self.setCacheMode(self.CacheBackground)
+        self.setCacheMode(self.CacheModeFlag.CacheBackground)
         
         ## This might help, but it's probably dangerous in the general case..
         #self.setOptimizationFlag(self.DontSavePainterState, True)
         
-        self.setBackgroundRole(QtGui.QPalette.NoRole)
+        self.setBackgroundRole(QtGui.QPalette.ColorRole.NoRole)
         self.setBackground(background)
         
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.setFrameShape(QtGui.QFrame.NoFrame)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setTransformationAnchor(QtGui.QGraphicsView.NoAnchor)
-        self.setResizeAnchor(QtGui.QGraphicsView.AnchorViewCenter)
-        self.setViewportUpdateMode(QtGui.QGraphicsView.MinimalViewportUpdate)
+        self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+        self.setFrameShape(QtGui.QFrame.Shape.NoFrame)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setTransformationAnchor(QtGui.QGraphicsView.ViewportAnchor.NoAnchor)
+        self.setResizeAnchor(QtGui.QGraphicsView.ViewportAnchor.AnchorViewCenter)
+        self.setViewportUpdateMode(QtGui.QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate)
         
         
         self.lockedViewports = []
@@ -345,13 +345,13 @@ class GraphicsView(QtGui.QGraphicsView):
         if self.clickAccepted:  ## Ignore event if an item in the scene has already claimed it.
             return
         
-        if ev.buttons() == QtCore.Qt.RightButton:
+        if ev.buttons() == QtCore.Qt.MouseButton.RightButton:
             delta = Point(np.clip(delta[0], -50, 50), np.clip(-delta[1], -50, 50))
             scale = 1.01 ** delta
             self.scale(scale[0], scale[1], center=self.mapToScene(self.mousePressPos))
             self.sigDeviceRangeChanged.emit(self, self.range)
 
-        elif ev.buttons() in [QtCore.Qt.MidButton, QtCore.Qt.LeftButton]:  ## Allow panning by left or mid button.
+        elif ev.buttons() in [QtCore.Qt.MouseButton.MiddleButton, QtCore.Qt.MouseButton.LeftButton]:  ## Allow panning by left or mid button.
             px = self.pixelSize()
             tr = -delta * px
             

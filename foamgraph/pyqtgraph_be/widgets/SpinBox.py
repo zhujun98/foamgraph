@@ -66,7 +66,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
         self.setMinimumWidth(0)
         self._lastFontHeight = None
         
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Preferred)
+        self.setSizePolicy(QtGui.QSizePolicy.Policy.Expanding, QtGui.QSizePolicy.Preferred)
         self.errorBox = ErrorBox(self.lineEdit())
         
         self.opts = {

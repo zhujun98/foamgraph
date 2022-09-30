@@ -7,9 +7,9 @@ Author: Jun Zhu <jun.zhu@xfel.eu>
 Copyright (C) European X-Ray Free-Electron Laser Facility GmbH.
 All rights reserved.
 """
-from PyQt5.QtCore import pyqtSignal, QRegExp, Qt
-from PyQt5.QtGui import QRegExpValidator, QValidator
-from PyQt5.QtWidgets import QLineEdit
+from ..backend.QtCore import pyqtSignal, QRegularExpression, Qt
+from ..backend.QtGui import QRegularExpressionValidator, QValidator
+from ..backend.QtWidgets import QLineEdit
 
 from foamgraph.aesthetics import FColor
 from foamgraph.utilities import parse_boundary, parse_id, parse_slice
@@ -97,7 +97,7 @@ class SmartStringLineEdit(SmartLineEdit):
         #
         # .+ will then actually do the match. It will match anything
         # (except newline) up to the end of the string.
-        self.setValidator(QRegExpValidator(QRegExp('^(?!\s*$).+')))
+        self.setValidator(QRegularExpressionValidator(QRegularExpression('^(?!\s*$).+')))
 
 
 class SmartBoundaryLineEdit(SmartLineEdit):

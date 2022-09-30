@@ -3,10 +3,8 @@ from ...Qt import QtCore, QtGui, QT_LIB
 from ...python2_3 import asUnicode
 from ...WidgetGroup import WidgetGroup
 
-if QT_LIB == 'PyQt5':
-    from .axisCtrlTemplate_pyqt5 import Ui_Form as AxisCtrlTemplate
-elif QT_LIB == 'PySide2':
-    from .axisCtrlTemplate_pyside2 import Ui_Form as AxisCtrlTemplate
+from .axisCtrlTemplate_pyqt5 import Ui_Form as AxisCtrlTemplate
+
 
 import weakref 
 

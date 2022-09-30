@@ -18,9 +18,11 @@ class MouseDragEvent(object):
         self.currentItem = None
         self._buttonDownScenePos = {}
         self._buttonDownScreenPos = {}
-        for btn in [QtCore.Qt.LeftButton, QtCore.Qt.MidButton, QtCore.Qt.RightButton]:
-            self._buttonDownScenePos[int(btn)] = moveEvent.buttonDownScenePos(btn)
-            self._buttonDownScreenPos[int(btn)] = moveEvent.buttonDownScreenPos(btn)
+        for btn in [QtCore.Qt.MouseButton.LeftButton,
+                    QtCore.Qt.MouseButton.MiddleButton,
+                    QtCore.Qt.MouseButton.RightButton]:
+            self._buttonDownScenePos[btn] = moveEvent.buttonDownScenePos(btn)
+            self._buttonDownScreenPos[btn] = moveEvent.buttonDownScreenPos(btn)
         self._scenePos = moveEvent.scenePos()
         self._screenPos = moveEvent.screenPos()
         if lastEvent is None:
@@ -61,7 +63,7 @@ class MouseDragEvent(object):
         """
         if btn is None:
             btn = self.button()
-        return Point(self._buttonDownScenePos[int(btn)])
+        return Point(self._buttonDownScenePos[btn])
     
     def buttonDownScreenPos(self, btn=None):
         """
@@ -70,7 +72,7 @@ class MouseDragEvent(object):
         """
         if btn is None:
             btn = self.button()
-        return Point(self._buttonDownScreenPos[int(btn)])
+        return Point(self._buttonDownScreenPos[btn])
     
     def lastScenePos(self):
         """
@@ -119,7 +121,7 @@ class MouseDragEvent(object):
         """
         if btn is None:
             btn = self.button()
-        return Point(self.currentItem.mapFromScene(self._buttonDownScenePos[int(btn)]))
+        return Point(self.currentItem.mapFromScene(self._buttonDownScenePos[btn]))
     
     def isStart(self):
         """Returns True if this event is the first since a drag was initiated."""

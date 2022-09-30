@@ -2,8 +2,7 @@ import pytest
 
 import numpy as np
 
-from PyQt5.QtCore import QByteArray, QDataStream, QIODevice, QPointF, QRectF
-
+from foamgraph.backend.QtCore import QByteArray, QDataStream, QIODevice, QPointF, QRectF
 from foamgraph import mkQApp, PlotWidgetF
 from foamgraph.plot_items import (
     CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem

@@ -21,12 +21,12 @@ class GraphicsObject(GraphicsItem, QtGui.QGraphicsObject):
     def __init__(self, *args, **kwargs):
         self.__inform_view_on_changes = True
         QtGui.QGraphicsObject.__init__(self, *args, **kwargs)
-        self.setFlag(self.ItemSendsGeometryChanges)
+        self.setFlag(self.GraphicsItemFlag.ItemSendsGeometryChanges)
         GraphicsItem.__init__(self)
         
     def itemChange(self, change, value):
         ret = QtGui.QGraphicsObject.itemChange(self, change, value)
-        if change in [self.ItemParentHasChanged, self.ItemSceneHasChanged]:
+        if change in [self.GraphicsItemChange.ItemParentHasChanged, self.GraphicsItemChange.ItemSceneHasChanged]:
             self.parentChanged()
         try:
             inform_view_on_change = self.__inform_view_on_changes
@@ -35,7 +35,7 @@ class GraphicsObject(GraphicsItem, QtGui.QGraphicsObject):
             # (if it was triggered during the gc of the object).
             pass
         else:
-            if inform_view_on_change and change in [self.ItemPositionHasChanged, self.ItemTransformHasChanged]:
+            if inform_view_on_change and change in [self.GraphicsItemChange.ItemPositionHasChanged, self.GraphicsItemChange.ItemTransformHasChanged]:
                 self.informViewBoundsChanged()
             
         ## workaround for pyqt bug:

@@ -12,10 +12,10 @@ from collections import OrderedDict
 
 import numpy as np
 
-from PyQt5.QtGui import (
+from .backend.QtGui import (
     QImage, QPainter, QPainterPath, QPicture, QPixmap, QTransform
 )
-from PyQt5.QtCore import QByteArray, QDataStream, QRectF
+from .backend.QtCore import QByteArray, QDataStream, QRectF
 
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import functions as fn
@@ -517,12 +517,12 @@ class ScatterPlotItem(pg.PlotItem):
     def _buildFragment(self):
         pen = self._pen
         size = int(self._size + max(np.ceil(pen.widthF()), 1))
-        image = QImage(size, size, QImage.Format_ARGB32)
+        image = QImage(size, size, QImage.Format.Format_ARGB32)
         image.fill(0)
         p = QPainter(image)
         try:
             # default is QPainter.TextAntialiasing
-            p.setRenderHint(QPainter.Antialiasing)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing)
             center = 0.5 * size
             p.translate(center, center)
             self.drawSymbol(p)

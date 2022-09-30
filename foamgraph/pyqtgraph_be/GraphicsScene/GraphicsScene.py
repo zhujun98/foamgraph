@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import warnings
 
+from ..Qt import QtCore, QtGui, QtWidgets
 from .mouseEvents import *
 from .. import debug as debug
 
@@ -147,8 +148,8 @@ class GraphicsScene(QtGui.QGraphicsScene):
             ## set focus on the topmost focusable item under this click
             items = self.items(ev.scenePos())
             for i in items:
-                if i.isEnabled() and i.isVisible() and int(i.flags() & i.ItemIsFocusable) > 0:
-                    i.setFocus(QtCore.Qt.MouseFocusReason)
+                if i.isEnabled() and i.isVisible() and (i.flags() & i.GraphicsItemFlag.ItemIsFocusable):
+                    i.setFocus(QtCore.Qt.FocusReason.MouseFocusReason)
                     break
         
     def mouseMoveEvent(self, ev):
@@ -160,24 +161,26 @@ class GraphicsScene(QtGui.QGraphicsScene):
         ## Next deliver our own HoverEvents
         self.sendHoverEvents(ev)
         
-        if int(ev.buttons()) != 0:  ## button is pressed; send mouseMoveEvents and mouseDragEvents
+        if ev.buttons():  ## button is pressed; send mouseMoveEvents and mouseDragEvents
             QtGui.QGraphicsScene.mouseMoveEvent(self, ev)
             if self.mouseGrabberItem() is None:
                 now = ptime.time()
                 init = False
                 ## keep track of which buttons are involved in dragging
-                for btn in [QtCore.Qt.LeftButton, QtCore.Qt.MidButton, QtCore.Qt.RightButton]:
-                    if int(ev.buttons() & btn) == 0:
+                for btn in [QtCore.Qt.MouseButton.LeftButton,
+                            QtCore.Qt.MouseButton.MiddleButton,
+                            QtCore.Qt.MouseButton.RightButton]:
+                    if not (ev.buttons() & btn):
                         continue
-                    if int(btn) not in self.dragButtons:  ## see if we've dragged far enough yet
-                        cev = [e for e in self.clickEvents if int(e.button()) == int(btn)]
+                    if btn not in self.dragButtons:  ## see if we've dragged far enough yet
+                        cev = [e for e in self.clickEvents if e.button() == btn]
                         if cev:
                             cev = cev[0]
                             dist = Point(ev.scenePos() - cev.scenePos()).length()
                             if dist == 0 or (dist < self._moveDistance and now - cev.time() < self.minDragTime):
                                 continue
                             init = init or (len(self.dragButtons) == 0)  ## If this is the first button to be dragged, then init=True
-                            self.dragButtons.append(int(btn))
+                            self.dragButtons.append(btn)
                         
                 ## If we have dragged buttons, deliver a drag event
                 if len(self.dragButtons) > 0:
@@ -196,14 +199,14 @@ class GraphicsScene(QtGui.QGraphicsScene):
                     ev.accept()
                 self.dragButtons.remove(ev.button())
             else:
-                cev = [e for e in self.clickEvents if int(e.button()) == int(ev.button())]
+                cev = [e for e in self.clickEvents if e.button() == ev.button()]
                 if cev:
                     if self.sendClickEvent(cev[0]):
                         #print "sent click event"
                         ev.accept()
                     self.clickEvents.remove(cev[0])
-                
-        if int(ev.buttons()) == 0:
+
+        if not ev.buttons():
             self.dragItem = None
             self.dragButtons = []
             self.clickEvents = []
@@ -225,7 +228,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
             items = []
             event = HoverEvent(None, acceptable)
         else:
-            acceptable = int(ev.buttons()) == 0  ## if we are in mid-drag, do not allow items to accept the hover event.
+            acceptable = not ev.buttons()  ## if we are in mid-drag, do not allow items to accept the hover event.
             event = HoverEvent(ev, acceptable)
             items = self.itemsNearEvent(event, hoverable=True)
             self.sigMouseHover.emit(items)
@@ -264,8 +267,8 @@ class GraphicsScene(QtGui.QGraphicsScene):
         #   - mouse is dragging (move+buttons); in this case we want the dragged
         #     item to continue receiving events until the drag is over
         #   - event is not a mouse event (QEvent.Leave sometimes appears here)
-        if (ev.type() == ev.GraphicsSceneMousePress or 
-            (ev.type() == ev.GraphicsSceneMouseMove and int(ev.buttons()) == 0)):
+        if (ev.type() == ev.Type.GraphicsSceneMousePress or
+            (ev.type() == ev.Type.GraphicsSceneMouseMove and not ev.buttons())):
             self.lastHoverEvent = event  ## save this so we can ask about accepted events later.
 
     def sendDragEvent(self, ev, init=False, final=False):
@@ -301,10 +304,9 @@ class GraphicsScene(QtGui.QGraphicsScene):
                         except:
                             debug.printExc("Error sending drag event:")
                         if event.isAccepted():
-                            #print "   --> accepted"
                             self.dragItem = item
-                            if int(item.flags() & item.ItemIsFocusable) > 0:
-                                item.setFocus(QtCore.Qt.MouseFocusReason)
+                            if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:
+                                item.setFocus(QtCore.Qt.FocusReason.MouseFocusReason)
                             break
         elif self.dragItem is not None:
             event.currentItem = self.dragItem
@@ -348,8 +350,8 @@ class GraphicsScene(QtGui.QGraphicsScene):
                             debug.printExc("Error sending click event:")
                             
                         if ev.isAccepted():
-                            if int(item.flags() & item.ItemIsFocusable) > 0:
-                                item.setFocus(QtCore.Qt.MouseFocusReason)
+                            if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:
+                                item.setFocus(QtCore.Qt.FocusReason.MouseFocusReason)
                             break
         self.sigMouseClicked.emit(ev)
         return ev.isAccepted()
@@ -366,7 +368,11 @@ class GraphicsScene(QtGui.QGraphicsScene):
         item = QtGui.QGraphicsScene.itemAt(self, *args)
         return self.translateGraphicsItem(item)
 
-    def itemsNearEvent(self, event, selMode=QtCore.Qt.IntersectsItemShape, sortOrder=QtCore.Qt.DescendingOrder, hoverable=False):
+    def itemsNearEvent(self,
+                       event,
+                       selMode=QtCore.Qt.ItemSelectionMode.IntersectsItemShape,
+                       sortOrder=QtCore.Qt.SortOrder.DescendingOrder,
+                       hoverable=False):
         """
         Return an iterator that iterates first through the items that directly intersect point (in Z order)
         followed by any other items that are within the scene's click radius.
@@ -427,20 +433,6 @@ class GraphicsScene(QtGui.QGraphicsScene):
         
     def getViewWidget(self):
         return self.views()[0]
-    
-    #def getViewWidget(self, widget):
-        ### same pyqt bug -- mouseEvent.widget() doesn't give us the original python object.
-        ### [[doesn't seem to work correctly]]
-        #if HAVE_SIP and isinstance(self, sip.wrapper):
-            #addr = sip.unwrapinstance(sip.cast(widget, QtGui.QWidget))
-            ##print "convert", widget, addr
-            #for v in self.views():
-                #addr2 = sip.unwrapinstance(sip.cast(v, QtGui.QWidget))
-                ##print "   check:", v, addr2
-                #if addr2 == addr:
-                    #return v
-        #else:
-            #return widget
 
     def addParentContextMenus(self, item, menu, event):
         """

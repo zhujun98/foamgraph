@@ -276,7 +276,7 @@ def mkBrush(*args, **kwds):
     elif len(args) == 1:
         arg = args[0]
         if arg is None:
-            return QtGui.QBrush(QtCore.Qt.NoBrush)
+            return QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush)
         elif isinstance(arg, QtGui.QBrush):
             return QtGui.QBrush(arg)
         else:
@@ -314,7 +314,7 @@ def mkPen(*args, **kargs):
         if isinstance(arg, QtGui.QPen):
             return QtGui.QPen(arg)  ## return a copy of this pen
         elif arg is None:
-            style = QtCore.Qt.NoPen
+            style = QtCore.Qt.PenStyle.NoPen
         else:
             color = arg
     if len(args) > 1:
@@ -2306,25 +2306,31 @@ def isosurface(data, level):
     return vertexes, faces
 
 
-    
+def _pinv_fallback(tr):
+    arr = np.array([tr.m11(), tr.m12(), tr.m13(),
+                    tr.m21(), tr.m22(), tr.m23(),
+                    tr.m31(), tr.m32(), tr.m33()])
+    arr.shape = (3, 3)
+    pinv = np.linalg.pinv(arr)
+    return QtGui.QTransform(*pinv.ravel().tolist())
+
+
 def invertQTransform(tr):
     """Return a QTransform that is the inverse of *tr*.
-    Rasises an exception if tr is not invertible.
-    
+    A pseudo-inverse is returned if tr is not invertible.
+
     Note that this function is preferred over QTransform.inverted() due to
     bugs in that method. (specifically, Qt has floating-point precision issues
     when determining whether a matrix is invertible)
     """
     try:
-        import numpy.linalg
-        arr = np.array([[tr.m11(), tr.m12(), tr.m13()], [tr.m21(), tr.m22(), tr.m23()], [tr.m31(), tr.m32(), tr.m33()]])
-        inv = numpy.linalg.inv(arr)
-        return QtGui.QTransform(inv[0,0], inv[0,1], inv[0,2], inv[1,0], inv[1,1], inv[1,2], inv[2,0], inv[2,1])
-    except ImportError:
-        inv = tr.inverted()
-        if inv[1] is False:
-            raise Exception("Transform is not invertible.")
-        return inv[0]
+        det = tr.determinant()
+        detr = 1.0 / det  # let singular matrices raise ZeroDivisionError
+        inv = tr.adjoint()
+        inv *= detr
+        return inv
+    except ZeroDivisionError:
+        return _pinv_fallback(tr)
     
 
 def pseudoScatter(data, spacing=None, shuffle=True, bidir=False, method='exact'):

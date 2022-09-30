@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from PyQt5.QtTest import QSignalSpy
+from . import QtTest
 
 from foamgraph import mkQApp
 from foamgraph.graphics_widgets import HistogramLUTItem, PlotArea
@@ -176,7 +176,7 @@ class TestPlotArea(unittest.TestCase):
         meter_actions = menus[0].actions()
         self.assertFalse(area._show_meter)
         self.assertFalse(area._meter.isVisible())
-        spy = QSignalSpy(area.cross_toggled_sgn)
+        spy = QtTest.QSignalSpy(area.cross_toggled_sgn)
         meter_actions[0].defaultWidget().setChecked(True)
         self.assertTrue(area._show_meter)
         self.assertTrue(area._meter.isVisible())

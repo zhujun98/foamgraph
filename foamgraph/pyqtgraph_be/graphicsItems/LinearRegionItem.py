@@ -245,7 +245,7 @@ class LinearRegionItem(GraphicsObject):
         self.sigRegionChangeFinished.emit(self)
 
     def mouseDragEvent(self, ev):
-        if not self.movable or int(ev.button() & QtCore.Qt.LeftButton) == 0:
+        if not self.movable or int(ev.button() & QtCore.Qt.MouseButton.LeftButton) == 0:
             return
         ev.accept()
         
@@ -271,7 +271,7 @@ class LinearRegionItem(GraphicsObject):
             self.sigRegionChanged.emit(self)
             
     def mouseClickEvent(self, ev):
-        if self.moving and ev.button() == QtCore.Qt.RightButton:
+        if self.moving and ev.button() == QtCore.Qt.MouseButton.RightButton:
             ev.accept()
             for i, l in enumerate(self.lines):
                 l.setPos(self.startPositions[i])
@@ -280,7 +280,7 @@ class LinearRegionItem(GraphicsObject):
             self.sigRegionChangeFinished.emit(self)
 
     def hoverEvent(self, ev):
-        if self.movable and (not ev.isExit()) and ev.acceptDrags(QtCore.Qt.LeftButton):
+        if self.movable and (not ev.isExit()) and ev.acceptDrags(QtCore.Qt.MouseButton.LeftButton):
             self.setMouseHover(True)
         else:
             self.setMouseHover(False)
