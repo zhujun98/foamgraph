@@ -8,6 +8,7 @@ foamgraph
 
 ![Language](https://img.shields.io/badge/language-python-blue)
 [![Qt 5](https://img.shields.io/badge/Qt-5-brightgreen)](https://doc.qt.io/qt-5/)
+[![Qt 6](https://img.shields.io/badge/Qt-6-brightgreen)](https://doc.qt.io/qt-6/)
 
 `foamgraph` was originally developed as part of the online analysis framework 
 [EXtra-foam](https://github.com/European-XFEL/EXtra-foam.git)
