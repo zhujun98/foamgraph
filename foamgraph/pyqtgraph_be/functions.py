@@ -91,8 +91,7 @@ def siFormat(x, precision=3, suffix='', space=True, error=None, minVal=1e-25, al
         space = ' '
     if space is False:
         space = ''
-        
-    
+
     (p, pref) = siScale(x, minVal, allowUnicode)
     if not (len(pref) > 0 and pref[0] == 'e'):
         pref = space + pref
@@ -480,7 +479,7 @@ def eq(a, b):
                 return False
         except:
             return False
-        if (hasattr(e, 'implements') and e.implements('MetaArray')):
+        if hasattr(e, 'implements') and e.implements('MetaArray'):
             return e.asarray().all()
         else:
             return e.all()
@@ -502,15 +501,15 @@ def affineSliceCoords(shape, origin, vectors, axes):
         
     shape = list(map(np.ceil, shape))
 
-    ## make sure vectors are arrays
+    # make sure vectors are arrays
     if not isinstance(vectors, np.ndarray):
         vectors = np.array(vectors)
     if not isinstance(origin, np.ndarray):
         origin = np.array(origin)
     origin.shape = (len(axes),) + (1,)*len(shape)
 
-    ## Build array of sample locations. 
-    grid = np.mgrid[tuple([slice(0,x) for x in shape])]  ## mesh grid of indexes
+    # Build array of sample locations.
+    grid = np.mgrid[tuple([slice(0,x) for x in shape])]  # mesh grid of indexes
     x = (grid[np.newaxis,...] * vectors.transpose()[(Ellipsis,) + (np.newaxis,)*len(shape)]).sum(axis=1)  ## magic
     x += origin
 
@@ -566,14 +565,12 @@ def affineSlice(data, shape, origin, vectors, axes, order=1, returnCoords=False,
     """
     x = affineSliceCoords(shape, origin, vectors, axes)
 
-    ## transpose data so slice axes come first
+    # transpose data so slice axes come first
     trAx = list(range(data.ndim))
     for ax in axes:
         trAx.remove(ax)
     tr1 = tuple(axes) + tuple(trAx)
     data = data.transpose(tr1)
-    #print "tr1:", tr1
-    ## dims are now [(slice axes), (other axes)]
 
     if order > 1:
         try:
@@ -601,10 +598,10 @@ def affineSlice(data, shape, origin, vectors, axes, order=1, returnCoords=False,
         trb.append(ind)
     tr2 = tuple(trb+tr)
 
-    ## Untranspose array before returning
+    # Untranspose array before returning
     output = output.transpose(tr2)
     if returnCoords:
-        return (output, x)
+        return output, x
     else:
         return output
 
@@ -713,7 +710,7 @@ def interpolateArray(data, x, default=0.0, order=1):
         # Get data values surrounding each requested point
         fieldData = data[tuple(fieldInds)]
 
-        ## Interpolate
+        # Interpolate
         s = np.empty((md,) + fieldData.shape, dtype=float)
         dx = x - xmin
         # reshape fields for arithmetic against dx
@@ -758,16 +755,17 @@ def transformToArray(tr):
         mapped = np.dot(m, coords)
     """
     #return np.array([[tr.m11(), tr.m12(), tr.m13()],[tr.m21(), tr.m22(), tr.m23()],[tr.m31(), tr.m32(), tr.m33()]])
-    ## The order of elements given by the method names m11..m33 is misleading--
-    ## It is most common for x,y translation to occupy the positions 1,3 and 2,3 in
-    ## a transformation matrix. However, with QTransform these values appear at m31 and m32.
-    ## So the correct interpretation is transposed:
+    # The order of elements given by the method names m11..m33 is misleading--
+    # It is most common for x,y translation to occupy the positions 1,3 and 2,3 in
+    # a transformation matrix. However, with QTransform these values appear at m31 and m32.
+    # So the correct interpretation is transposed:
     if isinstance(tr, QtGui.QTransform):
         return np.array([[tr.m11(), tr.m21(), tr.m31()], [tr.m12(), tr.m22(), tr.m32()], [tr.m13(), tr.m23(), tr.m33()]])
     elif isinstance(tr, QtGui.QMatrix4x4):
         return np.array(tr.copyDataTo()).reshape(4,4)
     else:
         raise Exception("Transform argument must be either QTransform or QMatrix4x4.")
+
 
 def transformCoordinates(tr, coords, transpose=False):
     """
@@ -782,7 +780,7 @@ def transformCoordinates(tr, coords, transpose=False):
     """
     
     if transpose:
-        ## move last axis to beginning. This transposition will be reversed before returning the mapped coordinates.
+        # move last axis to beginning. This transposition will be reversed before returning the mapped coordinates.
         coords = coords.transpose((coords.ndim-1,) + tuple(range(0,coords.ndim-1)))
     
     nd = coords.shape[0]
@@ -792,7 +790,7 @@ def transformCoordinates(tr, coords, transpose=False):
         m = transformToArray(tr)
         m = m[:m.shape[0]-1]  # remove perspective
     
-    ## If coords are 3D and tr is 2D, assume no change for Z axis
+    # If coords are 3D and tr is 2D, assume no change for Z axis
     if m.shape == (2,3) and nd == 3:
         m2 = np.zeros((3,4))
         m2[:2, :2] = m[:2,:2]
@@ -800,14 +798,14 @@ def transformCoordinates(tr, coords, transpose=False):
         m2[2,2] = 1
         m = m2
     
-    ## if coords are 2D and tr is 3D, ignore Z axis
+    # if coords are 2D and tr is 3D, ignore Z axis
     if m.shape == (3,4) and nd == 2:
         m2 = np.empty((2,3))
         m2[:,:2] = m[:2,:2]
         m2[:,2] = m[:2,3]
         m = m2
     
-    ## reshape tr and coords to prepare for multiplication
+    # reshape tr and coords to prepare for multiplication
     m = m.reshape(m.shape + (1,)*(coords.ndim-1))
     coords = coords[np.newaxis, ...]
     
@@ -815,12 +813,12 @@ def transformCoordinates(tr, coords, transpose=False):
     translate = m[:,-1]  
     m = m[:, :-1]
     
-    ## map coordinates and return
+    # map coordinates and return
     mapped = (m*coords).sum(axis=1)  ## apply scale/rotate
     mapped += translate
     
     if transpose:
-        ## move first axis to end.
+        # move first axis to end.
         mapped = mapped.transpose(tuple(range(1,mapped.ndim)) + (0,))
     return mapped
     
@@ -842,14 +840,15 @@ def solve3DTransform(points1, points2):
             A = np.array([[inp[i].x(), inp[i].y(), inp[i].z(), 1] for i in range(4)])
         pts.append(A)
     
-    ## solve 3 sets of linear equations to determine transformation matrix elements
+    # solve 3 sets of linear equations to determine transformation matrix elements
     matrix = np.zeros((4,4))
     for i in range(3):
-        ## solve Ax = B; x is one row of the desired transformation matrix
+        # solve Ax = B; x is one row of the desired transformation matrix
         matrix[i] = numpy.linalg.solve(pts[0], pts[1][:,i])  
     
     return matrix
-    
+
+
 def solveBilinearTransform(points1, points2):
     """
     Find a bilinear transformation matrix (2x4) that maps points1 onto points2.
@@ -860,18 +859,19 @@ def solveBilinearTransform(points1, points2):
         mapped = np.dot(matrix, [x*y, x, y, 1])
     """
     import numpy.linalg
-    ## A is 4 rows (points) x 4 columns (xy, x, y, 1)
-    ## B is 4 rows (points) x 2 columns (x, y)
+    # A is 4 rows (points) x 4 columns (xy, x, y, 1)
+    # B is 4 rows (points) x 2 columns (x, y)
     A = np.array([[points1[i].x()*points1[i].y(), points1[i].x(), points1[i].y(), 1] for i in range(4)])
     B = np.array([[points2[i].x(), points2[i].y()] for i in range(4)])
     
-    ## solve 2 sets of linear equations to determine transformation matrix elements
+    # solve 2 sets of linear equations to determine transformation matrix elements
     matrix = np.zeros((2,4))
     for i in range(2):
         matrix[i] = numpy.linalg.solve(A, B[:,i])  ## solve Ax = B; x is one row of the desired transformation matrix
     
     return matrix
-    
+
+
 def rescaleData(data, scale, offset, dtype=None, clip=None):
     """Return data rescaled and optionally cast to a new dtype.
 
@@ -893,7 +893,7 @@ def rescaleData(data, scale, offset, dtype=None, clip=None):
         except ImportError:
             raise Exception('scipy.weave is not importable; falling back to slower version.')
         
-        ## require native dtype when using weave
+        # require native dtype when using weave
         if not data.dtype.isnative:
             data = data.astype(data.dtype.newbyteorder('='))
         if not dtype.isnative:
@@ -902,8 +902,6 @@ def rescaleData(data, scale, offset, dtype=None, clip=None):
             weaveDtype = dtype
         
         newData = np.empty((data.size,), dtype=weaveDtype)
-        flat = np.ascontiguousarray(data).reshape(data.size)
-        size = data.size
         
         code = """
         double sc = (double)scale;
@@ -921,9 +919,7 @@ def rescaleData(data, scale, offset, dtype=None, clip=None):
             if getConfigOption('weaveDebug'):
                 print("Error; disabling weave.")
             setConfigOptions(useWeave=False)
-        
-        #p = np.poly1d([scale, -offset*scale])
-        #d2 = p(data)
+
         d2 = data - float(offset)
         d2 *= scale
         
@@ -940,7 +936,8 @@ def rescaleData(data, scale, offset, dtype=None, clip=None):
                 d2 = np.clip(d2, *clip)
         data = d2.astype(dtype)
     return data
-    
+
+
 def applyLookupTable(data, lut):
     """
     Uses values in *data* as indexes to select values from *lut*.

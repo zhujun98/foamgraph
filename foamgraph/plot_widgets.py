@@ -18,7 +18,6 @@ from .backend.QtWidgets import QSizePolicy
 
 from . import pyqtgraph_be as pg
 
-from .config import config
 from .graphics_widgets import PlotArea
 from .plot_items import (
     BarGraphItem, CurvePlotItem, ScatterPlotItem, ErrorbarItem

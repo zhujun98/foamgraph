@@ -137,9 +137,9 @@ class ColorMap(object):
     
     def getGradient(self, p1=None, p2=None):
         """Return a QLinearGradient object spanning from QPoints p1 to p2."""
-        if p1 == None:
+        if p1 is None:
             p1 = QtCore.QPointF(0,0)
-        if p2 == None:
+        if p2 is None:
             p2 = QtCore.QPointF(self.pos.max()-self.pos.min(),0)
         g = QtGui.QLinearGradient(p1, p2)
         

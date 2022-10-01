@@ -17,7 +17,7 @@ from .backend.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from . import pyqtgraph_be as pg
 
-from .aesthetics import colorMapFactory, FColor
+from .aesthetics import colorMapFactory
 from .config import config
 from .graphics_widgets import ImageHistogramEditor
 from .plot_widgets import PlotWidgetF
