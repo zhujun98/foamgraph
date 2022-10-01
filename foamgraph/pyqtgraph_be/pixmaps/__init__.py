@@ -6,7 +6,6 @@ Provides support for frozen environments as well.
 import os, sys, pickle
 from foamgraph.functions import makeQImage
 from foamgraph.Qt import QtGui
-from foamgraph.python2_3 import basestring
 if sys.version_info[0] == 2:
     from . import pixmapData_2 as pixmapData
 else:
@@ -20,7 +19,7 @@ def getPixmap(name):
     """
     key = name+'.png'
     data = pixmapData.pixmapData[key]
-    if isinstance(data, basestring) or isinstance(data, bytes):
+    if isinstance(data, str) or isinstance(data, bytes):
         pixmapData.pixmapData[key] = pickle.loads(data)
     arr = pixmapData.pixmapData[key]
     return QtGui.QPixmap(makeQImage(arr, alpha=True))

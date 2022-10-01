@@ -4,7 +4,6 @@ import sys
 from copy import deepcopy
 import numpy as np
 from ...Qt import QtGui, QtCore
-from ...python2_3 import basestring
 from ...Point import Point
 from ... import functions as fn
 from .. ItemGroup import ItemGroup
@@ -311,7 +310,7 @@ class ViewBox(GraphicsWidget):
         for v in state['linkedViews']:
             if isinstance(v, weakref.ref):
                 v = v()
-            if v is None or isinstance(v, basestring):
+            if v is None or isinstance(v, str):
                 views.append(v)
             else:
                 views.append(v.name)
@@ -946,7 +945,7 @@ class ViewBox(GraphicsWidget):
         Link X or Y axes of two views and unlink any previously connected axes. *axis* must be ViewBox.XAxis or ViewBox.YAxis.
         If view is None, the axis is left unlinked.
         """
-        if isinstance(view, basestring):
+        if isinstance(view, str):
             if view == '':
                 view = None
             else:
@@ -974,7 +973,7 @@ class ViewBox(GraphicsWidget):
                 pass
 
 
-        if view is None or isinstance(view, basestring):
+        if view is None or isinstance(view, str):
             self.state['linkedViews'][axis] = view
         else:
             self.state['linkedViews'][axis] = weakref.ref(view)
@@ -1007,7 +1006,7 @@ class ViewBox(GraphicsWidget):
         ## Return the linked view for axis *ax*.
         ## this method _always_ returns either a ViewBox or None.
         v = self.state['linkedViews'][ax]
-        if v is None or isinstance(v, basestring):
+        if v is None or isinstance(v, str):
             return None
         else:
             return v()  ## dereference weakref pointer. If the reference is dead, this returns None
@@ -1633,7 +1632,7 @@ class ViewBox(GraphicsWidget):
 
         for ax in [0,1]:
             link = self.state['linkedViews'][ax]
-            if isinstance(link, basestring):     ## axis has not been linked yet; see if it's possible now
+            if isinstance(link, str):     ## axis has not been linked yet; see if it's possible now
                 for v in nv:
                     if link == v.name:
                         self.linkView(ax, v)

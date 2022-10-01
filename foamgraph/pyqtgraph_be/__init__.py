@@ -8,9 +8,6 @@ __version__ = '0.11.0.dev0'
 
 import os, sys
 
-## helpers for 2/3 compatibility
-from . import python2_3
-
 CONFIG_OPTIONS = {
     'leftButtonPan': True,  ## if false, left button drags a rubber band for zooming in viewbox
     # foreground/background take any arguments to the 'mkColor' in /pyqtgraph/functions.py

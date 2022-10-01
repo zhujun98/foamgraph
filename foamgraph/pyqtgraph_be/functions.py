@@ -10,9 +10,8 @@ import warnings
 import numpy as np
 import decimal, re
 import ctypes
-import sys, struct
+import sys
 from .pgcollections import OrderedDict
-from .python2_3 import asUnicode, basestring
 from .Qt import QtGui, QtCore, QT_LIB
 from . import getConfigOption, setConfigOptions
 from . import reload
@@ -33,7 +32,7 @@ Colors = {
     's': QtGui.QColor(100,100,150,255),
 }  
 
-SI_PREFIXES = asUnicode('yzafpnµm kMGTPEZY')
+SI_PREFIXES = 'yzafpnµm kMGTPEZY'
 SI_PREFIXES_ASCII = 'yzafpnum kMGTPEZY'
 SI_PREFIX_EXPONENTS = dict([(SI_PREFIXES[i], (i-8)*3) for i in range(len(SI_PREFIXES))])
 SI_PREFIX_EXPONENTS['u'] = -6
@@ -105,7 +104,7 @@ def siFormat(x, precision=3, suffix='', space=True, error=None, minVal=1e-25, al
         return fmt % (x*p, pref, suffix)
     else:
         if allowUnicode:
-            plusminus = space + asUnicode("±") + space
+            plusminus = space + "±" + space
         else:
             plusminus = " +/- "
         fmt = "%." + str(precision) + "g%s%s%s%s"
@@ -119,7 +118,6 @@ def siParse(s, regex=FLOAT_REGEX, suffix=None):
     
         siParse('100 μV")  # returns ('100', 'μ', 'V')
     """
-    s = asUnicode(s)
     s = s.strip()
     if suffix is not None and len(suffix) > 0:
         if s[-len(suffix):] != suffix:
@@ -199,7 +197,7 @@ def mkColor(*args):
     """
     err = 'Not sure how to make a color from "%s"' % str(args)
     if len(args) == 1:
-        if isinstance(args[0], basestring):
+        if isinstance(args[0], str):
             c = args[0]
             if c[0] == '#':
                 c = c[1:]

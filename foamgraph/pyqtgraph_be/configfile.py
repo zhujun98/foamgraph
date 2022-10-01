@@ -13,7 +13,6 @@ import re, os, sys, datetime
 import numpy
 from .pgcollections import OrderedDict
 from . import units
-from .python2_3 import asUnicode, basestring
 from .Qt import QtCore
 from .Point import Point
 from .colormap import ColorMap
@@ -54,9 +53,8 @@ def readConfigFile(fname):
     GLOBAL_PATH = os.path.dirname(os.path.abspath(fname))
         
     try:
-        #os.chdir(newDir)  ## bad.
         with open(fname) as fd:
-            s = asUnicode(fd.read())
+            s = fd.read()
         s = s.replace("\r\n", "\n")
         s = s.replace("\r", "\n")
         data = parseString(s)[1]
@@ -96,7 +94,7 @@ def genString(data, indent=''):
 def parseString(lines, start=0):
     
     data = OrderedDict()
-    if isinstance(lines, basestring):
+    if isinstance(lines, str):
         lines = lines.replace("\\\n", "")
         lines = lines.split('\n')
         lines = [l for l in lines if re.search(r'\S', l) and not re.match(r'\s*#', l)]  ## remove empty lines

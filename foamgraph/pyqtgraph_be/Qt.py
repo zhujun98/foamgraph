@@ -10,11 +10,9 @@ This module exists to smooth out some of the differences between PySide and PyQt
 
 """
 
-import sys, re, time, subprocess, warnings
+import sys, subprocess, warnings
 
 from ..backend import QT_LIB, QtCore, QtGui, QtWidgets
-
-from .python2_3 import asUnicode
 
 PYQT5 = 'PyQt5'
 PYQT6 = 'PyQt6'
@@ -60,7 +58,7 @@ class _StringIO(object):
         self.data.append(data)
         
     def getvalue(self):
-        return ''.join(map(asUnicode, self.data)).encode('utf8')
+        return ''.join(map(str, self.data)).encode('utf8')
 
     
 def _loadUiType(uiFile):
