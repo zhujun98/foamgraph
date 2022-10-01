@@ -7,8 +7,8 @@ Copyright (C) Jun Zhu. All rights reserved.
 """
 import numpy as np
 
-from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
+from foamgraph.backend.QtCore import QTimer
+from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 
 from foamgraph import (
     AbstractScene, ImageViewF, mkQApp, PlotWidgetF
@@ -117,4 +117,4 @@ if __name__ == "__main__":
     consumer = Consumer(scene.queue)
     consumer.start()
 
-    app.exec_()
+    app.exec()

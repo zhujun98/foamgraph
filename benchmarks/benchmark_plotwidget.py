@@ -11,7 +11,7 @@ from collections import deque
 
 import numpy as np
 
-from PyQt5.QtCore import QTimer
+from foamgraph.backend.QtCore import QTimer
 
 from foamgraph import mkQApp, PlotWidgetF
 
@@ -136,4 +136,4 @@ if __name__ == '__main__':
     timer2.timeout.connect(bench.callback)
     timer2.start(1000)
 
-    app.exec_()
+    app.exec()

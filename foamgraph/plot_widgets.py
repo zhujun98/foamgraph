@@ -13,8 +13,8 @@ from typing import final
 
 import numpy as np
 
-from PyQt5.QtCore import pyqtSlot, QTimer
-from PyQt5.QtWidgets import QSizePolicy
+from .backend.QtCore import pyqtSlot, QTimer
+from .backend.QtWidgets import QSizePolicy
 
 from . import pyqtgraph_be as pg
 
@@ -44,7 +44,8 @@ class PlotWidgetF(pg.GraphicsView):
         """Initialization."""
         super().__init__(parent, background=background)
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding,
+                           QSizePolicy.Policy.Expanding)
         self.enableMouse(False)
 
         self._title = ""

@@ -6,7 +6,6 @@ import weakref
 import re
 
 from ..Qt import QtGui, QtCore
-from ..python2_3 import asUnicode, basestring
 from ..SignalProxy import SignalProxy
 from .. import functions as fn
 
@@ -66,7 +65,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
         self.setMinimumWidth(0)
         self._lastFontHeight = None
         
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Preferred)
+        self.setSizePolicy(QtGui.QSizePolicy.Policy.Expanding, QtGui.QSizePolicy.Preferred)
         self.errorBox = ErrorBox(self.lineEdit())
         
         self.opts = {
@@ -92,7 +91,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
             
             'decimals': 6,
             
-            'format': asUnicode("{scaledValue:.{decimals}g}{suffixGap}{siPrefix}{suffix}"),
+            'format': "{scaledValue:.{decimals}g}{suffixGap}{siPrefix}{suffix}",
             'regex': fn.FLOAT_REGEX,
             'evalFunc': D,
             
@@ -101,7 +100,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
         
         self.decOpts = ['step', 'minStep']
         
-        self.val = D(asUnicode(value))  ## Value is precise decimal. Ordinary math not allowed.
+        self.val = D(value)  ## Value is precise decimal. Ordinary math not allowed.
         self.updateText()
         self.skipValidate = False
         self.setCorrectionMode(self.CorrectToPreviousValue)
@@ -175,7 +174,6 @@ class SpinBox(QtGui.QAbstractSpinBox):
                        excessive widget decoration. Default is True.
         ============== ========================================================================
         """
-        #print opts
         for k,v in opts.items():
             if k == 'bounds':
                 self.setMinimum(v[0], update=False)
@@ -185,12 +183,12 @@ class SpinBox(QtGui.QAbstractSpinBox):
             elif k == 'max':
                 self.setMaximum(v, update=False)
             elif k in ['step', 'minStep']:
-                self.opts[k] = D(asUnicode(v))
+                self.opts[k] = D(v)
             elif k == 'value':
                 pass   ## don't set value until bounds have been set
             elif k == 'format':
-                self.opts[k] = asUnicode(v)
-            elif k == 'regex' and isinstance(v, basestring):
+                self.opts[k] = v
+            elif k == 'regex' and isinstance(v, str):
                 self.opts[k] = re.compile(v)
             elif k in self.opts:
                 self.opts[k] = v
@@ -231,7 +229,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
     def setMaximum(self, m, update=True):
         """Set the maximum allowed value (or None for no limit)"""
         if m is not None:
-            m = D(asUnicode(m))
+            m = D(m)
         self.opts['bounds'][1] = m
         if update:
             self.setValue()
@@ -239,7 +237,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
     def setMinimum(self, m, update=True):
         """Set the minimum allowed value (or None for no limit)"""
         if m is not None:
-            m = D(asUnicode(m))
+            m = D(m)
         self.opts['bounds'][0] = m
         if update:
             self.setValue()
@@ -295,7 +293,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
         Select the numerical portion of the text to allow quick editing by the user.
         """
         le = self.lineEdit()
-        text = asUnicode(le.text())
+        text = le.text()
         m = self.opts['regex'].match(text)
         if m is None:
             return
@@ -348,7 +346,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
             value = int(value)
 
         if not isinstance(value, D):
-            value = D(asUnicode(value))
+            value = D(value)
         
         if value == self.val:
             return
@@ -548,9 +546,7 @@ class SpinBox(QtGui.QAbstractSpinBox):
 
     def editingFinishedEvent(self):
         """Edit has finished; set value."""
-        #print "Edit finished."
-        if asUnicode(self.lineEdit().text()) == self.lastText:
-            #print "no text change."
+        if self.lineEdit().text() == self.lastText:
             return
         try:
             val = self.interpret()

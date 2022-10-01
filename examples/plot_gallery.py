@@ -5,8 +5,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 Copyright (C) Jun Zhu. All rights reserved.
 """
-from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QFrame, QGridLayout
+from foamgraph.backend.QtCore import QTimer
+from foamgraph.backend.QtWidgets import QFrame, QGridLayout
 
 from foamgraph import (
     AbstractScene, FColor, mkQApp, PlotWidgetF, TimedPlotWidgetF
@@ -184,4 +184,4 @@ if __name__ == "__main__":
     consumer = Consumer(scene.queue)
     consumer.start()
 
-    app.exec_()
+    app.exec()

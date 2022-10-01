@@ -23,7 +23,6 @@ classifiers = [
 ]
 dependencies = [
     'numpy>=1.21.5',
-    'PyQt5==5.15.2',
 ]
 requires-python = ">=3.8"
 

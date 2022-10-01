@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..Qt import QtGui, QtCore
-from ..python2_3 import asUnicode
 import numpy as np
 from ..Point import Point
-from .. import debug as debug
 import sys
 import weakref
 from .. import functions as fn
@@ -298,16 +296,15 @@ class AxisItem(GraphicsWidget):
             if not self.autoSIPrefix or self.autoSIPrefixScale == 1.0:
                 units = ''
             else:
-                units = asUnicode('(x%g)') % (1.0/self.autoSIPrefixScale)
+                units = '(x%g)' % (1.0/self.autoSIPrefixScale)
         else:
-            #print repr(self.labelUnitPrefix), repr(self.labelUnits)
-            units = asUnicode('(%s%s)') % (asUnicode(self.labelUnitPrefix), asUnicode(self.labelUnits))
+            units = '(%s%s)' % (self.labelUnitPrefix, self.labelUnits)
 
-        s = asUnicode('%s %s') % (asUnicode(self.labelText), asUnicode(units))
+        s = '%s %s' % (self.labelText, units)
 
         style = ';'.join(['%s: %s' % (k, self.labelStyle[k]) for k in self.labelStyle])
 
-        return asUnicode("<span style='%s'>%s</span>") % (style, asUnicode(s))
+        return "<span style='%s'>%s</span>" % (style, s)
 
     def _updateMaxTextSize(self, x):
         ## Informs that the maximum tick size orthogonal to the axis has
@@ -571,7 +568,6 @@ class AxisItem(GraphicsWidget):
             return self.mapRectFromParent(self.geometry()) | linkedView.mapRectToItem(self, linkedView.boundingRect())
 
     def paint(self, p, opt, widget):
-        profiler = debug.Profiler()
         if self.picture is None:
             try:
                 picture = QtGui.QPicture()
@@ -579,15 +575,12 @@ class AxisItem(GraphicsWidget):
                 if self.style["tickFont"]:
                     painter.setFont(self.style["tickFont"])
                 specs = self.generateDrawSpecs(painter)
-                profiler('generate specs')
                 if specs is not None:
                     self.drawPicture(painter, *specs)
-                    profiler('draw picture')
             finally:
                 painter.end()
             self.picture = picture
-        #p.setRenderHint(p.Antialiasing, False)   ## Sometimes we get a segfault here ???
-        #p.setRenderHint(p.TextAntialiasing, True)
+
         self.picture.play(p)
 
     def setTicks(self, ticks):
@@ -679,7 +672,6 @@ class AxisItem(GraphicsWidget):
         levels = [
             (intervals[minorIndex+2], 0),
             (intervals[minorIndex+1], 0),
-            #(intervals[minorIndex], 0)    ## Pretty, but eats up CPU
         ]
 
         if self.style['maxTickLevel'] >= 2:
@@ -854,7 +846,6 @@ class AxisItem(GraphicsWidget):
         be drawn, then generates from this a set of drawing commands to be
         interpreted by drawPicture().
         """
-        profiler = debug.Profiler()
         if self.style['tickFont'] is not None:
             p.setFont(self.style['tickFont'])
         bounds = self.mapRectFromParent(self.geometry())
@@ -889,7 +880,6 @@ class AxisItem(GraphicsWidget):
             tickStop = bounds.top()
             tickDir = 1
             axis = 1
-        #print tickStart, tickStop, span
 
         ## determine size of this item in pixels
         points = list(map(self.mapToDevice, span))
@@ -933,8 +923,6 @@ class AxisItem(GraphicsWidget):
         xMin = min(xRange)
         xMax = max(xRange)
 
-        profiler('init')
-
         tickPositions = [] # remembers positions of previously drawn ticks
 
         ## compute coordinates to draw ticks
@@ -970,8 +958,6 @@ class AxisItem(GraphicsWidget):
                 color.setAlpha(int(lineAlpha))
                 tickPen.setColor(color)
                 tickSpecs.append((tickPen, Point(p1), Point(p2)))
-        profiler('compute ticks')
-
 
         if self.style['stopAxisAtTick'][0] is True:
             minTickPosition = min(map(min, tickPositions))
@@ -993,12 +979,6 @@ class AxisItem(GraphicsWidget):
 
 
         textOffset = self.style['tickTextOffset'][axis]  ## spacing between axis and text
-        #if self.style['autoExpandTextSpace'] is True:
-            #textWidth = self.textWidth
-            #textHeight = self.textHeight
-        #else:
-            #textWidth = self.style['tickTextWidth'] ## space allocated for horizontal text
-            #textHeight = self.style['tickTextHeight'] ## space allocated for horizontal text
 
         textSize2 = 0
         textRects = []
@@ -1030,7 +1010,7 @@ class AxisItem(GraphicsWidget):
                 if s is None:
                     rects.append(None)
                 else:
-                    br = p.boundingRect(QtCore.QRectF(0, 0, 100, 100), QtCore.Qt.AlignCenter, asUnicode(s))
+                    br = p.boundingRect(QtCore.QRectF(0, 0, 100, 100), QtCore.Qt.AlignmentFlag.AlignCenter, s)
                     ## boundingRect is usually just a bit too large
                     ## (but this probably depends on per-font metrics?)
                     br.setHeight(br.height() * 0.8)
@@ -1070,7 +1050,6 @@ class AxisItem(GraphicsWidget):
                 vstr = strings[j]
                 if vstr is None: ## this tick was ignored because it is out of bounds
                     continue
-                vstr = asUnicode(vstr)
                 x = tickPositions[i][j]
                 #textRect = p.boundingRect(QtCore.QRectF(0, 0, 100, 100), QtCore.Qt.AlignCenter, vstr)
                 textRect = rects[j]
@@ -1079,22 +1058,21 @@ class AxisItem(GraphicsWidget):
                 #self.textHeight = height
                 offset = max(0,self.style['tickLength']) + textOffset
                 if self.orientation == 'left':
-                    textFlags = QtCore.Qt.TextDontClip|QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter
+                    textFlags = QtCore.Qt.TextFlag.TextDontClip|QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter
                     rect = QtCore.QRectF(tickStop-offset-width, x-(height/2), width, height)
                 elif self.orientation == 'right':
-                    textFlags = QtCore.Qt.TextDontClip|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter
+                    textFlags = QtCore.Qt.TextFlag.TextDontClip|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignVCenter
                     rect = QtCore.QRectF(tickStop+offset, x-(height/2), width, height)
                 elif self.orientation == 'top':
-                    textFlags = QtCore.Qt.TextDontClip|QtCore.Qt.AlignCenter|QtCore.Qt.AlignBottom
+                    textFlags = QtCore.Qt.TextFlag.TextDontClip|QtCore.Qt.AlignmentFlag.AlignCenter|QtCore.Qt.AlignmentFlag.AlignBottom
                     rect = QtCore.QRectF(x-width/2., tickStop-offset-height, width, height)
                 elif self.orientation == 'bottom':
-                    textFlags = QtCore.Qt.TextDontClip|QtCore.Qt.AlignCenter|QtCore.Qt.AlignTop
+                    textFlags = QtCore.Qt.TextFlag.TextDontClip|QtCore.Qt.AlignmentFlag.AlignCenter|QtCore.Qt.AlignmentFlag.AlignTop
                     rect = QtCore.QRectF(x-width/2., tickStop+offset, width, height)
 
                 #p.setPen(self.pen())
                 #p.drawText(rect, textFlags, vstr)
                 textSpecs.append((rect, textFlags, vstr))
-        profiler('compute text')
 
         ## update max text size if needed.
         self._updateMaxTextSize(textSize2)
@@ -1102,10 +1080,8 @@ class AxisItem(GraphicsWidget):
         return (axisSpec, tickSpecs, textSpecs)
 
     def drawPicture(self, p, axisSpec, tickSpecs, textSpecs):
-        profiler = debug.Profiler()
-
-        p.setRenderHint(p.Antialiasing, False)
-        p.setRenderHint(p.TextAntialiasing, True)
+        p.setRenderHint(p.RenderHint.Antialiasing, False)
+        p.setRenderHint(p.RenderHint.TextAntialiasing, True)
 
         ## draw long line along axis
         pen, p1, p2 = axisSpec
@@ -1117,7 +1093,6 @@ class AxisItem(GraphicsWidget):
         for pen, p1, p2 in tickSpecs:
             p.setPen(pen)
             p.drawLine(p1, p2)
-        profiler('draw ticks')
 
         # Draw all text
         if self.style['tickFont'] is not None:
@@ -1125,8 +1100,6 @@ class AxisItem(GraphicsWidget):
         p.setPen(self.textPen())
         for rect, flags, text in textSpecs:
             p.drawText(rect, int(flags), text)
-
-        profiler('draw text')
 
     def show(self):
         GraphicsWidget.show(self)

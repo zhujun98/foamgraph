@@ -5,7 +5,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 Copyright (C) Jun Zhu. All rights reserved.
 """
-from PyQt5.QtWidgets import QApplication
+from .backend import QtCore, QtGui, QtWidgets
+from .backend.QtWidgets import QApplication
 
 from .pyqtgraph_be import setConfigOptions
 

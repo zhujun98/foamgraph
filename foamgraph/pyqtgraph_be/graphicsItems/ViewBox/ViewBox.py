@@ -4,12 +4,10 @@ import sys
 from copy import deepcopy
 import numpy as np
 from ...Qt import QtGui, QtCore
-from ...python2_3 import basestring
 from ...Point import Point
 from ... import functions as fn
 from .. ItemGroup import ItemGroup
 from ..GraphicsWidget import GraphicsWidget
-from ... import debug as debug
 from ... import getConfigOption
 from ...Qt import isQObjectAlive
 
@@ -41,7 +39,7 @@ class ChildGroup(ItemGroup):
 
     def __init__(self, parent):
         ItemGroup.__init__(self, parent)
-        self.setFlag(self.ItemClipsChildrenToShape)
+        self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
         # Used as callback to inform ViewBox when items are added/removed from
         # the group.
@@ -56,7 +54,7 @@ class ChildGroup(ItemGroup):
 
     def itemChange(self, change, value):
         ret = ItemGroup.itemChange(self, change, value)
-        if change == self.ItemChildAddedChange or change == self.ItemChildRemovedChange:
+        if change == self.GraphicsItemChange.ItemChildAddedChange or change == self.GraphicsItemChange.ItemChildRemovedChange:
             try:
                 itemsChangedListeners = self.itemsChangedListeners
             except AttributeError:
@@ -180,8 +178,8 @@ class ViewBox(GraphicsWidget):
 
         self.locateGroup = None  ## items displayed when using ViewBox.locate(item)
 
-        self.setFlag(self.ItemClipsChildrenToShape)
-        self.setFlag(self.ItemIsFocusable, True)  ## so we can receive key presses
+        self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
+        self.setFlag(self.GraphicsItemFlag.ItemIsFocusable, True)  ## so we can receive key presses
 
         ## childGroup is required so that ViewBox has local coordinates similar to device coordinates.
         ## this is a workaround for a Qt + OpenGL bug that causes improper clipping
@@ -220,7 +218,7 @@ class ViewBox(GraphicsWidget):
         self.axHistoryPointer = -1 # pointer into the history. Allows forward/backward movement, not just "undo"
 
         self.setZValue(-100)
-        self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
+        self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Policy.Expanding, QtGui.QSizePolicy.Policy.Expanding))
 
         self.setAspectLocked(lockAspect)
 
@@ -312,7 +310,7 @@ class ViewBox(GraphicsWidget):
         for v in state['linkedViews']:
             if isinstance(v, weakref.ref):
                 v = v()
-            if v is None or isinstance(v, basestring):
+            if v is None or isinstance(v, str):
                 views.append(v)
             else:
                 views.append(v.name)
@@ -947,7 +945,7 @@ class ViewBox(GraphicsWidget):
         Link X or Y axes of two views and unlink any previously connected axes. *axis* must be ViewBox.XAxis or ViewBox.YAxis.
         If view is None, the axis is left unlinked.
         """
-        if isinstance(view, basestring):
+        if isinstance(view, str):
             if view == '':
                 view = None
             else:
@@ -975,7 +973,7 @@ class ViewBox(GraphicsWidget):
                 pass
 
 
-        if view is None or isinstance(view, basestring):
+        if view is None or isinstance(view, str):
             self.state['linkedViews'][axis] = view
         else:
             self.state['linkedViews'][axis] = weakref.ref(view)
@@ -1008,7 +1006,7 @@ class ViewBox(GraphicsWidget):
         ## Return the linked view for axis *ax*.
         ## this method _always_ returns either a ViewBox or None.
         v = self.state['linkedViews'][ax]
-        if v is None or isinstance(v, basestring):
+        if v is None or isinstance(v, str):
             return None
         else:
             return v()  ## dereference weakref pointer. If the reference is dead, this returns None
@@ -1228,7 +1226,7 @@ class ViewBox(GraphicsWidget):
         self.sigRangeChangedManually.emit(mask)
 
     def mouseClickEvent(self, ev):
-        if ev.button() == QtCore.Qt.RightButton and self.menuEnabled():
+        if ev.button() == QtCore.Qt.MouseButton.RightButton and self.menuEnabled():
             ev.accept()
             self.raiseContextMenu(ev)
 
@@ -1260,7 +1258,7 @@ class ViewBox(GraphicsWidget):
             mask[1-axis] = 0.0
 
         ## Scale or translate based on mouse button
-        if ev.button() & (QtCore.Qt.LeftButton | QtCore.Qt.MidButton):
+        if ev.button() & (QtCore.Qt.MouseButton.LeftButton | QtCore.Qt.MouseButton.MiddleButton):
             if self.state['mouseMode'] == ViewBox.RectMode:
                 if ev.isFinish():  ## This is the final move in the drag; change the view scale now
                     #print "finish"
@@ -1285,7 +1283,7 @@ class ViewBox(GraphicsWidget):
                 if x is not None or y is not None:
                     self.translateBy(x=x, y=y)
                 self.sigRangeChangedManually.emit(self.state['mouseEnabled'])
-        elif ev.button() & QtCore.Qt.RightButton:
+        elif ev.button() & QtCore.Qt.MouseButton.RightButton:
             #print "vb.rightDrag"
             if self.state['aspectLocked'] is not False:
                 mask[0] = 0
@@ -1301,7 +1299,7 @@ class ViewBox(GraphicsWidget):
             x = s[0] if mouseEnabled[0] == 1 else None
             y = s[1] if mouseEnabled[1] == 1 else None
 
-            center = Point(tr.map(ev.buttonDownPos(QtCore.Qt.RightButton)))
+            center = Point(tr.map(ev.buttonDownPos(QtCore.Qt.MouseButton.RightButton)))
             self._resetTarget()
             self.scaleBy(x=x, y=y, center=center)
             self.sigRangeChangedManually.emit(self.state['mouseEnabled'])
@@ -1364,7 +1362,6 @@ class ViewBox(GraphicsWidget):
         [[xmin, xmax], [ymin, ymax]]
         Values may be None if there are no specific bounds for an axis.
         """
-        profiler = debug.Profiler()
         if items is None:
             items = self.addedItems
 
@@ -1419,7 +1416,7 @@ class ViewBox(GraphicsWidget):
 
                 itemBounds.append((bounds, useX, useY, pxPad))
             else:
-                if int(item.flags() & item.ItemHasNoContents) > 0:
+                if item.flags() & item.GraphicsItemFlag.ItemHasNoContents:
                     continue
                 else:
                     bounds = item.boundingRect()
@@ -1439,7 +1436,6 @@ class ViewBox(GraphicsWidget):
                     range[0] = [min(bounds.left(), range[0][0]), max(bounds.right(), range[0][1])]
                 else:
                     range[0] = [bounds.left(), bounds.right()]
-            profiler()
 
         ## Now expand any bounds that have a pixel margin
         ## This must be done _after_ we have a good estimate of the new range
@@ -1636,7 +1632,7 @@ class ViewBox(GraphicsWidget):
 
         for ax in [0,1]:
             link = self.state['linkedViews'][ax]
-            if isinstance(link, basestring):     ## axis has not been linked yet; see if it's possible now
+            if isinstance(link, str):     ## axis has not been linked yet; see if it's possible now
                 for v in nv:
                     if link == v.name:
                         self.linkView(ax, v)

@@ -5,9 +5,9 @@ The full license is in the file LICENSE, distributed with this software.
 
 Copyright (C) Jun Zhu. All rights reserved.
 """
-from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QIntValidator
-from PyQt5.QtWidgets import (
+from ..backend.QtCore import Qt, pyqtSignal, pyqtSlot
+from ..backend.QtGui import QIntValidator
+from ..backend.QtWidgets import (
     QCheckBox, QHBoxLayout, QLabel, QVBoxLayout
 )
 
@@ -37,7 +37,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 
         self._activate_cb = QCheckBox(f"ROI{self._roi.index}")
         palette = self._activate_cb.palette()
-        palette.setColor(palette.WindowText, FColor.mkColor(roi.color))
+        palette.setColor(palette.ColorRole.WindowText, FColor.mkColor(roi.color))
         self._activate_cb.setPalette(palette)
 
         self._enable_lock = enable_lock
@@ -92,7 +92,8 @@ class RoiCtrlWidget(AbstractCtrlWidget):
             self.onRoiGeometryChangeFinished)
 
         self._activate_cb.stateChanged.connect(self.onToggleRoiActivation)
-        self._activate_cb.stateChanged.emit(self._activate_cb.checkState())
+        self._activate_cb.stateChanged.emit(
+            self._activate_cb.checkState().value)
         self._lock_cb.stateChanged.connect(self.onLock)
 
     def setLabel(self, text):
@@ -100,7 +101,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 
     @pyqtSlot(int)
     def onToggleRoiActivation(self, state):
-        if state == Qt.Checked:
+        if state == Qt.CheckState.Checked:
             self._roi.show()
             self.enableAllEdit()
         else:
@@ -110,7 +111,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         x, y = [int(v) for v in self._roi.pos()]
         w, h = [int(v) for v in self._roi.size()]
         self.roi_geometry_change_sgn.emit(
-            (self._roi.index, state == Qt.Checked, 0, x, y, w, h))
+            (self._roi.index, state == Qt.CheckState.Checked, 0, x, y, w, h))
 
     @pyqtSlot(object)
     def onRoiPositionEdited(self, value):

@@ -6,44 +6,9 @@ www.pyqtgraph.org
 
 __version__ = '0.11.0.dev0'
 
-### import all the goodies and add some helper functions for easy CLI use
-
-## 'Qt' is a local module; it is intended mainly to cover up the differences
-## between PyQt4 and PySide.
-from .Qt import QtGui, mkQApp
-
-## not really safe--If we accidentally create another QApplication, the process hangs (and it is very difficult to trace the cause)
-#if QtGui.QApplication.instance() is None:
-    #app = QtGui.QApplication([])
-
-## (import here to avoid massive error dump later on if numpy is not available)
-
 import os, sys
 
-## check python version
-## Allow anything >= 2.7
-if sys.version_info[0] < 2 or (sys.version_info[0] == 2 and sys.version_info[1] < 6):
-    raise Exception("Pyqtgraph requires Python version 2.6 or greater (this is %d.%d)" % (sys.version_info[0], sys.version_info[1]))
-
-## helpers for 2/3 compatibility
-from . import python2_3
-
-## in general openGL is poorly supported with Qt+GraphicsView.
-## we only enable it where the performance benefit is critical.
-## Note this only applies to 2D graphics; 3D graphics always use OpenGL.
-if 'linux' in sys.platform:  ## linux has numerous bugs in opengl implementation
-    useOpenGL = False
-elif 'darwin' in sys.platform: ## openGL can have a major impact on mac, but also has serious bugs
-    useOpenGL = False
-    if QtGui.QApplication.instance() is not None:
-        print('Warning: QApplication was created before pyqtgraph was imported; there may be problems (to avoid bugs, call QApplication.setGraphicsSystem("raster") before the QApplication is created).')
-    if QtGui.QApplication.setGraphicsSystem:
-        QtGui.QApplication.setGraphicsSystem('raster')  ## work around a variety of bugs in the native graphics system 
-else:
-    useOpenGL = False  ## on windows there's a more even performance / bugginess tradeoff. 
-                
 CONFIG_OPTIONS = {
-    'useOpenGL': useOpenGL, ## by default, this is platform-dependent (see widgets/GraphicsView). Set to True or False to explicitly enable/disable opengl.
     'leftButtonPan': True,  ## if false, left button drags a rubber band for zooming in viewbox
     # foreground/background take any arguments to the 'mkColor' in /pyqtgraph/functions.py
     'foreground': 'd',  ## default foreground color for axes, labels, etc.
@@ -140,62 +105,6 @@ def renamePyc(startDir):
 path = os.path.split(__file__)[0]
 if __version__ is None and not hasattr(sys, 'frozen') and sys.version_info[0] == 2: ## If we are frozen, there's a good chance we don't have the original .py files anymore.
     renamePyc(path)
-
-
-## Import almost everything to make it available from a single namespace
-## don't import the more complex systems--canvas, parametertree, flowchart, dockarea
-## these must be imported separately.
-#from . import frozenSupport
-#def importModules(path, globals, locals, excludes=()):
-    #"""Import all modules residing within *path*, return a dict of name: module pairs.
-    
-    #Note that *path* MUST be relative to the module doing the import.    
-    #"""
-    #d = os.path.join(os.path.split(globals['__file__'])[0], path)
-    #files = set()
-    #for f in frozenSupport.listdir(d):
-        #if frozenSupport.isdir(os.path.join(d, f)) and f not in ['__pycache__', 'tests']:
-            #files.add(f)
-        #elif f[-3:] == '.py' and f != '__init__.py':
-            #files.add(f[:-3])
-        #elif f[-4:] == '.pyc' and f != '__init__.pyc':
-            #files.add(f[:-4])
-        
-    #mods = {}
-    #path = path.replace(os.sep, '.')
-    #for modName in files:
-        #if modName in excludes:
-            #continue
-        #try:
-            #if len(path) > 0:
-                #modName = path + '.' + modName
-            #print( "from .%s import * " % modName)
-            #mod = __import__(modName, globals, locals, ['*'], 1)
-            #mods[modName] = mod
-        #except:
-            #import traceback
-            #traceback.print_stack()
-            #sys.excepthook(*sys.exc_info())
-            #print("[Error importing module: %s]" % modName)
-            
-    #return mods
-
-#def importAll(path, globals, locals, excludes=()):
-    #"""Given a list of modules, import all names from each module into the global namespace."""
-    #mods = importModules(path, globals, locals, excludes)
-    #for mod in mods.values():
-        #if hasattr(mod, '__all__'):
-            #names = mod.__all__
-        #else:
-            #names = [n for n in dir(mod) if n[0] != '_']
-        #for k in names:
-            #if hasattr(mod, k):
-                #globals[k] = getattr(mod, k)
-
-# Dynamic imports are disabled. This causes too many problems.
-#importAll('graphicsItems', globals(), locals())
-#importAll('widgets', globals(), locals(),
-          #excludes=['MatplotlibWidget', 'RawImageWidget', 'RemoteGraphicsView'])
 
 from .graphicsItems.GraphicsWidget import *
 from .graphicsItems.TextItem import *

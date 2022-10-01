@@ -8,8 +8,8 @@ All rights reserved.
 """
 import abc
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
+from ..backend.QtCore import Qt
+from ..backend.QtWidgets import (
     QAbstractSpinBox, QCheckBox, QFrame, QGroupBox, QLineEdit, QWidget
 )
 
@@ -77,7 +77,7 @@ class AbstractCtrlWidget(QFrame, _CtrlWidgetMixin):
     def __init__(self, *, with_frame: bool = True, parent=None):
         """Initialization."""
         super().__init__(parent=parent)
-        self.setAttribute(Qt.WA_DeleteOnClose, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
 
         # widgets whose values are not allowed to change after the "run"
         # button is clicked
@@ -86,7 +86,7 @@ class AbstractCtrlWidget(QFrame, _CtrlWidgetMixin):
         if with_frame:
             self.setFrameStyle(QFrame.StyledPanel)
         else:
-            self.setFrameStyle(QFrame.NoFrame)
+            self.setFrameStyle(QFrame.Shape.NoFrame)
 
     def onStart(self):
         """Override."""
@@ -112,7 +112,7 @@ class AbstractGroupBoxCtrlWidget(QGroupBox, _CtrlWidgetMixin):
     def __init__(self, title, *, parent=None):
         """Initialization."""
         super().__init__(title, parent=parent)
-        self.setAttribute(Qt.WA_DeleteOnClose, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         self.setStyleSheet(self.GROUP_BOX_STYLE_SHEET)
 
         # widgets whose values are not allowed to change after the "run"

@@ -8,9 +8,8 @@ This class addresses the problem of having to save and restore the state
 of a large group of widgets. 
 """
 
-from .Qt import QtCore, QtGui, QT_LIB
+from .Qt import QtCore, QtGui
 import weakref, inspect
-from .python2_3 import asUnicode
 
 
 __all__ = ['WidgetGroup']
@@ -45,7 +44,7 @@ def comboState(w):
         except AttributeError:
             pass
     if data is None:
-        return asUnicode(w.itemText(ind))
+        return w.itemText(ind)
     else:
         return data
     
@@ -218,9 +217,6 @@ class WidgetGroup(QtCore.QObject):
         v1 = self.cache[n]
         v2 = self.readWidget(w)
         if v1 != v2:
-            if QT_LIB != 'PyQt5':
-                # Old signal kept for backward compatibility.
-                self.emit(QtCore.SIGNAL('changed'), self.widgetList[w], v2)
             self.sigChanged.emit(self.widgetList[w], v2)
         
     def state(self):

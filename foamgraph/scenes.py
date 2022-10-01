@@ -10,8 +10,8 @@ import abc
 from collections import deque
 from weakref import WeakKeyDictionary
 
-from PyQt5.QtCore import QObject, Qt
-from PyQt5.QtWidgets import QMainWindow, QWidget
+from .backend.QtCore import QObject, Qt
+from .backend.QtWidgets import QMainWindow, QWidget
 
 
 class _SceneMeta(type(QObject), abc.ABCMeta):
@@ -50,7 +50,7 @@ class AbstractScene(QMainWindow, _SceneMixin):
     def __init__(self, *, parent=None):
         """Initialization."""
         super().__init__(parent=parent)
-        self.setAttribute(Qt.WA_DeleteOnClose, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if parent is not None:
             parent.registerWindow(self)
 
