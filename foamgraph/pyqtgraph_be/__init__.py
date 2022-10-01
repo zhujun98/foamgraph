@@ -114,7 +114,6 @@ from .graphicsItems.ROI import *
 from .graphicsItems.InfiniteLine import *
 from .graphicsItems.GradientLegend import *
 from .graphicsItems.GraphicsItem import *
-from .graphicsItems.BarGraphItem import *
 from .graphicsItems.ViewBox import *
 from .graphicsItems.ArrowItem import *
 from .graphicsItems.AxisItem import *
