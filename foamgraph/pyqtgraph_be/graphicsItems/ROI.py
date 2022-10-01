@@ -11,11 +11,13 @@ of array data from ImageItems.
 The ROI class is meant to serve as the base for more specific types; see several examples
 of how to build an ROI at the bottom of the file.
 """
+from math import cos, sin
+
+import numpy as np
 
 from ..Qt import QtCore, QtGui
 from ..Point import *
 from ..SRTTransform import SRTTransform
-from math import cos, sin
 from .. import functions as fn
 from .GraphicsObject import GraphicsObject
 from .UIGraphicsItem import UIGraphicsItem
@@ -672,26 +674,26 @@ class ROI(GraphicsObject):
         
         The format returned is a list of (name, pos) tuples.
         """
-        if index == None:
+        if index is None:
             positions = []
             for h in self.handles:
                 positions.append((h['name'], h['pos']))
             return positions
         else:
-            return (self.handles[index]['name'], self.handles[index]['pos'])
+            return self.handles[index]['name'], self.handles[index]['pos']
             
     def getSceneHandlePositions(self, index=None):
         """Returns the position of handles in the scene coordinate system.
         
         The format returned is a list of (name, pos) tuples.
         """
-        if index == None:
+        if index is None:
             positions = []
             for h in self.handles:
                 positions.append((h['name'], h['item'].scenePos()))
             return positions
         else:
-            return (self.handles[index]['name'], self.handles[index]['item'].scenePos())
+            return self.handles[index]['name'], self.handles[index]['item'].scenePos()
         
     def getHandles(self):
         """
@@ -704,7 +706,6 @@ class ROI(GraphicsObject):
 
     def setSelected(self, s):
         QtGui.QGraphicsItem.setSelected(self, s)
-        #print "select", self, s
         if s:
             for h in self.handles:
                 h['item'].show()
@@ -2028,13 +2029,10 @@ class PolyLineROI(ROI):
         return h
         
     def segmentClicked(self, segment, ev=None, pos=None): ## pos should be in this item's coordinate system
-        if ev != None:
+        if ev is not None:
             pos = segment.mapToParent(ev.pos())
-        elif pos != None:
-            pos = pos
-        else:
+        elif pos is None:
             raise Exception("Either an event or a position must be given.")
-        h1 = segment.handles[0]['item']
         h2 = segment.handles[1]['item']
         
         i = self.segments.index(segment)
@@ -2260,9 +2258,9 @@ class CrosshairROI(ROI):
     """A crosshair ROI whose position is at the center of the crosshairs. By default, it is scalable, rotatable and translatable."""
     
     def __init__(self, pos=None, size=None, **kargs):
-        if size == None:
+        if size is None:
             size=[1,1]
-        if pos == None:
+        if pos is None:
             pos = [0,0]
         self._shape = None
         ROI.__init__(self, pos, size, **kargs)

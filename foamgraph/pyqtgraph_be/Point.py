@@ -4,9 +4,12 @@ Point.py -  Extension of QPointF which adds a few missing methods.
 Copyright 2010  Luke Campagnola
 Distributed under MIT/X11 license. See license.txt for more information.
 """
-
-from .Qt import QtCore
 import numpy as np
+
+from ..backend.QtCore import QPoint, QPointF, QSizeF
+
+__all__ = ['Point']
+
 
 def clip(x, mn, mx):
     if x > mx:
@@ -15,30 +18,31 @@ def clip(x, mn, mx):
         return mn
     return x
 
-class Point(QtCore.QPointF):
+
+class Point(QPointF):
     """Extension of QPointF which adds a few missing methods."""
     
     def __init__(self, *args):
         if len(args) == 1:
-            if isinstance(args[0], QtCore.QSizeF):
-                QtCore.QPointF.__init__(self, float(args[0].width()), float(args[0].height()))
+            if isinstance(args[0], QSizeF):
+                QPointF.__init__(self, float(args[0].width()), float(args[0].height()))
                 return
             elif isinstance(args[0], float) or isinstance(args[0], int):
-                QtCore.QPointF.__init__(self, float(args[0]), float(args[0]))
+                QPointF.__init__(self, float(args[0]), float(args[0]))
                 return
             elif hasattr(args[0], '__getitem__'):
-                QtCore.QPointF.__init__(self, float(args[0][0]), float(args[0][1]))
+                QPointF.__init__(self, float(args[0][0]), float(args[0][1]))
                 return
         elif len(args) == 2:
-            QtCore.QPointF.__init__(self, args[0], args[1])
+            QPointF.__init__(self, args[0], args[1])
             return
-        QtCore.QPointF.__init__(self, *args)
+        QPointF.__init__(self, *args)
         
     def __len__(self):
         return 2
         
     def __reduce__(self):
-        return (Point, (self.x(), self.y()))
+        return Point, (self.x(), self.y())
         
     def __getitem__(self, i):
         if i == 0:
@@ -93,13 +97,6 @@ class Point(QtCore.QPointF):
         return self._math_('__pow__', a)
     
     def _math_(self, op, x):
-        #print "point math:", op
-        #try:
-            #fn  = getattr(QtCore.QPointF, op)
-            #pt = fn(self, x)
-            #print fn, pt, self, x
-            #return Point(pt)
-        #except AttributeError:
         x = Point(x)
         return Point(getattr(self[0], op)(x[0]), getattr(self[1], op)(x[1]))
     
@@ -123,8 +120,8 @@ class Point(QtCore.QPointF):
         n2 = a.length()
         if n1 == 0. or n2 == 0.:
             return None
-        ## Probably this should be done with arctan2 instead..
-        ang = np.arccos(clip(self.dot(a) / (n1 * n2), -1.0, 1.0)) ### in radians
+        # Probably this should be done with arctan2 instead..
+        ang = np.arccos(clip(self.dot(a) / (n1 * n2), -1.0, 1.0))  # in radians
         c = self.cross(a)
         if c > 0:
             ang *= -1.
@@ -146,8 +143,7 @@ class Point(QtCore.QPointF):
     
     def __repr__(self):
         return "Point(%f, %f)" % (self[0], self[1])
-    
-    
+
     def min(self):
         return min(self[0], self[1])
     
@@ -158,4 +154,4 @@ class Point(QtCore.QPointF):
         return Point(self)
         
     def toQPoint(self):
-        return QtCore.QPoint(*self)
+        return QPoint(*self)
