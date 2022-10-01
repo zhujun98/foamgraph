@@ -112,7 +112,6 @@ from .graphicsItems.UIGraphicsItem import *
 from .graphicsItems.GraphicsObject import *
 from .graphicsItems.ROI import *
 from .graphicsItems.InfiniteLine import *
-from .graphicsItems.GradientLegend import *
 from .graphicsItems.GraphicsItem import *
 from .graphicsItems.ViewBox import *
 from .graphicsItems.ArrowItem import *

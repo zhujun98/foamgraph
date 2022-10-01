@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
+import numpy as np
+
 from ..Qt import QtGui, QtCore
 from ..Point import Point
 from .GraphicsObject import GraphicsObject
 from .TextItem import TextItem
 from .ViewBox import ViewBox
 from .. import functions as fn
-import numpy as np
-import weakref
 
 
 __all__ = ['InfiniteLine', 'InfLineLabel']

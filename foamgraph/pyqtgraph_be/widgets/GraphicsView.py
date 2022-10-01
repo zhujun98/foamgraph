@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
 """
 GraphicsView.py -   Extension of QGraphicsView
 Copyright 2010  Luke Campagnola
 Distributed under MIT/X11 license. See license.txt for more information.
 """
 
-from ..Qt import QtCore, QtGui, QT_LIB
-
-try:
-    from ..Qt import QtOpenGL
-    HAVE_OPENGL = True
-except ImportError:
-    HAVE_OPENGL = False
+from ...backend.QtCore import pyqtSignal, QPoint, QRectF, Qt
+from ...backend.QtGui import QPalette, QPainter
+from ...backend.QtWidgets import (
+    QFrame, QGraphicsGridLayout, QGraphicsView, QGraphicsWidget, QWidget
+)
 
 from ..Point import Point
 import sys
@@ -24,7 +21,7 @@ from .. import getConfigOption
 __all__ = ['GraphicsView']
 
 
-class GraphicsView(QtGui.QGraphicsView):
+class GraphicsView(QGraphicsView):
     """Re-implementation of QGraphicsView that removes scrollbars and allows unambiguous control of the 
     viewed coordinate range. Also automatically creates a GraphicsScene and a central QGraphicsWidget
     that is automatically scaled to the full view geometry.
@@ -40,11 +37,11 @@ class GraphicsView(QtGui.QGraphicsView):
     The view can be panned using the middle mouse button and scaled using the right mouse button if
     enabled via enableMouse()  (but ordinarily, we use ViewBox for this functionality)."""
     
-    sigDeviceRangeChanged = QtCore.Signal(object, object)
-    sigDeviceTransformChanged = QtCore.Signal(object)
-    sigMouseReleased = QtCore.Signal(object)
-    sigSceneMouseMoved = QtCore.Signal(object)
-    sigScaleChanged = QtCore.Signal(object)
+    sigDeviceRangeChanged = pyqtSignal(object, object)
+    sigDeviceTransformChanged = pyqtSignal(object)
+    sigMouseReleased = pyqtSignal(object)
+    sigSceneMouseMoved = pyqtSignal(object)
+    sigScaleChanged = pyqtSignal(object)
     lastFileDir = None
     
     def __init__(self, parent=None, background='default'):
@@ -63,7 +60,7 @@ class GraphicsView(QtGui.QGraphicsView):
         
         self.closed = False
         
-        QtGui.QGraphicsView.__init__(self, parent)
+        super().__init__(parent)
         
         # This connects a cleanup function to QApplication.aboutToQuit. It is
         # called from here because we have no good way to react when the
@@ -72,30 +69,29 @@ class GraphicsView(QtGui.QGraphicsView):
         from .. import _connectCleanup
         _connectCleanup()
         
-        self.setViewport(QtGui.QWidget())
+        self.setViewport(QWidget())
         
         self.setCacheMode(self.CacheModeFlag.CacheBackground)
         
-        ## This might help, but it's probably dangerous in the general case..
-        #self.setOptimizationFlag(self.DontSavePainterState, True)
+        # This might help, but it's probably dangerous in the general case..
+        # self.setOptimizationFlag(self.DontSavePainterState, True)
         
-        self.setBackgroundRole(QtGui.QPalette.ColorRole.NoRole)
+        self.setBackgroundRole(QPalette.ColorRole.NoRole)
         self.setBackground(background)
         
-        self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
-        self.setFrameShape(QtGui.QFrame.Shape.NoFrame)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setTransformationAnchor(QtGui.QGraphicsView.ViewportAnchor.NoAnchor)
-        self.setResizeAnchor(QtGui.QGraphicsView.ViewportAnchor.AnchorViewCenter)
-        self.setViewportUpdateMode(QtGui.QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate)
-        
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+        self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate)
         
         self.lockedViewports = []
         self.lastMousePos = None
         self.setMouseTracking(True)
         self.aspectLocked = False
-        self.range = QtCore.QRectF(0, 0, 1, 1)
+        self.range = QRectF(0, 0, 1, 1)
         self.autoPixelRange = True
         self.currentItem = None
         self.clearMouse()
@@ -104,24 +100,24 @@ class GraphicsView(QtGui.QGraphicsView):
         self.sceneObj = GraphicsScene(parent=self)
         self.setScene(self.sceneObj)
 
-        ## by default we set up a central widget with a grid layout.
-        ## this can be replaced if needed.
+        # by default we set up a central widget with a grid layout.
+        # this can be replaced if needed.
         self.centralWidget = None
-        self.setCentralWidget(QtGui.QGraphicsWidget())
-        self.centralLayout = QtGui.QGraphicsGridLayout()
+        self.setCentralWidget(QGraphicsWidget())
+        self.centralLayout = QGraphicsGridLayout()
         self.centralWidget.setLayout(self.centralLayout)
         
         self.mouseEnabled = False
-        self.scaleCenter = False  ## should scaling center around view center (True) or mouse click (False)
+        self.scaleCenter = False  # should scaling center around view center (True) or mouse click (False)
         self.clickAccepted = False
         
     def setAntialiasing(self, aa):
         """Enable or disable default antialiasing.
         Note that this will only affect items that do not specify their own antialiasing options."""
         if aa:
-            self.setRenderHints(self.renderHints() | QtGui.QPainter.Antialiasing)
+            self.setRenderHints(self.renderHints() | QPainter.Antialiasing)
         else:
-            self.setRenderHints(self.renderHints() & ~QtGui.QPainter.Antialiasing)
+            self.setRenderHints(self.renderHints() & ~QPainter.Antialiasing)
         
     def setBackground(self, background):
         """
@@ -137,11 +133,11 @@ class GraphicsView(QtGui.QGraphicsView):
     
     def paintEvent(self, ev):
         self.scene().prepareForPaint()
-        return QtGui.QGraphicsView.paintEvent(self, ev)
+        return QGraphicsView.paintEvent(self, ev)
     
     def render(self, *args, **kwds):
         self.scene().prepareForPaint()
-        return QtGui.QGraphicsView.render(self, *args, **kwds)
+        return QGraphicsView.render(self, *args, **kwds)
 
     def close(self):
         self.centralWidget = None
@@ -153,8 +149,8 @@ class GraphicsView(QtGui.QGraphicsView):
         super(GraphicsView, self).close()
 
     def keyPressEvent(self, ev):
-        self.scene().keyPressEvent(ev)  ## bypass view, hand event directly to scene
-                                        ## (view likes to eat arrow key events)
+        self.scene().keyPressEvent(ev)  # bypass view, hand event directly to scene
+                                        # (view likes to eat arrow key events)
 
     def setCentralWidget(self, item):
         """Sets a QGraphicsWidget to automatically fill the entire view (the item will be automatically
@@ -184,8 +180,8 @@ class GraphicsView(QtGui.QGraphicsView):
         if self.closed:
             return
         if self.autoPixelRange:
-            self.range = QtCore.QRectF(0, 0, self.size().width(), self.size().height())
-        GraphicsView.setRange(self, self.range, padding=0, disableAutoPixel=False)  ## we do this because some subclasses like to redefine setRange in an incompatible way.
+            self.range = QRectF(0, 0, self.size().width(), self.size().height())
+        GraphicsView.setRange(self, self.range, padding=0, disableAutoPixel=False)  # we do this because some subclasses like to redefine setRange in an incompatible way.
         self.updateMatrix()
     
     def updateMatrix(self, propagate=True):
@@ -194,9 +190,9 @@ class GraphicsView(QtGui.QGraphicsView):
             self.resetTransform()
         else:
             if self.aspectLocked:
-                self.fitInView(self.range, QtCore.Qt.KeepAspectRatio)
+                self.fitInView(self.range, Qt.KeepAspectRatio)
             else:
-                self.fitInView(self.range, QtCore.Qt.IgnoreAspectRatio)
+                self.fitInView(self.range, Qt.IgnoreAspectRatio)
 
         if propagate:
             for v in self.lockedViewports:
@@ -207,12 +203,12 @@ class GraphicsView(QtGui.QGraphicsView):
 
     def viewRect(self):
         """Return the boundaries of the view in scene coordinates"""
-        ## easier to just return self.range ?
-        r = QtCore.QRectF(self.rect())
+        # easier to just return self.range ?
+        r = QRectF(self.rect())
         return self.viewportTransform().inverted()[0].mapRect(r)
 
     def visibleRange(self):
-        ## for backward compatibility
+        # for backward compatibility
         return self.viewRect()
 
     def translate(self, dx, dy):
@@ -231,7 +227,10 @@ class GraphicsView(QtGui.QGraphicsView):
             
         w = self.range.width()  / scale[0]
         h = self.range.height() / scale[1]
-        self.range = QtCore.QRectF(center.x() - (center.x()-self.range.left()) / scale[0], center.y() - (center.y()-self.range.top())  /scale[1], w, h)
+        self.range = QRectF(center.x() - (center.x()-self.range.left()) / scale[0],
+                            center.y() - (center.y()-self.range.top())  /scale[1],
+                            w,
+                            h)
 
         self.updateMatrix()
         self.sigScaleChanged.emit(self)
@@ -244,7 +243,7 @@ class GraphicsView(QtGui.QGraphicsView):
             padding = 0
         
         padding = Point(padding)
-        newRect = QtCore.QRectF(newRect)
+        newRect = QRectF(newRect)
         pw = newRect.width() * padding[0]
         ph = newRect.height() * padding[1]
         newRect = newRect.adjusted(-pw, -ph, pw, ph)
@@ -252,7 +251,7 @@ class GraphicsView(QtGui.QGraphicsView):
         if self.range.width() != newRect.width() or self.range.height() != newRect.height():
             scaleChanged = True
         self.range = newRect
-        #print "New Range:", self.range
+
         if self.centralWidget is not None:
             self.centralWidget.setGeometry(self.range)
         self.updateMatrix(propagate)
@@ -270,7 +269,7 @@ class GraphicsView(QtGui.QGraphicsView):
         tl = image.sceneBoundingRect().topLeft()
         w = self.size().width() * pxSize[0]
         h = self.size().height() * pxSize[1]
-        range = QtCore.QRectF(tl.x(), tl.y(), w, h)
+        range = QRectF(tl.x(), tl.y(), w, h)
         GraphicsView.setRange(self, range, padding=0)
         self.sigScaleChanged.connect(image.setScaledMode)
 
@@ -279,19 +278,19 @@ class GraphicsView(QtGui.QGraphicsView):
             self.lockedViewports.append(v1)
         
     def setXRange(self, r, padding=0.05):
-        r1 = QtCore.QRectF(self.range)
+        r1 = QRectF(self.range)
         r1.setLeft(r.left())
         r1.setRight(r.right())
         GraphicsView.setRange(self, r1, padding=[padding, 0], propagate=False)
         
     def setYRange(self, r, padding=0.05):
-        r1 = QtCore.QRectF(self.range)
+        r1 = QRectF(self.range)
         r1.setTop(r.top())
         r1.setBottom(r.bottom())
         GraphicsView.setRange(self, r1, padding=[0, padding], propagate=False)
         
     def wheelEvent(self, ev):
-        QtGui.QGraphicsView.wheelEvent(self, ev)
+        QGraphicsView.wheelEvent(self, ev)
         if not self.mouseEnabled:
             return
 
@@ -300,19 +299,16 @@ class GraphicsView(QtGui.QGraphicsView):
             delta = ev.angleDelta().y()
 
         sc = 1.001 ** delta
-        #self.scale *= sc
-        #self.updateMatrix()
         self.scale(sc, sc)
         
     def setAspectLocked(self, s):
         self.aspectLocked = s
         
     def leaveEvent(self, ev):
-        self.scene().leaveEvent(ev)  ## inform scene when mouse leaves
+        self.scene().leaveEvent(ev)  # inform scene when mouse leaves
         
     def mousePressEvent(self, ev):
-        QtGui.QGraphicsView.mousePressEvent(self, ev)
-        
+        QGraphicsView.mousePressEvent(self, ev)
 
         if not self.mouseEnabled:
             return
@@ -321,37 +317,37 @@ class GraphicsView(QtGui.QGraphicsView):
         self.clickAccepted = ev.isAccepted()
         if not self.clickAccepted:
             self.scene().clearSelection()
-        return   ## Everything below disabled for now..
+        return   # Everything below disabled for now..
         
     def mouseReleaseEvent(self, ev):
-        QtGui.QGraphicsView.mouseReleaseEvent(self, ev)
+        QGraphicsView.mouseReleaseEvent(self, ev)
         if not self.mouseEnabled:
             return 
         self.sigMouseReleased.emit(ev)
         self.lastButtonReleased = ev.button()
-        return   ## Everything below disabled for now..
-        
+        return
+
     def mouseMoveEvent(self, ev):
         if self.lastMousePos is None:
             self.lastMousePos = Point(ev.pos())
-        delta = Point(ev.pos() - QtCore.QPoint(*self.lastMousePos))
+        delta = Point(ev.pos() - QPoint(*self.lastMousePos))
         self.lastMousePos = Point(ev.pos())
 
-        QtGui.QGraphicsView.mouseMoveEvent(self, ev)
+        QGraphicsView.mouseMoveEvent(self, ev)
         if not self.mouseEnabled:
             return
         self.sigSceneMouseMoved.emit(self.mapToScene(ev.pos()))
             
-        if self.clickAccepted:  ## Ignore event if an item in the scene has already claimed it.
+        if self.clickAccepted:  # Ignore event if an item in the scene has already claimed it.
             return
         
-        if ev.buttons() == QtCore.Qt.MouseButton.RightButton:
+        if ev.buttons() == Qt.MouseButton.RightButton:
             delta = Point(np.clip(delta[0], -50, 50), np.clip(-delta[1], -50, 50))
             scale = 1.01 ** delta
             self.scale(scale[0], scale[1], center=self.mapToScene(self.mousePressPos))
             self.sigDeviceRangeChanged.emit(self, self.range)
 
-        elif ev.buttons() in [QtCore.Qt.MouseButton.MiddleButton, QtCore.Qt.MouseButton.LeftButton]:  ## Allow panning by left or mid button.
+        elif ev.buttons() in [Qt.MouseButton.MiddleButton, Qt.MouseButton.LeftButton]:  ## Allow panning by left or mid button.
             px = self.pixelSize()
             tr = -delta * px
             
@@ -368,7 +364,7 @@ class GraphicsView(QtGui.QGraphicsView):
         return Point(p11 - p01)
         
     def dragEnterEvent(self, ev):
-        ev.ignore()  ## not sure why, but for some reason this class likes to consume drag events
+        ev.ignore()  # not sure why, but for some reason this class likes to consume drag events
 
     def _del(self):
         try:

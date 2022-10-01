@@ -1,10 +1,11 @@
 from ..Qt import QtGui, QtCore, QT_LIB
-import weakref
 from .GraphicsObject import GraphicsObject
 if QT_LIB in ['PyQt5']:
     import sip
 
 __all__ = ['UIGraphicsItem']
+
+
 class UIGraphicsItem(GraphicsObject):
     """
     Base class for graphics items with boundaries relative to a GraphicsView or ViewBox.
@@ -93,6 +94,3 @@ class UIGraphicsItem(GraphicsObject):
         stroker.setWidh(2)
         ds2 = stroker.createStroke(ds).united(ds)
         return self.mapFromDevice(ds2)
-        
-        
-        

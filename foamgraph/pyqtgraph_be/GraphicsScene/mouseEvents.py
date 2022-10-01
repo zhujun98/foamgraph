@@ -1,16 +1,16 @@
+from ...backend.QtCore import Qt
+
 from ..Point import Point
-from ..Qt import QtCore, QtGui
 import weakref
 from .. import ptime as ptime
 
-class MouseDragEvent(object):
+
+class MouseDragEvent:
     """
-    Instances of this class are delivered to items in a :class:`GraphicsScene <pyqtgraph.GraphicsScene>` via their mouseDragEvent() method when the item is being mouse-dragged. 
+    Instances of this class are delivered to items in a :class:`GraphicsScene <pyqtgraph.GraphicsScene>`
+    via their mouseDragEvent() method when the item is being mouse-dragged.
     
     """
-    
-    
-    
     def __init__(self, moveEvent, pressEvent, lastEvent, start=False, finish=False):
         self.start = start
         self.finish = finish
@@ -18,9 +18,9 @@ class MouseDragEvent(object):
         self.currentItem = None
         self._buttonDownScenePos = {}
         self._buttonDownScreenPos = {}
-        for btn in [QtCore.Qt.MouseButton.LeftButton,
-                    QtCore.Qt.MouseButton.MiddleButton,
-                    QtCore.Qt.MouseButton.RightButton]:
+        for btn in [Qt.MouseButton.LeftButton,
+                    Qt.MouseButton.MiddleButton,
+                    Qt.MouseButton.RightButton]:
             self._buttonDownScenePos[btn] = moveEvent.buttonDownScenePos(btn)
             self._buttonDownScreenPos[btn] = moveEvent.buttonDownScreenPos(btn)
         self._scenePos = moveEvent.scenePos()
@@ -37,12 +37,16 @@ class MouseDragEvent(object):
         self.acceptedItem = None
         
     def accept(self):
-        """An item should call this method if it can handle the event. This will prevent the event being delivered to any other items."""
+        """An item should call this method if it can handle the event.
+
+        This will prevent the event being delivered to any other items."""
         self.accepted = True
         self.acceptedItem = self.currentItem
         
     def ignore(self):
-        """An item should call this method if it cannot handle the event. This will allow the event to be delivered to other items."""
+        """An item should call this method if it cannot handle the event.
+
+        This will allow the event to be delivered to other items."""
         self.accepted = False
     
     def isAccepted(self):
@@ -149,12 +153,10 @@ class MouseDragEvent(object):
         return self._modifiers
 
 
-
-class MouseClickEvent(object):
+class MouseClickEvent:
     """
-    Instances of this class are delivered to items in a :class:`GraphicsScene <pyqtgraph.GraphicsScene>` via their mouseClickEvent() method when the item is clicked. 
-    
-    
+    Instances of this class are delivered to items in a :class:`GraphicsScene <pyqtgraph.GraphicsScene>`
+    via their mouseClickEvent() method when the item is clicked.
     """
     
     def __init__(self, pressEvent, double=False):
@@ -170,12 +172,16 @@ class MouseClickEvent(object):
         self.acceptedItem = None
         
     def accept(self):
-        """An item should call this method if it can handle the event. This will prevent the event being delivered to any other items."""
+        """An item should call this method if it can handle the event.
+
+        This will prevent the event being delivered to any other items."""
         self.accepted = True
         self.acceptedItem = self.currentItem
         
     def ignore(self):
-        """An item should call this method if it cannot handle the event. This will allow the event to be delivered to other items."""
+        """An item should call this method if it cannot handle the event.
+
+        This will allow the event to be delivered to other items."""
         self.accepted = False
     
     def isAccepted(self):
@@ -240,8 +246,7 @@ class MouseClickEvent(object):
         return self._time
 
 
-
-class HoverEvent(object):
+class HoverEvent:
     """
     Instances of this class are delivered to items in a :class:`GraphicsScene <pyqtgraph.GraphicsScene>` via their hoverEvent() method when the mouse is hovering over the item.
     This event class both informs items that the mouse cursor is nearby and allows items to 
@@ -377,6 +382,3 @@ class HoverEvent(object):
         
     def dragItems(self):
         return self.__dragItems
-        
-    
-    
