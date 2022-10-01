@@ -3,7 +3,6 @@ import warnings
 
 from ..Qt import QtCore, QtGui, QtWidgets
 from .mouseEvents import *
-from .. import debug as debug
 
 
 if hasattr(QtCore, 'PYQT_VERSION'):
@@ -248,7 +247,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
                 try:
                     item.hoverEvent(event)
                 except:
-                    debug.printExc("Error sending hover event:")
+                    print("Error sending hover event:")
         
         event.enter = False
         event.exit = True
@@ -259,7 +258,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
                 if item.scene() is self:
                     item.hoverEvent(event)
             except:
-                debug.printExc("Error sending hover exit event:")
+                print("Error sending hover exit event:")
             finally:
                 del self.hoverItems[item]
         
@@ -289,7 +288,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
                 try:
                     self.dragItem.mouseDragEvent(event)
                 except:
-                    debug.printExc("Error sending drag event:")
+                    print("Error sending drag event:")
                     
             else:
                 #print "drag -> new item"
@@ -302,7 +301,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
                         try:
                             item.mouseDragEvent(event)
                         except:
-                            debug.printExc("Error sending drag event:")
+                            print("Error sending drag event:")
                         if event.isAccepted():
                             self.dragItem = item
                             if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:
@@ -313,7 +312,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
             try:
                 self.dragItem.mouseDragEvent(event)
             except:
-                debug.printExc("Error sending hover exit event:")
+                print("Error sending hover exit event:")
             
         self.lastDrag = event
         
@@ -337,7 +336,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
                 try:
                     acceptedItem.mouseClickEvent(ev)
                 except:
-                    debug.printExc("Error sending click event:")
+                    print("Error sending click event:")
             else:
                 for item in self.itemsNearEvent(ev):
                     if not item.isVisible() or not item.isEnabled():
@@ -347,7 +346,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
                         try:
                             item.mouseClickEvent(ev)
                         except:
-                            debug.printExc("Error sending click event:")
+                            print("Error sending click event:")
                             
                         if ev.isAccepted():
                             if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:

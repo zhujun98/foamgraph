@@ -3,7 +3,6 @@ from ..Qt import QtGui, QtCore
 from .GraphicsObject import GraphicsObject
 from .InfiniteLine import InfiniteLine
 from .. import functions as fn
-from .. import debug as debug
 
 __all__ = ['LinearRegionItem']
 
@@ -216,7 +215,6 @@ class LinearRegionItem(GraphicsObject):
         return br
         
     def paint(self, p, *args):
-        profiler = debug.Profiler()
         p.setBrush(self.currentBrush)
         p.setPen(fn.mkPen(None))
         p.drawRect(self.boundingRect())

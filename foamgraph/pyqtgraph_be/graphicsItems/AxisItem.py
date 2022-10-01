@@ -3,7 +3,6 @@ from ..Qt import QtGui, QtCore
 from ..python2_3 import asUnicode
 import numpy as np
 from ..Point import Point
-from .. import debug as debug
 import sys
 import weakref
 from .. import functions as fn
@@ -571,7 +570,6 @@ class AxisItem(GraphicsWidget):
             return self.mapRectFromParent(self.geometry()) | linkedView.mapRectToItem(self, linkedView.boundingRect())
 
     def paint(self, p, opt, widget):
-        profiler = debug.Profiler()
         if self.picture is None:
             try:
                 picture = QtGui.QPicture()
@@ -579,15 +577,12 @@ class AxisItem(GraphicsWidget):
                 if self.style["tickFont"]:
                     painter.setFont(self.style["tickFont"])
                 specs = self.generateDrawSpecs(painter)
-                profiler('generate specs')
                 if specs is not None:
                     self.drawPicture(painter, *specs)
-                    profiler('draw picture')
             finally:
                 painter.end()
             self.picture = picture
-        #p.setRenderHint(p.Antialiasing, False)   ## Sometimes we get a segfault here ???
-        #p.setRenderHint(p.TextAntialiasing, True)
+
         self.picture.play(p)
 
     def setTicks(self, ticks):
@@ -679,7 +674,6 @@ class AxisItem(GraphicsWidget):
         levels = [
             (intervals[minorIndex+2], 0),
             (intervals[minorIndex+1], 0),
-            #(intervals[minorIndex], 0)    ## Pretty, but eats up CPU
         ]
 
         if self.style['maxTickLevel'] >= 2:
@@ -854,7 +848,6 @@ class AxisItem(GraphicsWidget):
         be drawn, then generates from this a set of drawing commands to be
         interpreted by drawPicture().
         """
-        profiler = debug.Profiler()
         if self.style['tickFont'] is not None:
             p.setFont(self.style['tickFont'])
         bounds = self.mapRectFromParent(self.geometry())
@@ -889,7 +882,6 @@ class AxisItem(GraphicsWidget):
             tickStop = bounds.top()
             tickDir = 1
             axis = 1
-        #print tickStart, tickStop, span
 
         ## determine size of this item in pixels
         points = list(map(self.mapToDevice, span))
@@ -933,8 +925,6 @@ class AxisItem(GraphicsWidget):
         xMin = min(xRange)
         xMax = max(xRange)
 
-        profiler('init')
-
         tickPositions = [] # remembers positions of previously drawn ticks
 
         ## compute coordinates to draw ticks
@@ -970,8 +960,6 @@ class AxisItem(GraphicsWidget):
                 color.setAlpha(int(lineAlpha))
                 tickPen.setColor(color)
                 tickSpecs.append((tickPen, Point(p1), Point(p2)))
-        profiler('compute ticks')
-
 
         if self.style['stopAxisAtTick'][0] is True:
             minTickPosition = min(map(min, tickPositions))
@@ -993,12 +981,6 @@ class AxisItem(GraphicsWidget):
 
 
         textOffset = self.style['tickTextOffset'][axis]  ## spacing between axis and text
-        #if self.style['autoExpandTextSpace'] is True:
-            #textWidth = self.textWidth
-            #textHeight = self.textHeight
-        #else:
-            #textWidth = self.style['tickTextWidth'] ## space allocated for horizontal text
-            #textHeight = self.style['tickTextHeight'] ## space allocated for horizontal text
 
         textSize2 = 0
         textRects = []
@@ -1094,7 +1076,6 @@ class AxisItem(GraphicsWidget):
                 #p.setPen(self.pen())
                 #p.drawText(rect, textFlags, vstr)
                 textSpecs.append((rect, textFlags, vstr))
-        profiler('compute text')
 
         ## update max text size if needed.
         self._updateMaxTextSize(textSize2)
@@ -1102,8 +1083,6 @@ class AxisItem(GraphicsWidget):
         return (axisSpec, tickSpecs, textSpecs)
 
     def drawPicture(self, p, axisSpec, tickSpecs, textSpecs):
-        profiler = debug.Profiler()
-
         p.setRenderHint(p.RenderHint.Antialiasing, False)
         p.setRenderHint(p.RenderHint.TextAntialiasing, True)
 
@@ -1117,7 +1096,6 @@ class AxisItem(GraphicsWidget):
         for pen, p1, p2 in tickSpecs:
             p.setPen(pen)
             p.drawLine(p1, p2)
-        profiler('draw ticks')
 
         # Draw all text
         if self.style['tickFont'] is not None:
@@ -1125,8 +1103,6 @@ class AxisItem(GraphicsWidget):
         p.setPen(self.textPen())
         for rect, flags, text in textSpecs:
             p.drawText(rect, int(flags), text)
-
-        profiler('draw text')
 
     def show(self):
         GraphicsWidget.show(self)

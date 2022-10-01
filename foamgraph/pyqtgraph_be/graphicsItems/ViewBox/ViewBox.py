@@ -9,7 +9,6 @@ from ...Point import Point
 from ... import functions as fn
 from .. ItemGroup import ItemGroup
 from ..GraphicsWidget import GraphicsWidget
-from ... import debug as debug
 from ... import getConfigOption
 from ...Qt import isQObjectAlive
 
@@ -1364,7 +1363,6 @@ class ViewBox(GraphicsWidget):
         [[xmin, xmax], [ymin, ymax]]
         Values may be None if there are no specific bounds for an axis.
         """
-        profiler = debug.Profiler()
         if items is None:
             items = self.addedItems
 
@@ -1439,7 +1437,6 @@ class ViewBox(GraphicsWidget):
                     range[0] = [min(bounds.left(), range[0][0]), max(bounds.right(), range[0][1])]
                 else:
                     range[0] = [bounds.left(), bounds.right()]
-            profiler()
 
         ## Now expand any bounds that have a pixel margin
         ## This must be done _after_ we have a good estimate of the new range

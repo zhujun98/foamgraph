@@ -23,52 +23,13 @@ Does NOT:
 
 from __future__ import print_function
 import inspect, os, sys, gc, traceback, types
-from .debug import printExc
+
 try:
     from importlib import reload as orig_reload
 except ImportError:
     orig_reload = reload
 
-
 py3 = sys.version_info >= (3,)
-
-
-def reloadAll(prefix=None, debug=False):
-    """Automatically reload everything whose __file__ begins with prefix.
-    - Skips reload if the file has not been updated (if .pyc is newer than .py)
-    - if prefix is None, checks all loaded modules
-    """
-    failed = []
-    changed = []
-    for modName, mod in list(sys.modules.items()):  ## don't use iteritems; size may change during reload
-        if not inspect.ismodule(mod):
-            continue
-        if modName == '__main__':
-            continue
-        
-        ## Ignore if the file name does not start with prefix
-        if not hasattr(mod, '__file__') or mod.__file__ is None or os.path.splitext(mod.__file__)[1] not in ['.py', '.pyc']:
-            continue
-        if prefix is not None and mod.__file__[:len(prefix)] != prefix:
-            continue
-        
-        ## ignore if the .pyc is newer than the .py (or if there is no pyc or py)
-        py = os.path.splitext(mod.__file__)[0] + '.py'
-        pyc = py + 'c'
-        if py not in changed and os.path.isfile(pyc) and os.path.isfile(py) and os.stat(pyc).st_mtime >= os.stat(py).st_mtime:
-            #if debug:
-                #print "Ignoring module %s; unchanged" % str(mod)
-            continue
-        changed.append(py)  ## keep track of which modules have changed to insure that duplicate-import modules get reloaded.
-        
-        try:
-            reload(mod, debug=debug)
-        except:
-            printExc("Error while reloading module %s, skipping\n" % mod)
-            failed.append(mod.__name__)
-        
-    if len(failed) > 0:
-        raise Exception("Some modules failed to reload: %s" % ', '.join(failed))
 
 def reload(module, debug=False, lists=False, dicts=False):
     """Replacement for the builtin reload function:

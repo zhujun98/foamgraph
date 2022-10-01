@@ -15,7 +15,7 @@ from .pgcollections import OrderedDict
 from .python2_3 import asUnicode, basestring
 from .Qt import QtGui, QtCore, QT_LIB
 from . import getConfigOption, setConfigOptions
-from . import debug, reload
+from . import reload
 from .metaarray import MetaArray
 
 
@@ -691,8 +691,6 @@ def interpolateArray(data, x, default=0.0, order=1):
     if order not in (0, 1):
         raise ValueError("interpolateArray requires order=0 or 1 (got %s)" % order)
 
-    prof = debug.Profiler()
-
     nd = data.ndim
     md = x.shape[-1]
     if md > nd:
@@ -729,12 +727,10 @@ def interpolateArray(data, x, default=0.0, order=1):
             axisIndex[axisIndex < 0] = 0
             axisIndex[axisIndex >= data.shape[ax]] = 0
             fieldInds.append(axisIndex)
-        prof()
 
         # Get data values surrounding each requested point
         fieldData = data[tuple(fieldInds)]
-        prof()
-    
+
         ## Interpolate
         s = np.empty((md,) + fieldData.shape, dtype=float)
         dx = x - xmin
@@ -749,15 +745,12 @@ def interpolateArray(data, x, default=0.0, order=1):
         for i in range(md):
             result = result.sum(axis=0)
 
-    prof()
-
     if totalMask.ndim > 0:
         result[~totalMask] = default
     else:
         if totalMask is False:
             result[:] = default
 
-    prof()
     return result
 
 
@@ -981,7 +974,7 @@ def rescaleData(data, scale, offset, dtype=None, clip=None):
     except:
         if getConfigOption('useWeave'):
             if getConfigOption('weaveDebug'):
-                debug.printExc("Error; disabling weave.")
+                print("Error; disabling weave.")
             setConfigOptions(useWeave=False)
         
         #p = np.poly1d([scale, -offset*scale])
@@ -1062,7 +1055,6 @@ def makeARGB(data, lut=None, levels=None, scale=None, useRGBA=False):
                    is BGRA).
     ============== ==================================================================================
     """
-    profile = debug.Profiler()
     if data.ndim not in (2, 3):
         raise TypeError("data must be 2D or 3D")
     if data.ndim == 3 and data.shape[2] > 4:
@@ -1095,8 +1087,6 @@ def makeARGB(data, lut=None, levels=None, scale=None, useRGBA=False):
             raise Exception('levels must have shape (data.shape[-1], 2)')
     else:
         raise Exception("levels argument must be 1D or 2D (got shape=%s)." % repr(levels.shape))
-
-    profile()
 
     # Decide on maximum scaled value
     if scale is None:
@@ -1146,7 +1136,6 @@ def makeARGB(data, lut=None, levels=None, scale=None, useRGBA=False):
                 rng = 1 if rng == 0 else rng
                 data = rescaleData(data, scale/rng, minVal, dtype=dtype)
 
-    profile()
     # apply LUT if given
     if lut is not None:
         data = applyLookupTable(data, lut)
@@ -1154,12 +1143,8 @@ def makeARGB(data, lut=None, levels=None, scale=None, useRGBA=False):
         if data.dtype is not np.ubyte:
             data = np.clip(data, 0, 255).astype(np.ubyte)
 
-    profile()
-
     # this will be the final image array
     imgData = np.empty(data.shape[:2]+(4,), dtype=np.ubyte)
-
-    profile()
 
     # decide channel order
     if useRGBA:
@@ -1180,9 +1165,7 @@ def makeARGB(data, lut=None, levels=None, scale=None, useRGBA=False):
     else:
         for i in range(0, data.shape[2]):
             imgData[..., i] = data[..., order[i]] 
-        
-    profile()
-    
+
     # add opaque alpha channel if needed
     if data.ndim == 2 or data.shape[2] == 3:
         alpha = False
@@ -1197,7 +1180,6 @@ def makeARGB(data, lut=None, levels=None, scale=None, useRGBA=False):
     #     imgData[nanMask, 3] = 0
     # FIXME: EXtra-foam patch end
 
-    profile()
     return imgData, alpha
 
 
@@ -1228,8 +1210,7 @@ def makeQImage(imgData, alpha=None, copy=True, transpose=True):
     ============== ===================================================================    
     """
     ## create QImage from buffer
-    profile = debug.Profiler()
-    
+
     ## If we didn't explicitly specify alpha, check the array shape.
     if alpha is None:
         alpha = (imgData.shape[2] == 4)
@@ -1252,8 +1233,6 @@ def makeQImage(imgData, alpha=None, copy=True, transpose=True):
         
     if transpose:
         imgData = imgData.transpose((1, 0, 2))  ## QImage expects the row/column order to be opposite
-
-    profile()
 
     if not imgData.flags['C_CONTIGUOUS']:
         if copy is False:
@@ -1485,16 +1464,13 @@ def arrayToQPath(x, y, connect='all'):
 
     path = QtGui.QPainterPath()
 
-    #profiler = debug.Profiler()
     n = x.shape[0]
     # create empty array, pad with extra space on either end
     arr = np.empty(n+2, dtype=[('x', '>f8'), ('y', '>f8'), ('c', '>i4')])
     # write first two integers
-    #profiler('allocate empty')
     byteview = arr.view(dtype=np.ubyte)
     byteview[:12] = 0
     byteview.data[12:20] = struct.pack('>ii', n, 0)
-    #profiler('pack header')
     # Fill array with vertex values
     arr[1:-1]['x'] = x
     arr[1:-1]['y'] = y
@@ -1512,11 +1488,9 @@ def arrayToQPath(x, y, connect='all'):
     else:
         raise Exception('connect argument must be "all", "pairs", "finite", or array')
 
-    #profiler('fill array')
     # write last 0
     lastInd = 20*(n+1)
     byteview.data[lastInd:lastInd+4] = struct.pack('>i', 0)
-    #profiler('footer')
     # create datastream object and stream into path
 
     ## Avoiding this method because QByteArray(str) leaks memory in PySide
@@ -1527,11 +1501,9 @@ def arrayToQPath(x, y, connect='all'):
         buf = QtCore.QByteArray.fromRawData(path.strn)
     except TypeError:
         buf = QtCore.QByteArray(bytes(path.strn))
-    #profiler('create buffer')
     ds = QtCore.QDataStream(buf)
 
     ds >> path
-    #profiler('load')
 
     return path
 
@@ -2265,9 +2237,7 @@ def isosurface(data, level):
     totFaces = nFaces.sum()
     faces = np.empty((totFaces, 3), dtype=np.uint32)
     ptr = 0
-    #import debug
-    #p = debug.Profiler()
-    
+
     ## this helps speed up an indexing operation later on
     cs = np.array(cutEdges.strides)//cutEdges.itemsize
     cutEdges = cutEdges.flatten()
@@ -2278,29 +2248,21 @@ def isosurface(data, level):
 
     for i in range(1,6):
         ### expensive:
-        #profiler()
         cells = np.argwhere(nFaces == i)  ## all cells which require i faces  (argwhere is expensive)
-        #profiler()
         if cells.shape[0] == 0:
             continue
         cellInds = index[cells[:,0], cells[:,1], cells[:,2]]   ## index values of cells to process for this round
-        #profiler()
-        
+
         ### expensive:
         verts = faceShiftTables[i][cellInds]
-        #profiler()
         np.add(verts[...,:3], cells[:,np.newaxis,np.newaxis,:], out=verts[...,:3], casting='unsafe')  ## we now have indexes into cutEdges
         verts = verts.reshape((verts.shape[0]*i,)+verts.shape[2:])
-        #profiler()
-        
+
         ### expensive:
         verts = (verts * cs[np.newaxis, np.newaxis, :]).sum(axis=2)
         vertInds = cutEdges[verts]
-        #profiler()
         nv = vertInds.shape[0]
-        #profiler()
         faces[ptr:ptr+nv] = vertInds #.reshape((nv, 3))
-        #profiler()
         ptr += nv
         
     return vertexes, faces
