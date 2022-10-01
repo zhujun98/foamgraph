@@ -175,10 +175,6 @@ class Color(QtGui.QColor):
     def __init__(self, *args):
         QtGui.QColor.__init__(self, mkColor(*args))
         
-    def glColor(self):
-        """Return (r,g,b,a) normalized for use in opengl"""
-        return (self.red()/255., self.green()/255., self.blue()/255., self.alpha()/255.)
-        
     def __getitem__(self, ind):
         return (self.red, self.green, self.blue, self.alpha)[ind]()
         
@@ -376,16 +372,6 @@ def intColor(index, hues=9, values=1, maxValue=255, minValue=150, maxHue=360, mi
     c.setHsv(h, sat, v)
     c.setAlpha(alpha)
     return c
-
-
-def glColor(*args, **kargs):
-    """
-    Convert a color to OpenGL color format (r,g,b,a) floats 0.0-1.0
-    Accepts same arguments as :func:`mkColor <pyqtgraph.mkColor>`.
-    """
-    c = mkColor(*args, **kargs)
-    return (c.red()/255., c.green()/255., c.blue()/255., c.alpha()/255.)
-
     
 
 def makeArrowPath(headLen=20, headWidth=None, tipAngle=20, tailLen=20, tailWidth=3, baseAngle=0):
@@ -754,41 +740,6 @@ def interpolateArray(data, x, default=0.0, order=1):
     return result
 
 
-def subArray(data, offset, shape, stride):
-    """
-    Unpack a sub-array from *data* using the specified offset, shape, and stride.
-    
-    Note that *stride* is specified in array elements, not bytes.
-    For example, we have a 2x3 array packed in a 1D array as follows::
-    
-        data = [_, _, 00, 01, 02, _, 10, 11, 12, _]
-        
-    Then we can unpack the sub-array with this call::
-    
-        subArray(data, offset=2, shape=(2, 3), stride=(4, 1))
-        
-    ..which returns::
-    
-        [[00, 01, 02],
-         [10, 11, 12]]
-         
-    This function operates only on the first axis of *data*. So changing 
-    the input in the example above to have shape (10, 7) would cause the
-    output to have shape (2, 3, 7).
-    """
-    data = np.ascontiguousarray(data)[offset:]
-    shape = tuple(shape)
-    extraShape = data.shape[1:]
-
-    strides = list(data.strides[::-1])
-    itemsize = strides[-1]
-    for s in stride[1::-1]:
-        strides.append(itemsize * s)
-    strides = tuple(strides[::-1])
-    
-    return np.ndarray(buffer=data, shape=shape+extraShape, strides=strides, dtype=data.dtype)
-
-
 def transformToArray(tr):
     """
     Given a QTransform, return a 3x3 numpy array.
@@ -877,9 +828,7 @@ def transformCoordinates(tr, coords, transpose=False):
         mapped = mapped.transpose(tuple(range(1,mapped.ndim)) + (0,))
     return mapped
     
-    
 
-    
 def solve3DTransform(points1, points2):
     """
     Find a 3D transformation matrix that maps points1 onto points2.
@@ -1227,9 +1176,9 @@ def makeQImage(imgData, alpha=None, copy=True, transpose=True):
             raise Exception('Array has only 3 channels; cannot make QImage without copying.')
     
     if alpha:
-        imgFormat = QtGui.QImage.Format_ARGB32
+        imgFormat = QtGui.QImage.Format.Format_ARGB32
     else:
-        imgFormat = QtGui.QImage.Format_RGB32
+        imgFormat = QtGui.QImage.Format.Format_RGB32
         
     if transpose:
         imgData = imgData.transpose((1, 0, 2))  ## QImage expects the row/column order to be opposite
@@ -1293,53 +1242,9 @@ def imageToArray(img, copy=False, transpose=True):
         return arr.transpose((1,0,2))
     else:
         return arr
-    
-def colorToAlpha(data, color):
-    """
-    Given an RGBA image in *data*, convert *color* to be transparent. 
-    *data* must be an array (w, h, 3 or 4) of ubyte values and *color* must be 
-    an array (3) of ubyte values.
-    This is particularly useful for use with images that have a black or white background.
-    
-    Algorithm is taken from Gimp's color-to-alpha function in plug-ins/common/colortoalpha.c
-    Credit:
-        /*
-        * Color To Alpha plug-in v1.0 by Seth Burgess, sjburges@gimp.org 1999/05/14
-        *  with algorithm by clahey
-        */
-    
-    """
-    data = data.astype(float)
-    if data.shape[-1] == 3:  ## add alpha channel if needed
-        d2 = np.empty(data.shape[:2]+(4,), dtype=data.dtype)
-        d2[...,:3] = data
-        d2[...,3] = 255
-        data = d2
-    
-    color = color.astype(float)
-    alpha = np.zeros(data.shape[:2]+(3,), dtype=float)
-    output = data.copy()
-    
-    for i in [0,1,2]:
-        d = data[...,i]
-        c = color[i]
-        mask = d > c
-        alpha[...,i][mask] = (d[mask] - c) / (255. - c)
-        imask = d < c
-        alpha[...,i][imask] = (c - d[imask]) / c
-    
-    output[...,3] = alpha.max(axis=2) * 255.
-    
-    mask = output[...,3] >= 1.0  ## avoid zero division while processing alpha channel
-    correction = 255. / output[...,3][mask]  ## increase value to compensate for decreased alpha
-    for i in [0,1,2]:
-        output[...,i][mask] = ((output[...,i][mask]-color[i]) * correction) + color[i]
-        output[...,3][mask] *= data[...,3][mask] / 255.  ## combine computed and previous alpha values
-    
-    #raise Exception()
-    return np.clip(output, 0, 255).astype(np.ubyte)
 
-def gaussianFilter(data, sigma):
+
+def downsample(data, sigma):
     """
     Drop-in replacement for scipy.ndimage.gaussian_filter.
     
@@ -1421,178 +1326,6 @@ def downsample(data, n, axis=0, xvals='subsample'):
                 info[axis]['values'] = downsample(info[axis]['values'], n)
         return MetaArray(d2, info=info)
 
-
-def arrayToQPath(x, y, connect='all'):
-    """Convert an array of x,y coordinats to QPainterPath as efficiently as possible.
-    The *connect* argument may be 'all', indicating that each point should be
-    connected to the next; 'pairs', indicating that each pair of points
-    should be connected, or an array of int32 values (0 or 1) indicating
-    connections.
-    """
-
-    ## Create all vertices in path. The method used below creates a binary format so that all
-    ## vertices can be read in at once. This binary format may change in future versions of Qt,
-    ## so the original (slower) method is left here for emergencies:
-        #path.moveTo(x[0], y[0])
-        #if connect == 'all':
-            #for i in range(1, y.shape[0]):
-                #path.lineTo(x[i], y[i])
-        #elif connect == 'pairs':
-            #for i in range(1, y.shape[0]):
-                #if i%2 == 0:
-                    #path.lineTo(x[i], y[i])
-                #else:
-                    #path.moveTo(x[i], y[i])
-        #elif isinstance(connect, np.ndarray):
-            #for i in range(1, y.shape[0]):
-                #if connect[i] == 1:
-                    #path.lineTo(x[i], y[i])
-                #else:
-                    #path.moveTo(x[i], y[i])
-        #else:
-            #raise Exception('connect argument must be "all", "pairs", or array')
-
-    ## Speed this up using >> operator
-    ## Format is:
-    ##    numVerts(i4)   0(i4)
-    ##    x(f8)   y(f8)   0(i4)    <-- 0 means this vertex does not connect
-    ##    x(f8)   y(f8)   1(i4)    <-- 1 means this vertex connects to the previous vertex
-    ##    ...
-    ##    0(i4)
-    ##
-    ## All values are big endian--pack using struct.pack('>d') or struct.pack('>i')
-
-    path = QtGui.QPainterPath()
-
-    n = x.shape[0]
-    # create empty array, pad with extra space on either end
-    arr = np.empty(n+2, dtype=[('x', '>f8'), ('y', '>f8'), ('c', '>i4')])
-    # write first two integers
-    byteview = arr.view(dtype=np.ubyte)
-    byteview[:12] = 0
-    byteview.data[12:20] = struct.pack('>ii', n, 0)
-    # Fill array with vertex values
-    arr[1:-1]['x'] = x
-    arr[1:-1]['y'] = y
-
-    # decide which points are connected by lines
-    if eq(connect, 'all'):
-        arr[1:-1]['c'] = 1
-    elif eq(connect, 'pairs'):
-        arr[1:-1]['c'][::2] = 1
-        arr[1:-1]['c'][1::2] = 0
-    elif eq(connect, 'finite'):
-        arr[1:-1]['c'] = np.isfinite(x) & np.isfinite(y)
-    elif isinstance(connect, np.ndarray):
-        arr[1:-1]['c'] = connect
-    else:
-        raise Exception('connect argument must be "all", "pairs", "finite", or array')
-
-    # write last 0
-    lastInd = 20*(n+1)
-    byteview.data[lastInd:lastInd+4] = struct.pack('>i', 0)
-    # create datastream object and stream into path
-
-    ## Avoiding this method because QByteArray(str) leaks memory in PySide
-    #buf = QtCore.QByteArray(arr.data[12:lastInd+4])  # I think one unnecessary copy happens here
-
-    path.strn = byteview.data[12:lastInd+4] # make sure data doesn't run away
-    try:
-        buf = QtCore.QByteArray.fromRawData(path.strn)
-    except TypeError:
-        buf = QtCore.QByteArray(bytes(path.strn))
-    ds = QtCore.QDataStream(buf)
-
-    ds >> path
-
-    return path
-
-#def isosurface(data, level):
-    #"""
-    #Generate isosurface from volumetric data using marching tetrahedra algorithm.
-    #See Paul Bourke, "Polygonising a Scalar Field Using Tetrahedrons"  (http://local.wasp.uwa.edu.au/~pbourke/geometry/polygonise/)
-    
-    #*data*   3D numpy array of scalar values
-    #*level*  The level at which to generate an isosurface
-    #"""
-    
-    #facets = []
-    
-    ### mark everything below the isosurface level
-    #mask = data < level
-    
-    #### make eight sub-fields 
-    #fields = np.empty((2,2,2), dtype=object)
-    #slices = [slice(0,-1), slice(1,None)]
-    #for i in [0,1]:
-        #for j in [0,1]:
-            #for k in [0,1]:
-                #fields[i,j,k] = mask[slices[i], slices[j], slices[k]]
-    
-    
-    
-    ### split each cell into 6 tetrahedra
-    ### these all have the same 'orienation'; points 1,2,3 circle 
-    ### clockwise around point 0
-    #tetrahedra = [
-        #[(0,1,0), (1,1,1), (0,1,1), (1,0,1)],
-        #[(0,1,0), (0,1,1), (0,0,1), (1,0,1)],
-        #[(0,1,0), (0,0,1), (0,0,0), (1,0,1)],
-        #[(0,1,0), (0,0,0), (1,0,0), (1,0,1)],
-        #[(0,1,0), (1,0,0), (1,1,0), (1,0,1)],
-        #[(0,1,0), (1,1,0), (1,1,1), (1,0,1)]
-    #]
-    
-    ### each tetrahedron will be assigned an index
-    ### which determines how to generate its facets.
-    ### this structure is: 
-    ###    facets[index][facet1, facet2, ...]
-    ### where each facet is triangular and its points are each 
-    ### interpolated between two points on the tetrahedron
-    ###    facet = [(p1a, p1b), (p2a, p2b), (p3a, p3b)]
-    ### facet points always circle clockwise if you are looking 
-    ### at them from below the isosurface.
-    #indexFacets = [
-        #[],  ## all above
-        #[[(0,1), (0,2), (0,3)]],  # 0 below
-        #[[(1,0), (1,3), (1,2)]],   # 1 below
-        #[[(0,2), (1,3), (1,2)], [(0,2), (0,3), (1,3)]],   # 0,1 below
-        #[[(2,0), (2,1), (2,3)]],   # 2 below
-        #[[(0,3), (1,2), (2,3)], [(0,3), (0,1), (1,2)]],   # 0,2 below
-        #[[(1,0), (2,3), (2,0)], [(1,0), (1,3), (2,3)]],   # 1,2 below
-        #[[(3,0), (3,1), (3,2)]],   # 3 above
-        #[[(3,0), (3,2), (3,1)]],   # 3 below
-        #[[(1,0), (2,0), (2,3)], [(1,0), (2,3), (1,3)]],   # 0,3 below
-        #[[(0,3), (2,3), (1,2)], [(0,3), (1,2), (0,1)]],   # 1,3 below
-        #[[(2,0), (2,3), (2,1)]], # 0,1,3 below
-        #[[(0,2), (1,2), (1,3)], [(0,2), (1,3), (0,3)]],   # 2,3 below
-        #[[(1,0), (1,2), (1,3)]], # 0,2,3 below
-        #[[(0,1), (0,3), (0,2)]], # 1,2,3 below
-        #[]  ## all below
-    #]
-    
-    #for tet in tetrahedra:
-        
-        ### get the 4 fields for this tetrahedron
-        #tetFields = [fields[c] for c in tet]
-        
-        ### generate an index for each grid cell
-        #index = tetFields[0] + tetFields[1]*2 + tetFields[2]*4 + tetFields[3]*8
-        
-        ### add facets
-        #for i in xrange(index.shape[0]):                 # data x-axis
-            #for j in xrange(index.shape[1]):             # data y-axis
-                #for k in xrange(index.shape[2]):         # data z-axis
-                    #for f in indexFacets[index[i,j,k]]:  # faces to generate for this tet
-                        #pts = []
-                        #for l in [0,1,2]:      # points in this face
-                            #p1 = tet[f[l][0]]  # tet corner 1
-                            #p2 = tet[f[l][1]]  # tet corner 2
-                            #pts.append([(p1[x]+p2[x])*0.5+[i,j,k][x]+0.5 for x in [0,1,2]]) ## interpolate between tet corners
-                        #facets.append(pts)
-
-    #return facets
-    
 
 def isocurve(data, level, connected=False, extendToEdge=False, path=False):
     """
@@ -1774,47 +1507,7 @@ def isocurve(data, level, connected=False, extendToEdge=False, path=False):
             path.lineTo(*p)
     
     return path
-    
-    
-def traceImage(image, values, smooth=0.5):
-    """
-    Convert an image to a set of QPainterPath curves.
-    One curve will be generated for each item in *values*; each curve outlines the area
-    of the image that is closer to its value than to any others.
-    
-    If image is RGB or RGBA, then the shape of values should be (nvals, 3/4)
-    The parameter *smooth* is expressed in pixels.
-    """
-    try:
-        import scipy.ndimage as ndi
-    except ImportError:
-        raise Exception("traceImage() requires the package scipy.ndimage, but it is not importable.")
-    
-    if values.ndim == 2:
-        values = values.T
-    values = values[np.newaxis, np.newaxis, ...].astype(float)
-    image = image[..., np.newaxis].astype(float)
-    diff = np.abs(image-values)
-    if values.ndim == 4:
-        diff = diff.sum(axis=2)
-        
-    labels = np.argmin(diff, axis=2)
-    
-    paths = []
-    for i in range(diff.shape[-1]):    
-        d = (labels==i).astype(float)
-        d = gaussianFilter(d, (smooth, smooth))
-        lines = isocurve(d, 0.5, connected=True, extendToEdge=True)
-        path = QtGui.QPainterPath()
-        for line in lines:
-            path.moveTo(*line[0])
-            for p in line[1:]:
-                path.lineTo(*p)
-        
-        paths.append(path)
-    return paths
-    
-    
+
     
 IsosurfaceDataCache = None
 def isosurface(data, level):
@@ -2293,173 +1986,6 @@ def invertQTransform(tr):
         return inv
     except ZeroDivisionError:
         return _pinv_fallback(tr)
-    
-
-def pseudoScatter(data, spacing=None, shuffle=True, bidir=False, method='exact'):
-    """Return an array of position values needed to make beeswarm or column scatter plots.
-
-    Used for examining the distribution of values in an array.
-    
-    Given an array of x-values, construct an array of y-values such that an x,y scatter-plot
-    will not have overlapping points (it will look similar to a histogram).
-    """
-    if method == 'exact':
-        return _pseudoScatterExact(data, spacing=spacing, shuffle=shuffle, bidir=bidir)
-    elif method == 'histogram':
-        return _pseudoScatterHistogram(data, spacing=spacing, shuffle=shuffle, bidir=bidir)
-
-
-def _pseudoScatterHistogram(data, spacing=None, shuffle=True, bidir=False):
-    """Works by binning points into a histogram and spreading them out to fill the bin.
-
-    Faster method, but can produce blocky results.
-    """
-    inds = np.arange(len(data))
-    if shuffle:
-        np.random.shuffle(inds)
-
-    data = data[inds]
-
-    if spacing is None:
-        spacing = 2.*np.std(data)/len(data)**0.5
-
-    yvals = np.empty(len(data))
-
-    dmin = data.min()
-    dmax = data.max()
-    nbins = int((dmax-dmin) / spacing) + 1
-    bins = np.linspace(dmin, dmax, nbins)
-    dx = bins[1] - bins[0]
-    dbins = ((data - bins[0]) / dx).astype(int)
-    binCounts = {}
-
-    for i,j in enumerate(dbins):
-        c = binCounts.get(j, -1) + 1
-        binCounts[j] = c
-        yvals[i] = c
-
-    if bidir is True:
-        for i in range(nbins):
-            yvals[dbins==i] -= binCounts.get(i, 0) * 0.5
-
-    return yvals[np.argsort(inds)]  ## un-shuffle values before returning
-
-
-def _pseudoScatterExact(data, spacing=None, shuffle=True, bidir=False):
-    """Works by stacking points up one at a time, searching for the lowest position available at each point.
-
-    This method produces nice, smooth results but can be prohibitively slow for large datasets.
-    """
-    inds = np.arange(len(data))
-    if shuffle:
-        np.random.shuffle(inds)
-        
-    data = data[inds]
-    
-    if spacing is None:
-        spacing = 2.*np.std(data)/len(data)**0.5
-    s2 = spacing**2
-    
-    yvals = np.empty(len(data))
-    if len(data) == 0:
-        return yvals
-    yvals[0] = 0
-    for i in range(1,len(data)):
-        x = data[i]     # current x value to be placed
-        x0 = data[:i]   # all x values already placed
-        y0 = yvals[:i]  # all y values already placed
-        y = 0
-        
-        dx = (x0-x)**2  # x-distance to each previous point
-        xmask = dx < s2  # exclude anything too far away
-        
-        if xmask.sum() > 0:
-            if bidir:
-                dirs = [-1, 1]
-            else:
-                dirs = [1]
-            yopts = []
-            for direction in dirs:
-                y = 0
-                dx2 = dx[xmask]
-                dy = (s2 - dx2)**0.5   
-                limits = np.empty((2,len(dy)))  # ranges of y-values to exclude
-                limits[0] = y0[xmask] - dy
-                limits[1] = y0[xmask] + dy    
-                while True:
-                    # ignore anything below this y-value
-                    if direction > 0:
-                        mask = limits[1] >= y
-                    else:
-                        mask = limits[0] <= y
-                        
-                    limits2 = limits[:,mask]
-                    
-                    # are we inside an excluded region?
-                    mask = (limits2[0] < y) & (limits2[1] > y)
-                    if mask.sum() == 0:
-                        break
-                        
-                    if direction > 0:
-                        y = limits2[:,mask].max()
-                    else:
-                        y = limits2[:,mask].min()
-                yopts.append(y)
-            if bidir:
-                y = yopts[0] if -yopts[0] < yopts[1] else yopts[1]
-            else:
-                y = yopts[0]
-        yvals[i] = y
-    
-    return yvals[np.argsort(inds)]  ## un-shuffle values before returning
-
-
-
-def toposort(deps, nodes=None, seen=None, stack=None, depth=0):
-    """Topological sort. Arguments are:
-      deps    dictionary describing dependencies where a:[b,c] means "a depends on b and c"
-      nodes   optional, specifies list of starting nodes (these should be the nodes 
-              which are not depended on by any other nodes). Other candidate starting
-              nodes will be ignored.
-              
-    Example::
-
-        # Sort the following graph:
-        # 
-        #   B ──┬─────> C <── D
-        #       │       │       
-        #   E <─┴─> A <─┘
-        #     
-        deps = {'a': ['b', 'c'], 'c': ['b', 'd'], 'e': ['b']}
-        toposort(deps)
-         => ['b', 'd', 'c', 'a', 'e']
-    """
-    # fill in empty dep lists
-    deps = deps.copy()
-    for k,v in list(deps.items()):
-        for k in v:
-            if k not in deps:
-                deps[k] = []
-    
-    if nodes is None:
-        ## run through deps to find nodes that are not depended upon
-        rem = set()
-        for dep in deps.values():
-            rem |= set(dep)
-        nodes = set(deps.keys()) - rem
-    if seen is None:
-        seen = set()
-        stack = []
-    sorted = []
-    for n in nodes:
-        if n in stack:
-            raise Exception("Cyclic dependency detected", stack + [n])
-        if n in seen:
-            continue
-        seen.add(n)
-        sorted.extend( toposort(deps, deps[n], seen, stack+[n], depth=depth+1))
-        sorted.append(n)
-    return sorted
 
 
 def disconnect(signal, slot):

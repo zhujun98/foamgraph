@@ -1228,7 +1228,7 @@ class ROI(GraphicsObject):
         if width == 0 or height == 0:
             return np.empty((width, height), dtype=float)
         
-        im = QtGui.QImage(width, height, QtGui.QImage.Format_ARGB32)
+        im = QtGui.QImage(width, height, QtGui.QImage.Format.Format_ARGB32)
         im.fill(0x0)
         p = QtGui.QPainter(im)
         p.setPen(fn.mkPen(None))
