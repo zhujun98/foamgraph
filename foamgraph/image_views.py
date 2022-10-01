@@ -19,7 +19,7 @@ from . import pyqtgraph_be as pg
 
 from .aesthetics import colorMapFactory, FColor
 from .config import config
-from .graphics_widgets import HistogramLUTItem
+from .graphics_widgets import ImageHistogramEditor
 from .plot_widgets import PlotWidgetF
 from .image_items import ImageItem, RectROI
 
@@ -31,7 +31,7 @@ class HistogramLUTWidget(pg.GraphicsView):
         if not isinstance(image_item, ImageItem):
             raise TypeError
 
-        self._item = HistogramLUTItem(image_item)
+        self._item = ImageHistogramEditor(image_item)
         self.setCentralWidget(self._item)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.setMinimumWidth(95)
@@ -237,7 +237,7 @@ class ImageViewF(QWidget):
     def setLevels(self, *args, **kwargs):
         """Set the min/max (bright and dark) levels.
 
-        See HistogramLUTItem.setLevels.
+        See ImageHistogramEditor.setLevels.
         """
         self._hist_widget.setLevels(*args, **kwargs)
 
