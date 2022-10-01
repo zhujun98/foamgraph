@@ -13,15 +13,12 @@ of how to build an ROI at the bottom of the file.
 """
 
 from ..Qt import QtCore, QtGui
-import numpy as np
-#from numpy.linalg import norm
 from ..Point import *
 from ..SRTTransform import SRTTransform
 from math import cos, sin
 from .. import functions as fn
 from .GraphicsObject import GraphicsObject
 from .UIGraphicsItem import UIGraphicsItem
-from .. import getConfigOption
 
 __all__ = [
     'ROI', 

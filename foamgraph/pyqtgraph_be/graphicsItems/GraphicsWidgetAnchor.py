@@ -1,4 +1,3 @@
-from ..Qt import QtGui, QtCore
 from ..Point import Point
 
 
@@ -47,7 +46,6 @@ class GraphicsWidgetAnchor(object):
         self.__parentAnchor = parentPos
         self.__offset = offset
         self.__geometryChanged()
-    
 
     def autoAnchor(self, pos, relative=True):
         """
@@ -106,5 +104,3 @@ class GraphicsWidgetAnchor(object):
         off = Point(self.__offset)
         pos = p + (o-a) + off
         self.setPos(pos)
-        
-        

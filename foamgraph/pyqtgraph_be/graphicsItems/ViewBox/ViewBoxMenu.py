@@ -1,36 +1,36 @@
-# -*- coding: utf-8 -*-
-from ...Qt import QtCore, QtGui, QT_LIB
+import weakref
+
+from ....backend.QtWidgets import QMenu, QWidget, QWidgetAction
+from ....backend.QtGui import QAction, QActionGroup, QDoubleValidator
 from ...WidgetGroup import WidgetGroup
 
-from .axisCtrlTemplate_pyqt5 import Ui_Form as AxisCtrlTemplate
+from .axisCtrlTemplate import Ui_Form as AxisCtrlTemplate
 
 
-import weakref 
-
-class ViewBoxMenu(QtGui.QMenu):
+class ViewBoxMenu(QMenu):
     def __init__(self, view):
-        QtGui.QMenu.__init__(self)
+        super().__init__()
         
-        self.view = weakref.ref(view)  ## keep weakref to view to avoid circular reference (don't know why, but this prevents the ViewBox from being collected)
-        self.valid = False  ## tells us whether the ui needs to be updated
-        self.viewMap = weakref.WeakValueDictionary()  ## weakrefs to all views listed in the link combos
+        self.view = weakref.ref(view)  # keep weakref to view to avoid circular reference (don't know why, but this prevents the ViewBox from being collected)
+        self.valid = False  # tells us whether the ui needs to be updated
+        self.viewMap = weakref.WeakValueDictionary()  # weakrefs to all views listed in the link combos
 
         self.setTitle("ViewBox options")
-        self.viewAll = QtGui.QAction("View All", self)
+        self.viewAll = QAction("View All", self)
         self.viewAll.triggered.connect(self.autoRange)
         self.addAction(self.viewAll)
         
         self.axes = []
         self.ctrl = []
         self.widgetGroups = []
-        self.dv = QtGui.QDoubleValidator(self)
+        self.dv = QDoubleValidator(self)
         for axis in 'XY':
-            m = QtGui.QMenu()
+            m = QMenu()
             m.setTitle("%s Axis" % axis)
-            w = QtGui.QWidget()
+            w = QWidget()
             ui = AxisCtrlTemplate()
             ui.setupUi(w)
-            a = QtGui.QWidgetAction(self)
+            a = QWidgetAction(self)
             a.setDefaultWidget(w)
             m.addAction(a)
             self.addMenu(m)
@@ -56,17 +56,13 @@ class ViewBoxMenu(QtGui.QMenu):
 
         self.ctrl[0].invertCheck.toggled.connect(self.xInvertToggled)
         self.ctrl[1].invertCheck.toggled.connect(self.yInvertToggled)
-        ## exporting is handled by GraphicsScene now
-        #self.export = QtGui.QMenu("Export")
-        #self.setExportMethods(view.exportMethods)
-        #self.addMenu(self.export)
         
-        self.leftMenu = QtGui.QMenu("Mouse Mode")
-        group = QtGui.QActionGroup(self)
+        self.leftMenu = QMenu("Mouse Mode")
+        group = QActionGroup(self)
         
         # FIXME: EXtra-foam patch start
-        pan = QtGui.QAction("Pan", self.leftMenu)
-        zoom = QtGui.QAction("Zoom", self.leftMenu)
+        pan = QAction("Pan", self.leftMenu)
+        zoom = QAction("Zoom", self.leftMenu)
         self.leftMenu.addAction(pan)
         self.leftMenu.addAction(zoom)
         pan.triggered.connect(self.setPanMode)
@@ -97,7 +93,7 @@ class ViewBoxMenu(QtGui.QMenu):
             self.updateState()
         
     def updateState(self):
-        ## Something about the viewbox has changed; update the menu GUI
+        # Something about the viewbox has changed; update the menu GUI
         
         state = self.view().getState(copy=False)
         if state['mouseMode'] == ViewBox.PanMode:
@@ -117,11 +113,11 @@ class ViewBoxMenu(QtGui.QMenu):
                 self.ctrl[i].manualRadio.setChecked(True)
             self.ctrl[i].mouseCheck.setChecked(state['mouseEnabled'][i])
             
-            ## Update combo to show currently linked view
+            # Update combo to show currently linked view
             c = self.ctrl[i].linkCombo
             c.blockSignals(True)
             try:
-                view = state['linkedViews'][i]  ## will always be string or None
+                view = state['linkedViews'][i]  # will always be string or None
                 if view is None:
                     view = ''
                     
@@ -143,10 +139,10 @@ class ViewBoxMenu(QtGui.QMenu):
     def popup(self, *args):
         if not self.valid:
             self.updateState()
-        QtGui.QMenu.popup(self, *args)
+        QMenu.popup(self, *args)
         
     def autoRange(self):
-        self.view().autoRange()  ## don't let signal call this directly--it'll add an unwanted argument
+        self.view().autoRange()  # don't let signal call this directly--it'll add an unwanted argument
 
     def xMouseToggled(self, b):
         self.view().setMouseEnabled(x=b)
@@ -174,7 +170,6 @@ class ViewBoxMenu(QtGui.QMenu):
     
     def xVisibleOnlyToggled(self, b):
         self.view().setAutoVisible(x=b)
-
 
     def yMouseToggled(self, b):
         self.view().setMouseEnabled(y=b)
@@ -225,10 +220,10 @@ class ViewBoxMenu(QtGui.QMenu):
         names = ['']
         self.viewMap.clear()
         
-        ## generate list of views to show in the link combo
+        # generate list of views to show in the link combo
         for v in views:
             name = v.name
-            if name is None:  ## unnamed views do not show up in the view list (although they are linkable)
+            if name is None:  # unnamed views do not show up in the view list (although they are linkable)
                 continue
             names.append(name)
             self.viewMap[name] = v
@@ -267,5 +262,3 @@ class ViewBoxMenu(QtGui.QMenu):
 
 
 from .ViewBox import ViewBox
-        
-    

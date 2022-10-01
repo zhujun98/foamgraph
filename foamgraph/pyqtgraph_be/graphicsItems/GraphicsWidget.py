@@ -1,12 +1,14 @@
-from ..Qt import QtGui, QtCore
+from ...backend.QtGui import QPainterPath
+from ...backend.QtWidgets import QGraphicsWidget
+
 from .GraphicsItem import GraphicsItem
 
 __all__ = ['GraphicsWidget']
 
 
-class GraphicsWidget(GraphicsItem, QtGui.QGraphicsWidget):
+class GraphicsWidget(GraphicsItem, QGraphicsWidget):
     
-    _qtBaseClass = QtGui.QGraphicsWidget
+    _qtBaseClass = QGraphicsWidget
 
     def __init__(self, *args, **kargs):
         """
@@ -15,7 +17,7 @@ class GraphicsWidget(GraphicsItem, QtGui.QGraphicsWidget):
         Extends QGraphicsWidget with several helpful methods and workarounds for PyQt bugs. 
         Most of the extra functionality is inherited from :class:`GraphicsItem <pyqtgraph.GraphicsItem>`.
         """
-        QtGui.QGraphicsWidget.__init__(self, *args, **kargs)
+        QGraphicsWidget.__init__(self, *args, **kargs)
         GraphicsItem.__init__(self)
 
     def setFixedHeight(self, h):
@@ -35,7 +37,7 @@ class GraphicsWidget(GraphicsItem, QtGui.QGraphicsWidget):
     def boundingRect(self):
         return self.mapRectFromParent(self.geometry()).normalized()
         
-    def shape(self):  ## No idea why this is necessary, but rotated items do not receive clicks otherwise.
-        p = QtGui.QPainterPath()
+    def shape(self):  # No idea why this is necessary, but rotated items do not receive clicks otherwise.
+        p = QPainterPath()
         p.addRect(self.boundingRect())
         return p

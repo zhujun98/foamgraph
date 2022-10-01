@@ -1,23 +1,24 @@
-from ..Qt import QtGui, QtCore
+from ...backend.QtGui import QPainter, QTransform
+from ...backend.QtWidgets import QGraphicsPathItem
+
 from .. import functions as fn
-import numpy as np
+
 __all__ = ['ArrowItem']
 
-class ArrowItem(QtGui.QGraphicsPathItem):
+
+class ArrowItem(QGraphicsPathItem):
     """
     For displaying scale-invariant arrows.
     For arrows pointing to a location on a curve, see CurveArrow
     
     """
-    
-    
     def __init__(self, **opts):
         """
         Arrows can be initialized with any keyword arguments accepted by 
         the setStyle() method.
         """
         self.opts = {}
-        QtGui.QGraphicsPathItem.__init__(self, opts.get('parent', None))
+        QGraphicsPathItem.__init__(self, opts.get('parent', None))
 
         if 'size' in opts:
             opts['headLen'] = opts['size']
@@ -72,7 +73,7 @@ class ArrowItem(QtGui.QGraphicsPathItem):
         self.opts.update(opts)
         
         opt = dict([(k,self.opts[k]) for k in ['headLen', 'headWidth', 'tipAngle', 'baseAngle', 'tailLen', 'tailWidth']])
-        tr = QtGui.QTransform()
+        tr = QTransform()
         tr.rotate(self.opts['angle'])
         self.path = tr.map(fn.makeArrowPath(**opt))
 
@@ -86,22 +87,15 @@ class ArrowItem(QtGui.QGraphicsPathItem):
         else:
             self.setFlags(self.flags() & ~self.ItemIgnoresTransformations)
 
-
     def paint(self, p, *args):
-        p.setRenderHint(QtGui.QPainter.Antialiasing)
-        QtGui.QGraphicsPathItem.paint(self, p, *args)
-        
-        #p.setPen(fn.mkPen('r'))
-        #p.setBrush(fn.mkBrush(None))
-        #p.drawRect(self.boundingRect())
+        p.setRenderHint(QPainter.Antialiasing)
+        QGraphicsPathItem.paint(self, p, *args)
 
     def shape(self):
-        #if not self.opts['pxMode']:
-            #return QtGui.QGraphicsPathItem.shape(self)
         return self.path
     
-    ## dataBounds and pixelPadding methods are provided to ensure ViewBox can
-    ## properly auto-range 
+    # dataBounds and pixelPadding methods are provided to ensure ViewBox can
+    # properly auto-range
     def dataBounds(self, ax, frac, orthoRange=None):
         pw = 0
         pen = self.pen()
