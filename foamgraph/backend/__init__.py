@@ -3,14 +3,14 @@ import sys
 QT_LIB = None
 
 try:
-    from PyQt6 import QtCore, QtGui, QtWidgets
+    from PyQt6 import QtCore, QtGui, QtWidgets, QtTest
     QT_LIB = "PyQt6"
 except ModuleNotFoundError:
     ...
 
 if QT_LIB is None:
     try:
-        from PyQt5 import QtCore, QtGui, QtWidgets
+        from PyQt5 import QtCore, QtGui, QtWidgets, QtTest
         QT_LIB = "PyQt5"
     except ModuleNotFoundError:
         ...
@@ -23,3 +23,4 @@ if QT_LIB is None:
 sys.modules["foamgraph.backend.QtCore"] = QtCore
 sys.modules["foamgraph.backend.QtGui"] = QtGui
 sys.modules["foamgraph.backend.QtWidgets"] = QtWidgets
+sys.modules["foamgraph.backend.QtTest"] = QtTest

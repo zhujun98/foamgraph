@@ -1,12 +1,5 @@
 import time
 
-from foamgraph import backend
-
-if backend.QT_LIB == "PyQt6":
-    from PyQt6 import QtTest
-elif backend.QT_LIB == "PyQt5":
-    from PyQt5 import QtTest
-
 from foamgraph import mkQApp
 
 
