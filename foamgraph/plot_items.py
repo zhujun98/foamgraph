@@ -7,15 +7,14 @@ Author: Jun Zhu <jun.zhu@xfel.eu>
 Copyright (C) European X-Ray Free-Electron Laser Facility GmbH.
 All rights reserved.
 """
-import struct
 from collections import OrderedDict
 
 import numpy as np
 
 from .backend.QtGui import (
-    QImage, QPainter, QPainterPath, QPicture, QPixmap, QTransform
+    QImage, QPainter, QPainterPath, QPicture, QPixmap, QPolygonF, QTransform
 )
-from .backend.QtCore import QByteArray, QDataStream, QRectF
+from .backend.QtCore import QByteArray, QDataStream, QPointF, QRectF, Qt
 
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import functions as fn
@@ -69,26 +68,25 @@ class CurvePlotItem(pg.PlotItem):
     @staticmethod
     def array2Path(x, y):
         """Convert array to QPainterPath."""
-        path = QPainterPath()
-        if len(x) >= 2:
-            # see: https://github.com/qt/qtbase/blob/dev/src/gui/painting/qpainterpath.cpp
-            n = len(x)
-            buf = np.empty(n+2, dtype=[('c', '>i4'), ('x', '>f8'), ('y', '>f8')])
-            byteview = buf.view(dtype=np.ubyte)
-            # header (size)
-            byteview[:16] = 0
-            byteview.data[16:20] = struct.pack('>i', n)
-            # data
-            data = buf[1:-1]
-            data['c'], data['x'], data['y'] = 1, x, y
-            data['c'][0] = 0
-            # tail (cStart, fillRule)
-            byteview.data[-20:-16] = struct.pack('>i', 0)
-            byteview.data[-16:-12] = struct.pack('>i', 0)
+        n = x.shape[0]
+        if n < 2:
+            return QPainterPath()
 
-            # take the pointer without copy
-            arr = QByteArray.fromRawData(byteview.data[16:-12])
-            QDataStream(arr) >> path
+        polyline = QPolygonF()
+        polyline.fill(QPointF(), n)
+
+        buffer = polyline.data()
+        if buffer is None:
+            buffer = Qt.sip.voidptr(0)
+        buffer.setsize(2 * n * np.dtype(np.double).itemsize)
+
+        arr = np.frombuffer(buffer, np.double).reshape((-1, 2))
+
+        arr[:, 0] = x
+        arr[:, 1] = y
+
+        path = QPainterPath()
+        path.addPolygon(polyline)
         return path
 
     def drawSample(self, p):
