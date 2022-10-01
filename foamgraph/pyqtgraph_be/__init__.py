@@ -119,7 +119,6 @@ from .graphicsItems.ViewBox import *
 from .graphicsItems.ArrowItem import *
 from .graphicsItems.AxisItem import *
 from .graphicsItems.LabelItem import *
-from .graphicsItems.CurvePoint import *
 from .graphicsItems.GraphicsWidgetAnchor import *
 from .graphicsItems.GradientEditorItem import *
 from .graphicsItems.LinearRegionItem import *
