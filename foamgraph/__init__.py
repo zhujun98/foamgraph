@@ -1,9 +1,9 @@
 """
-Distributed under the terms of the MIT License.
+Distributed under the terms of the BSD 3-Clause License.
 
 The full license is in the file LICENSE, distributed with this software.
 
-Copyright (C) Jun Zhu. All rights reserved.
+Author: Jun Zhu
 """
 from .backend import QtCore, QtGui, QtWidgets
 from .backend.QtWidgets import QApplication
