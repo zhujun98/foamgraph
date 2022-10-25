@@ -103,7 +103,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 
     @pyqtSlot(int)
     def onToggleRoiActivation(self, state):
-        if state == Qt.CheckState.Checked:
+        if state == qt_enum_to_int(Qt.CheckState.Checked):
             self._roi.show()
             self.enableAllEdit()
         else:
@@ -198,8 +198,9 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 
     @pyqtSlot(int)
     def onLock(self, state):
-        self._roi.setLocked(state == Qt.Checked)
-        self.setEditable(not state == Qt.Checked)
+        locked = state == qt_enum_to_int(Qt.CheckState.Checked)
+        self._roi.setLocked(locked)
+        self.setEditable(not locked)
 
     def disableAllEdit(self):
         self.setEditable(False)

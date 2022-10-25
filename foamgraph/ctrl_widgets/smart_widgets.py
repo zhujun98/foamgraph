@@ -55,7 +55,7 @@ class SmartLineEdit(QLineEdit):
     def keyPressEvent(self, event):
         """Press ESC to return to the previous valid value."""
         key = event.key()
-        if key == Qt.Key_Escape:
+        if key == Qt.Key.Key_Escape:
             self.setTextWithoutSignal(self._cached)
         else:
             return super().keyPressEvent(event)
