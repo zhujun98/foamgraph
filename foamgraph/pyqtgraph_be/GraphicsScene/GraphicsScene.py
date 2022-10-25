@@ -247,22 +247,16 @@ class GraphicsScene(QGraphicsScene):
                     prevItems.remove(item)
                     event.enter = False
                     
-                try:
-                    item.hoverEvent(event)
-                except:
-                    print("Error sending hover event:")
+                item.hoverEvent(event)
         
         event.enter = False
         event.exit = True
         for item in prevItems:
             event.currentItem = item
-            try:
-                if item.scene() is self:
-                    item.hoverEvent(event)
-            except:
-                print("Error sending hover exit event:")
-            finally:
-                del self.hoverItems[item]
+
+            if item.scene() is self:
+                item.hoverEvent(event)
+            del self.hoverItems[item]
         
         # Update last hover event unless:
         #   - mouse is dragging (move+buttons); in this case we want the dragged
@@ -307,11 +301,8 @@ class GraphicsScene(QGraphicsScene):
                             break
         elif self.dragItem is not None:
             event.currentItem = self.dragItem
-            try:
-                self.dragItem.mouseDragEvent(event)
-            except:
-                print("Error sending hover exit event:")
-            
+            self.dragItem.mouseDragEvent(event)
+
         self.lastDrag = event
         
         return event.isAccepted()
@@ -330,20 +321,14 @@ class GraphicsScene(QGraphicsScene):
                 acceptedItem = None
             if acceptedItem is not None:
                 ev.currentItem = acceptedItem
-                try:
-                    acceptedItem.mouseClickEvent(ev)
-                except:
-                    print("Error sending click event:")
+                acceptedItem.mouseClickEvent(ev)
             else:
                 for item in self.itemsNearEvent(ev):
                     if not item.isVisible() or not item.isEnabled():
                         continue
                     if hasattr(item, 'mouseClickEvent'):
                         ev.currentItem = item
-                        try:
-                            item.mouseClickEvent(ev)
-                        except:
-                            print("Error sending click event:")
+                        item.mouseClickEvent(ev)
                             
                         if ev.isAccepted():
                             if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:

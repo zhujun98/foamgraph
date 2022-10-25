@@ -24,3 +24,9 @@ sys.modules["foamgraph.backend.QtCore"] = QtCore
 sys.modules["foamgraph.backend.QtGui"] = QtGui
 sys.modules["foamgraph.backend.QtWidgets"] = QtWidgets
 sys.modules["foamgraph.backend.QtTest"] = QtTest
+
+
+def qt_enum_to_int(value):
+    if QT_LIB == "PyQt5":
+        return value
+    return value.value
