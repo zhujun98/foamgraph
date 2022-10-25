@@ -5,6 +5,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from ..backend import qt_enum_to_int
 from ..backend.QtCore import Qt, pyqtSignal, pyqtSlot
 from ..backend.QtGui import QIntValidator
 from ..backend.QtWidgets import (
@@ -93,7 +94,8 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 
         self._activate_cb.stateChanged.connect(self.onToggleRoiActivation)
         self._activate_cb.stateChanged.emit(
-            self._activate_cb.checkState().value)
+            qt_enum_to_int(self._activate_cb.checkState()))
+
         self._lock_cb.stateChanged.connect(self.onLock)
 
     def setLabel(self, text):
