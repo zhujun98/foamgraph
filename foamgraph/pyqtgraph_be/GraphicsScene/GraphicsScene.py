@@ -1,4 +1,3 @@
-import warnings
 import weakref
 
 from ...backend import QtCore
@@ -24,8 +23,8 @@ __all__ = ['GraphicsScene']
 
 
 class GraphicsScene(QGraphicsScene):
-    """
-    Extension of QGraphicsScene that implements a complete, parallel mouse event system.
+    """Extension of QGraphicsScene that implements a complete, parallel mouse event system.
+
     (It would have been preferred to just alter the way QGraphicsScene creates and delivers 
     events, but this turned out to be impossible because the constructor for QGraphicsMouseEvent
     is private)
@@ -39,18 +38,6 @@ class GraphicsScene(QGraphicsScene):
        This lets us indicate unambiguously to the user which item they are about to click/drag on
     *  Eats mouseMove events that occur too soon after a mouse press.
     *  Reimplements items() and itemAt() to circumvent PyQt bug
-
-    ====================== ==================================================================
-    **Signals**
-    sigMouseClicked(event) Emitted when the mouse is clicked over the scene. Use ev.pos() to
-                           get the click position relative to the item that was clicked on,
-                           or ev.scenePos() to get the click position in scene coordinates.
-                           See :class:`pyqtgraph.GraphicsScene.MouseClickEvent`.                        
-    sigMouseMoved(pos)     Emitted when the mouse cursor moves over the scene. The position
-                           is given in scene coordinates.
-    sigMouseHover(items)   Emitted when the mouse is moved over the scene. Items is a list
-                           of items under the cursor.
-    ====================== ==================================================================
     
     Mouse interaction is as follows:
     
@@ -78,21 +65,20 @@ class GraphicsScene(QGraphicsScene):
        item originally claimed it could accept the click. DragEvents may only be delivered this way if it is the initial
        move in a drag.
     """
-    
-    sigMouseHover = QtCore.Signal(object)   ## emits a list of objects hovered over
-    sigMouseMoved = QtCore.Signal(object)   ## emits position of mouse on every move
-    sigMouseClicked = QtCore.Signal(object)   ## emitted when mouse is clicked. Check for event.isAccepted() to see whether the event has already been acted on.
-    
-    sigPrepareForPaint = QtCore.Signal()  ## emitted immediately before the scene is about to be rendered
-    
-    _addressCache = weakref.WeakValueDictionary()
+    # Emitted a list of objects under the cursor when the mouse is
+    # moved over the scene.
+    mouse_hover_sgn = QtCore.Signal(object)
+    # Emitted when the mouse cursor moves over the scene. The position
+    # is given in the scene coordinate system.
+    mouse_moved_sgn = QtCore.Signal(object)
+    # Emitted when the mouse is clicked over the scene. Use ev.pos() to
+    # get the click position relative to the item that was clicked on,
+    # or ev.scenePos() to get the click position in scene coordinates.
+    # See :class:`pyqtgraph.GraphicsScene.MouseClickEvent`.
+    mouse_clicked_sgn = QtCore.Signal(object)
 
-    @classmethod
-    def registerObject(cls, obj):
-        warnings.warn(
-            "'registerObject' is deprecated and does nothing.",
-            DeprecationWarning, stacklevel=2
-        )
+    # emitted immediately before the scene is about to be rendered
+    prepare_for_paint_sgn = QtCore.Signal()
 
     def __init__(self, clickRadius=2, moveDistance=5, parent=None):
         super().__init__(parent)
@@ -115,11 +101,13 @@ class GraphicsScene(QGraphicsScene):
         return QGraphicsScene.render(self, *args)
 
     def prepareForPaint(self):
-        """Called before every render. This method will inform items that the scene is about to
-        be rendered by emitting sigPrepareForPaint.
+        """Called before every render.
+
+        This method will inform items that the scene is about to
+        be rendered by emitting prepare_for_paint_sgn.
         
         This allows items to delay expensive processing until they know a paint will be required."""
-        self.sigPrepareForPaint.emit()
+        self.prepare_for_paint_sgn.emit()
 
     def setClickRadius(self, r):
         """
@@ -140,7 +128,7 @@ class GraphicsScene(QGraphicsScene):
 
     def mousePressEvent(self, ev):
         QGraphicsScene.mousePressEvent(self, ev)
-        if self.mouseGrabberItem() is None:  ## nobody claimed press; we are free to generate drag/click events
+        if self.mouseGrabberItem() is None:  # nobody claimed press; we are free to generate drag/click events
             if self.lastHoverEvent is not None:
                 # If the mouse has moved since the last hover event, send a new one.
                 # This can happen if a context menu is open while the mouse is moving.
@@ -149,7 +137,7 @@ class GraphicsScene(QGraphicsScene):
             
             self.clickEvents.append(MouseClickEvent(ev))
             
-            ## set focus on the topmost focusable item under this click
+            # set focus on the topmost focusable item under this click
             items = self.items(ev.scenePos())
             for i in items:
                 if i.isEnabled() and i.isVisible() and (i.flags() & i.GraphicsItemFlag.ItemIsFocusable):
@@ -157,7 +145,7 @@ class GraphicsScene(QGraphicsScene):
                     break
         
     def mouseMoveEvent(self, ev):
-        self.sigMouseMoved.emit(ev.scenePos())
+        self.mouse_moved_sgn.emit(ev.scenePos())
         
         # First allow QGraphicsScene to deliver hoverEnter/Move/ExitEvents
         QGraphicsScene.mouseMoveEvent(self, ev)
@@ -233,7 +221,7 @@ class GraphicsScene(QGraphicsScene):
             acceptable = not ev.buttons()  # if we are in mid-drag, do not allow items to accept the hover event.
             event = HoverEvent(ev, acceptable)
             items = self.itemsNearEvent(event, hoverable=True)
-            self.sigMouseHover.emit(items)
+            self.mouse_hover_sgn.emit(items)
             
         prevItems = list(self.hoverItems.keys())
             
@@ -309,7 +297,7 @@ class GraphicsScene(QGraphicsScene):
 
     def sendClickEvent(self, ev):
         # if we are in mid-drag, click events may only go to the dragged item.
-        if self.dragItem is not None and hasattr(self.dragItem, 'mouseClickEvent'):
+        if self.dragItem is not None and hasattr(self.dragItem, 'MouseDragEvent'):
             ev.currentItem = self.dragItem
             self.dragItem.mouseClickEvent(ev)
             
@@ -334,7 +322,7 @@ class GraphicsScene(QGraphicsScene):
                             if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:
                                 item.setFocus(QtCore.Qt.FocusReason.MouseFocusReason)
                             break
-        self.sigMouseClicked.emit(ev)
+        self.mouse_clicked_sgn.emit(ev)
         return ev.isAccepted()
         
     def items(self, *args):
@@ -426,7 +414,6 @@ class GraphicsScene(QGraphicsScene):
         event           The original event that triggered the menu to appear.
         ==============  ==================================================
         """
-
         menusToAdd = []
         while item is not self:
             item = item.parentItem()

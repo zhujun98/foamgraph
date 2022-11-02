@@ -5,6 +5,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+import abc
 from collections import OrderedDict
 
 import numpy as np
@@ -20,7 +21,104 @@ from .pyqtgraph_be import functions as fn
 from .aesthetics import FColor
 
 
-class CurvePlotItem(pg.PlotItem):
+class PlotItem(pg.GraphicsObject):
+    def __init__(self, name=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._graph = None
+
+        self._name = "" if name is None else name
+
+        self._log_x_mode = False
+        self._log_y_mode = False
+
+    @abc.abstractmethod
+    def setData(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def _parseInputData(self, x, y, **kwargs):
+        """Convert input to np.array and apply shape check."""
+        if isinstance(x, list):
+            x = np.array(x)
+        elif x is None:
+            x = np.array([])
+
+        if isinstance(y, list):
+            y = np.array(y)
+        elif y is None:
+            y = np.array([])
+
+        if len(x) != len(y):
+            raise ValueError("'x' and 'y' data have different lengths!")
+
+        # do not set data unless they pass the sanity check!
+        self._x, self._y = x, y
+
+    @abc.abstractmethod
+    def data(self):
+        raise NotImplementedError
+
+    def updateGraph(self):
+        self._graph = None
+        self.prepareGeometryChange()
+        self.informViewBoundsChanged()
+
+    @abc.abstractmethod
+    def _prepareGraph(self):
+        raise NotImplementedError
+
+    def paint(self, p, *args):
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        p.setPen(self._pen)
+        p.drawPath(self._graph)
+
+    def boundingRect(self):
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        return self._graph.boundingRect()
+
+    def setLogX(self, state):
+        """Set log mode for x axis."""
+        self._log_x_mode = state
+        self.updateGraph()
+
+    def setLogY(self, state):
+        """Set log mode for y axis."""
+        self._log_y_mode = state
+        self.updateGraph()
+
+    def transformedData(self):
+        """Transform and return the internal data to log scale if requested.
+
+        Child class should re-implement this method if it has a
+        different internal data structure.
+        """
+        return (self.toLogScale(self._x) if self._log_x_mode else self._x,
+                self.toLogScale(self._y) if self._log_y_mode else self._y)
+
+    @staticmethod
+    def toLogScale(arr, policy=None):
+        """Convert array result to logarithmic scale."""
+        ret = np.nan_to_num(arr)
+        ret[ret < 0] = 0
+        return np.log10(ret + 1)
+
+    def name(self):
+        """An identity of the PlotItem.
+
+        Used in LegendItem.
+        """
+        return self._name
+
+    def drawSample(self, p):
+        """Draw a sample used in LegendItem."""
+        pass
+
+
+class CurvePlotItem(PlotItem):
     """CurvePlotItem."""
 
     def __init__(self, x=None, y=None, *,
@@ -94,7 +192,7 @@ class CurvePlotItem(pg.PlotItem):
         p.drawLine(0, 11, 20, 11)
 
 
-class BarGraphItem(pg.PlotItem):
+class BarGraphItem(PlotItem):
     """BarGraphItem"""
     def __init__(self, x=None, y=None, *, width=1.0, pen=None, brush=None,
                  name=None, parent=None):
@@ -164,7 +262,7 @@ class BarGraphItem(pg.PlotItem):
         p.drawRect(QRectF(2, 2, 18, 18))
 
 
-class ErrorbarItem(pg.PlotItem):
+class ErrorbarItem(PlotItem):
     """ErrorbarItem."""
 
     def __init__(self, x=None, y=None, *, y_min=None, y_max=None, beam=None,
@@ -280,7 +378,7 @@ class ErrorbarItem(pg.PlotItem):
         return super().transformedData() + (y_min, y_max)
 
 
-class ScatterPlotItem(pg.PlotItem):
+class ScatterPlotItem(PlotItem):
     """ScatterPlotItem.
 
     Implemented based on pyqtgraph.ScatterPlotItem.

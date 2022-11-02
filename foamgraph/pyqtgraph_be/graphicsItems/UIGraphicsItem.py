@@ -18,9 +18,7 @@ class UIGraphicsItem(GraphicsObject):
     NOTE: Only the item's boundingRect is affected; the item is not transformed in any way. Use viewRangeChanged
     to respond to changes in the view.
     """
-    
-    #sigViewChanged = QtCore.Signal(object)  ## emitted whenever the viewport coords have changed
-    
+
     def __init__(self, bounds=None, parent=None):
         """
         ============== =============================================================================
@@ -29,7 +27,7 @@ class UIGraphicsItem(GraphicsObject):
                        which means the item will have the same bounds as the view.
         ============== =============================================================================
         """
-        GraphicsObject.__init__(self, parent)
+        super().__init__(parent)
         self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges)
             
         if bounds is None:
@@ -41,8 +39,6 @@ class UIGraphicsItem(GraphicsObject):
         self._updateView()
         
     def paint(self, *args):
-        ## check for a new view object every time we paint.
-        #self.updateView()
         pass
     
     def itemChange(self, change, value):
@@ -80,7 +76,6 @@ class UIGraphicsItem(GraphicsObject):
         """Update the item's bounding rect to match the viewport"""
         self._boundingRect = None  ## invalidate bounding rect, regenerate later if needed.
         self.prepareGeometryChange()
-
 
     def setPos(self, *args):
         GraphicsObject.setPos(self, *args)

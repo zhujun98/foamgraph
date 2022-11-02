@@ -64,18 +64,12 @@ class LabelItem(GraphicsWidget, GraphicsWidgetAnchor):
         if 'italic' in opts and opts['italic'] in [True, False]:
             optlist.append('font-style: ' + {True:'italic', False:'normal'}[opts['italic']])
         full = "<span style='%s'>%s</span>" % ('; '.join(optlist), text)
-        #print full
         self.item.setHtml(full)
         self.updateMin()
         self.resizeEvent(None)
         self.updateGeometry()
         
     def resizeEvent(self, ev):
-        #c1 = self.boundingRect().center()
-        #c2 = self.item.mapToParent(self.item.boundingRect().center()) # + self.item.pos()
-        #dif = c1 - c2
-        #self.item.moveBy(dif.x(), dif.y())
-        #print c1, c2, dif, self.item.pos()
         self.item.setPos(0,0)
         bounds = self.itemRect()
         left = self.mapFromItem(self.item, QtCore.QPointF(0,0)) - self.mapFromItem(self.item, QtCore.QPointF(1,0))
@@ -91,8 +85,7 @@ class LabelItem(GraphicsWidget, GraphicsWidgetAnchor):
                 
         elif self.opts['justify'] == 'center':
             bounds.moveCenter(rect.center())
-            #bounds = self.itemRect()
-            #self.item.setPos(self.width()/2. - bounds.width()/2., 0)
+
         elif self.opts['justify'] == 'right':
             if left.x() != 0:
                 bounds.moveRight(rect.right())
@@ -100,8 +93,6 @@ class LabelItem(GraphicsWidget, GraphicsWidgetAnchor):
                 bounds.moveBottom(rect.bottom())
             elif left.y() > 0:
                 bounds.moveTop(rect.top())
-            #bounds = self.itemRect()
-            #self.item.setPos(self.width() - bounds.width(), 0)
             
         self.item.setPos(bounds.topLeft() - self.itemRect().topLeft())
         self.updateMin()

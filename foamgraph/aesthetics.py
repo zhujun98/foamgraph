@@ -5,6 +5,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from typing import Union
+
 from .backend.QtCore import Qt
 from .backend.QtGui import QBrush, QColor, QPen, QPalette
 
@@ -152,12 +154,12 @@ lookupTableFactory = {name: cmap.getLookupTable()
                       for name, cmap in colorMapFactory.items()}
 
 
-def set_button_color(btn, color):
+def set_button_color(btn, color: Union[QColor, str]):
     """Set color for a given button."""
     palette = btn.palette()
     if isinstance(color, QColor):
-        palette.setColor(QPalette.Button, color)
+        palette.setColor(QPalette.ColorRole.Button, color)
     else:
-        palette.setColor(QPalette.Button, QualitativeColor.mkColor(color))
+        palette.setColor(QPalette.ColorRole.Button, QualitativeColor.mkColor(color))
     btn.setAutoFillBackground(True)
     btn.setPalette(palette)

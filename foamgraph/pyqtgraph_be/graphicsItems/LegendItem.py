@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from .GraphicsWidget import GraphicsWidget
 from .LabelItem import LabelItem
 from ..Qt import QtGui, QtCore
