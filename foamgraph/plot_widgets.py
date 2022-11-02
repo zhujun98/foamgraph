@@ -64,7 +64,7 @@ class PlotWidgetF(pg.GraphicsView):
             self._plot_area.addItem(self._h_line, ignore_bounds=True)
             # rateLimit should be fast enough to be able to capture
             # the leaveEvent
-            self._proxy = pg.SignalProxy(self._plot_area.scene().sigMouseMoved,
+            self._proxy = pg.SignalProxy(self._plot_area.scene().mouse_moved_sgn,
                                          rateLimit=60, slot=self.onMouseMoved)
 
         if parent is not None and hasattr(parent, 'registerPlotWidget'):
