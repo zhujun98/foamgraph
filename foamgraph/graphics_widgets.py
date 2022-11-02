@@ -20,7 +20,7 @@ from .backend.QtWidgets import (
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
 from .pyqtgraph_be import functions as fn
-from .plot_items import CurvePlotItem
+from .plot_items import CurvePlotItem, PlotItem
 from .aesthetics import FColor
 
 
@@ -388,7 +388,7 @@ class PlotArea(pg.GraphicsWidget):
 
         self._items.add(item)
 
-        if isinstance(item, pg.PlotItem):
+        if isinstance(item, PlotItem):
             if y2:
                 if self._log_x_cb.isChecked():
                     item.setLogX(True)
