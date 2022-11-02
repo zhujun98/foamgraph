@@ -19,7 +19,8 @@ from .aesthetics import colorMapFactory
 from .config import config
 from .graphics_widgets import ImageHistogramEditor
 from .plot_widgets import PlotWidgetF
-from .image_items import ImageItem, RectROI
+from .image_items import ImageItem
+from .roi import RectROI
 
 
 class HistogramLUTWidget(pg.GraphicsView):

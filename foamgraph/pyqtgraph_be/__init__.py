@@ -110,7 +110,6 @@ from .graphicsItems.GraphicsWidget import *
 from .graphicsItems.TextItem import *
 from .graphicsItems.UIGraphicsItem import *
 from .graphicsItems.GraphicsObject import *
-from .graphicsItems.ROI import *
 from .graphicsItems.InfiniteLine import *
 from .graphicsItems.GraphicsItem import *
 from .graphicsItems.ViewBox import *

@@ -5,7 +5,8 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 
 from foamgraph import ImageViewF, mkQApp, TimedImageViewF
-from foamgraph.image_items import ImageItem, RectROI
+from foamgraph.image_items import ImageItem
+from foamgraph.roi import RectROI
 
 from . import _display
 

@@ -35,6 +35,11 @@ class QualitativeColor:
     w = (177, 89, 40)  # brown
     i = (192, 192, 192)  # silver
 
+    roi = (255, 255, 255)
+    roi_hover = (255, 255, 0)
+    roi_handle = (150, 255, 255)
+    roi_handle_hover = (255, 255, 0)
+
     @classmethod
     def mkColor(cls, c, *, alpha=255):
         return QColor(*getattr(cls, c), alpha)

@@ -86,8 +86,8 @@ class ImageHistogramEditor(pg.GraphicsWidget):
         self.setLayout(layout)
 
     def initConnections(self):
-        self._lri.sigRegionChanged.connect(self.regionChanging)
-        self._lri.sigRegionChangeFinished.connect(self.regionChanged)
+        self._lri.region_changed_sgn.connect(self.regionChanging)
+        self._lri.region_change_finished_sgn.connect(self.regionChanged)
 
         self._gradient.sigGradientChanged.connect(self.gradientChanged)
 

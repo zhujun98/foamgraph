@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from ..Qt import QtGui, QtCore
 from .GraphicsObject import GraphicsObject
 from .InfiniteLine import InfiniteLine
@@ -6,24 +5,20 @@ from .. import functions as fn
 
 __all__ = ['LinearRegionItem']
 
+
 class LinearRegionItem(GraphicsObject):
+    """A horizontal or vertical region in a plot.
+
+    The region can be dragged and is bounded by lines which can be dragged
+    individually.
     """
-    **Bases:** :class:`GraphicsObject <pyqtgraph.GraphicsObject>`
-    
-    Used for marking a horizontal or vertical region in plots.
-    The region can be dragged and is bounded by lines which can be dragged individually.
-    
-    ===============================  =============================================================================
-    **Signals:**
-    sigRegionChangeFinished(self)    Emitted when the user has finished dragging the region (or one of its lines)
-                                     and when the region is changed programatically.
-    sigRegionChanged(self)           Emitted while the user is dragging the region (or one of its lines)
-                                     and when the region is changed programatically.
-    ===============================  =============================================================================
-    """
-    
-    sigRegionChangeFinished = QtCore.Signal(object)
-    sigRegionChanged = QtCore.Signal(object)
+    # Emitted when the user has finished dragging the region (or one of its lines)
+    # and when the region is changed programmatically.
+    region_change_finished_sgn = QtCore.Signal(object)
+    # Emitted while the user is dragging the region (or one of its lines)
+    # and when the region is changed programmatically.
+    region_changed_sgn = QtCore.Signal(object)
+
     Vertical = 0
     Horizontal = 1
     _orientation_axis = {
@@ -67,8 +62,7 @@ class LinearRegionItem(GraphicsObject):
                         positions. The default is "sort".
         ==============  =====================================================================
         """
-        
-        GraphicsObject.__init__(self)
+        super().__init__()
         self.orientation = orientation
         self.bounds = QtCore.QRectF()
         self.blockLineSignal = False
@@ -127,7 +121,7 @@ class LinearRegionItem(GraphicsObject):
         """Return the values at the edges of the region."""
         r = (self.lines[0].value(), self.lines[1].value())
         if self.swapMode == 'sort':
-            return (min(r), max(r))
+            return min(r), max(r)
         else:
             return r
 
@@ -145,7 +139,6 @@ class LinearRegionItem(GraphicsObject):
         self.lines[0].setValue(rgn[0])
         self.blockLineSignal = False
         self.lines[1].setValue(rgn[1])
-        #self.blockLineSignal = False
         self.lineMoved(0)
         self.lineMoved(1)
         self.lineMoveFinished()
@@ -237,10 +230,10 @@ class LinearRegionItem(GraphicsObject):
                 self.lines[1-i].setValue(self.lines[i].value())
         
         self.prepareGeometryChange()
-        self.sigRegionChanged.emit(self)
+        self.region_changed_sgn.emit(self)
             
     def lineMoveFinished(self):
-        self.sigRegionChangeFinished.emit(self)
+        self.region_change_finished_sgn.emit(self)
 
     def mouseDragEvent(self, ev):
         if not self.movable or int(ev.button() & QtCore.Qt.MouseButton.LeftButton) == 0:
@@ -264,9 +257,9 @@ class LinearRegionItem(GraphicsObject):
         
         if ev.isFinish():
             self.moving = False
-            self.sigRegionChangeFinished.emit(self)
+            self.region_change_finished_sgn.emit(self)
         else:
-            self.sigRegionChanged.emit(self)
+            self.region_changed_sgn.emit(self)
             
     def mouseClickEvent(self, ev):
         if self.moving and ev.button() == QtCore.Qt.MouseButton.RightButton:
@@ -274,8 +267,8 @@ class LinearRegionItem(GraphicsObject):
             for i, l in enumerate(self.lines):
                 l.setPos(self.startPositions[i])
             self.moving = False
-            self.sigRegionChanged.emit(self)
-            self.sigRegionChangeFinished.emit(self)
+            self.region_changed_sgn.emit(self)
+            self.region_change_finished_sgn.emit(self)
 
     def hoverEvent(self, ev):
         if self.movable and (not ev.isExit()) and ev.acceptDrags(QtCore.Qt.MouseButton.LeftButton):
@@ -284,7 +277,7 @@ class LinearRegionItem(GraphicsObject):
             self.setMouseHover(False)
             
     def setMouseHover(self, hover):
-        ## Inform the item that the mouse is(not) hovering over it
+        # Inform the item that the mouse is(not) hovering over it
         if self.mouseHovering == hover:
             return
         self.mouseHovering = hover

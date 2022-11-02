@@ -5,10 +5,11 @@ from foamgraph.backend.QtTest import QSignalSpy
 
 from foamgraph import mkQApp
 from foamgraph.graphics_widgets import ImageHistogramEditor, PlotArea
-from foamgraph.image_items import ImageItem, RectROI
+from foamgraph.image_items import ImageItem
 from foamgraph.plot_items import (
     CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
 )
+from foamgraph.roi import RectROI
 from foamgraph import pyqtgraph_be as pg
 
 
