@@ -304,9 +304,6 @@ class GraphicsView(QGraphicsView):
     def setAspectLocked(self, s):
         self.aspectLocked = s
         
-    def leaveEvent(self, ev):
-        self.scene().leaveEvent(ev)  # inform scene when mouse leaves
-        
     def mousePressEvent(self, ev):
         QGraphicsView.mousePressEvent(self, ev)
 

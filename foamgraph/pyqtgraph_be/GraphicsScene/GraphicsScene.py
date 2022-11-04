@@ -1,3 +1,4 @@
+from enum import Enum
 import weakref
 
 from ...backend import QtCore
@@ -21,6 +22,13 @@ else:
 __all__ = ['GraphicsScene', "MouseDragEvent", "MouseClickEvent", "HoverEvent"]
 
 
+class MouseEventState(Enum):
+    OFF = 0
+    ON = 1
+    ENTER = 2
+    EXIT = 3
+
+
 class MouseDragEvent:
     """
     Instances of this class are delivered to items in a :class:`GraphicsScene <pyqtgraph.GraphicsScene>`
@@ -28,9 +36,9 @@ class MouseDragEvent:
 
     """
 
-    def __init__(self, moveEvent, pressEvent, lastEvent, start=False, finish=False):
-        self.start = start
-        self.finish = finish
+    def __init__(self, moveEvent, pressEvent, lastEvent,
+                 state: MouseEventState = MouseEventState.ON):
+        self._state = state
         self.accepted = False
         self.currentItem = None
         self._buttonDownScenePos = {}
@@ -144,14 +152,13 @@ class MouseDragEvent:
             btn = self.button()
         return Point(self.currentItem.mapFromScene(self._buttonDownScenePos[btn]))
 
-    def isStart(self):
-        """Returns True if this event is the first since a drag was initiated."""
-        return self.start
+    def entering(self):
+        """Whether this event is the first one since a drag was initiated."""
+        return self._state == MouseEventState.ENTER
 
-    def isFinish(self):
-        """Returns False if this is the last event in a drag. Note that this
-        event will have the same position as the previous one."""
-        return self.finish
+    def exiting(self):
+        """Whether this event is the last one since a drag was initiated."""
+        return self._state == MouseEventState.EXIT
 
     def __repr__(self):
         if self.currentItem is None:
@@ -160,8 +167,8 @@ class MouseDragEvent:
         else:
             lp = self.lastPos()
             p = self.pos()
-        return "<MouseDragEvent (%g,%g)->(%g,%g) buttons=%d start=%s finish=%s>" % (
-        lp.x(), lp.y(), p.x(), p.y(), int(self.buttons()), str(self.isStart()), str(self.isFinish()))
+        return "<MouseDragEvent (%g,%g)->(%g,%g) buttons=%d entering=%s existing=%s>" % (
+        lp.x(), lp.y(), p.x(), p.y(), int(self.buttons()), str(self.entering()), str(self.exiting()))
 
     def modifiers(self):
         """Return any keyboard modifiers currently pressed.
@@ -286,20 +293,20 @@ class HoverEvent:
     event.isExit() returns True if the mouse has just left.
     """
 
-    def __init__(self, moveEvent, acceptable):
+    def __init__(self, ev: QGraphicsSceneMouseEvent, state: MouseEventState):
+        self._state = state
         self.enter = False
-        self.acceptable = acceptable
         self.exit = False
         self.__clickItems = weakref.WeakValueDictionary()
         self.__dragItems = weakref.WeakValueDictionary()
         self.currentItem = None
-        if moveEvent is not None:
-            self._scenePos = moveEvent.scenePos()
-            self._screenPos = moveEvent.screenPos()
-            self._lastScenePos = moveEvent.lastScenePos()
-            self._lastScreenPos = moveEvent.lastScreenPos()
-            self._buttons = moveEvent.buttons()
-            self._modifiers = moveEvent.modifiers()
+        if ev is not None:
+            self._scenePos = ev.scenePos()
+            self._screenPos = ev.screenPos()
+            self._lastScenePos = ev.lastScenePos()
+            self._lastScreenPos = ev.lastScreenPos()
+            self._buttons = ev.buttons()
+            self._modifiers = ev.modifiers()
         else:
             self.exit = True
 
@@ -319,7 +326,7 @@ class HoverEvent:
         Returns True if the request is successful, otherwise returns False (indicating
         that some other item would receive an incoming click).
         """
-        if not self.acceptable:
+        if self._state == MouseEventState.EXIT:
             return False
 
         if button not in self.__clickItems:
@@ -335,7 +342,7 @@ class HoverEvent:
         Returns True if the request is successful, otherwise returns False (indicating
         that some other item would receive an incoming drag event).
         """
-        if not self.acceptable:
+        if self._state == MouseEventState.EXIT:
             return False
 
         if button not in self.__dragItems:
@@ -510,10 +517,6 @@ class GraphicsScene(QGraphicsScene):
         """
         self._moveDistance = d
 
-    def leaveEvent(self, ev):  # inform items that mouse is gone
-        if len(self.dragButtons) == 0:
-            self.sendHoverEvents(ev, exit_only=True)
-
     def mousePressEvent(self, ev: QGraphicsSceneMouseEvent):
         """Override."""
         super().mousePressEvent(ev)
@@ -537,7 +540,7 @@ class GraphicsScene(QGraphicsScene):
     def mouseMoveEvent(self, ev: QGraphicsSceneMouseEvent):
         """Override."""
         self.mouse_moved_sgn.emit(ev.scenePos())
-        
+
         # First allow QGraphicsScene to deliver hoverEnter/Move/ExitEvents
         super().mouseMoveEvent(ev)
         
@@ -545,7 +548,8 @@ class GraphicsScene(QGraphicsScene):
         self.sendHoverEvents(ev)
         
         if ev.buttons():  # button is pressed; send mouseMoveEvents and mouseDragEvents
-            QGraphicsScene.mouseMoveEvent(self, ev)
+            # FIXME: duplicated?
+            super().mouseMoveEvent(ev)
             if self.mouseGrabberItem() is None:
                 now = ptime.time()
                 init = False
@@ -562,19 +566,22 @@ class GraphicsScene(QGraphicsScene):
                             dist = Point(ev.scenePos() - cev.scenePos()).length()
                             if dist == 0 or (dist < self._moveDistance and now - cev.time() < self.minDragTime):
                                 continue
-                            init = init or (len(self.dragButtons) == 0)  # If this is the first button to be dragged, then init=True
+                            # If this is the first button to be dragged, then init=True
+                            init = init or (len(self.dragButtons) == 0)
                             self.dragButtons.append(btn)
-                        
+
                 # If we have dragged buttons, deliver a drag event
                 if len(self.dragButtons) > 0:
-                    if self.sendDragEvent(ev, init=init):
+                    if self.sendDragEvent(
+                            ev, MouseEventState.ENTER if init
+                            else MouseEventState.ON):
                         ev.accept()
-                
+
     def mouseReleaseEvent(self, ev: QGraphicsSceneMouseEvent):
         """Override."""
         if self.mouseGrabberItem() is None:
             if ev.button() in self.dragButtons:
-                if self.sendDragEvent(ev, final=True):
+                if self.sendDragEvent(ev, MouseEventState.EXIT):
                     ev.accept()
                 self.dragButtons.remove(ev.button())
             else:
@@ -601,20 +608,23 @@ class GraphicsScene(QGraphicsScene):
         if self.mouseGrabberItem() is None:  # nobody claimed press; we are free to generate drag/click events
             self.clickEvents.append(MouseClickEvent(ev, double=True))
         
-    def sendHoverEvents(self, ev: QGraphicsSceneMouseEvent, exit_only: bool = False):
-        # if exitOnly, then just inform all previously hovered items that the mouse has left.
-        
-        if exit_only:
-            acceptable = False
+    def sendHoverEvents(self, ev: QGraphicsSceneMouseEvent,
+                        state: MouseEventState = MouseEventState.ON):
+        """Send out HoverEvent.
+
+        :param ev:
+        :param state:
+        """
+        if state == MouseEventState.EXIT:
             items = []
-            event = HoverEvent(None, acceptable)
+            event = HoverEvent(ev, False)
         else:
-            acceptable = not ev.buttons()  # if we are in mid-drag, do not allow items to accept the hover event.
-            event = HoverEvent(ev, acceptable)
+            # if we are in mid-drag, do not allow items to accept the hover event.
+            event = HoverEvent(ev, not ev.buttons())
             items = self.itemsNearEvent(event, hoverable=True)
             self.mouse_hover_sgn.emit(items)
             
-        prevItems = list(self.hoverItems.keys())
+        prev_items = list(self.hoverItems.keys())
             
         for item in items:
             if hasattr(item, 'hoverEvent'):
@@ -623,14 +633,14 @@ class GraphicsScene(QGraphicsScene):
                     self.hoverItems[item] = None
                     event.enter = True
                 else:
-                    prevItems.remove(item)
+                    prev_items.remove(item)
                     event.enter = False
                     
                 item.hoverEvent(event)
         
         event.enter = False
         event.exit = True
-        for item in prevItems:
+        for item in prev_items:
             event.currentItem = item
 
             if item.scene() is self:
@@ -645,12 +655,18 @@ class GraphicsScene(QGraphicsScene):
                 (ev.type() == ev.Type.GraphicsSceneMouseMove and not ev.buttons())):
             self.lastHoverEvent = event  # save this so we can ask about accepted events later.
 
-    def sendDragEvent(self, ev: QGraphicsSceneMouseEvent,
-                      init: bool = False, final: bool = False):
-        # Send a MouseDragEvent to the current dragItem or to
-        # items near the beginning of the drag
-        event = MouseDragEvent(ev, self.clickEvents[0], self.lastDrag, start=init, finish=final)
-        if init and self.dragItem is None:
+    def sendDragEvent(self,
+                      ev: QGraphicsSceneMouseEvent,
+                      state: MouseEventState):
+        """Send out a MouseDragEvent.
+
+        to the current dragItem or to items near the beginning of the drag.
+
+        :param ev:
+        :param state:
+        """
+        event = MouseDragEvent(ev, self.clickEvents[0], self.lastDrag, state=state)
+        if state == MouseEventState.ENTER and self.dragItem is None:
             if self.lastHoverEvent is not None:
                 acceptedItem = self.lastHoverEvent.dragItems().get(event.button(), None)
             else:

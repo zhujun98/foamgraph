@@ -20,8 +20,11 @@ from .backend.QtWidgets import (
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
 from .pyqtgraph_be import functions as fn
+
+from .gradient_editor_widget import GradientEditorWidget
+from .linear_region_item import LinearRegionItem
 from .plot_items import CurvePlotItem, PlotItem
-from .aesthetics import FColor
+from .aesthetics import ColorMap, FColor
 
 
 class ImageHistogramEditor(pg.GraphicsWidget):
@@ -36,13 +39,10 @@ class ImageHistogramEditor(pg.GraphicsWidget):
         super().__init__(parent=parent)
         self._lut = None
 
-        gradient = pg.GradientEditorItem()
-        gradient.setOrientation('right')
-        gradient.loadPreset('grey')
-        self._gradient = gradient
+        self._gradient = GradientEditorWidget()
         self._gradient.show()
 
-        lri = pg.LinearRegionItem([0, 1], 'horizontal', swapMode='block')
+        lri = LinearRegionItem([0, 1], 'horizontal', swapMode='block')
         lri.setZValue(1000)
         lri.lines[0].addMarker('<|', 0.5)
         lri.lines[1].addMarker('|>', 0.5)
@@ -89,7 +89,7 @@ class ImageHistogramEditor(pg.GraphicsWidget):
         self._lri.region_changed_sgn.connect(self.regionChanging)
         self._lri.region_change_finished_sgn.connect(self.regionChanged)
 
-        self._gradient.sigGradientChanged.connect(self.gradientChanged)
+        self._gradient.gradient_changed_sgn.connect(self.gradientChanged)
 
         self._vb.sigRangeChanged.connect(self.update)
 
@@ -102,7 +102,7 @@ class ImageHistogramEditor(pg.GraphicsWidget):
         p2 = self._vb.mapFromViewToItem(
             self, Point(self._vb.viewRect().center().x(), rgn[1]))
 
-        rect = self._gradient.mapRectToParent(self._gradient.gradRect.rect())
+        rect = self._gradient.mapRectToParent(self._gradient.gradientItem().rect())
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         for pen in [fn.mkPen((0, 0, 0, 100), width=3), pen]:
@@ -113,22 +113,16 @@ class ImageHistogramEditor(pg.GraphicsWidget):
             p.drawLine(rect.bottomLeft(), rect.bottomRight())
 
     def gradientChanged(self):
-        if self._gradient.isLookupTrivial():
-            # lambda x: x.astype(np.uint8))
-            self._image_item.setLookupTable(None)
-        else:
-            # send function pointer, not the result
-            self._image_item.setLookupTable(self.getLookupTable)
-
+        self._image_item.setLookupTable(self.getLookupTable)
         self._lut = None
         self.lut_changed_sgn.emit(self)
 
-    def getLookupTable(self, img=None, n=None, alpha=None):
+    def getLookupTable(self, img=None, n=None):
         """Return the look-up table."""
         if self._lut is None:
             if n is None:
                 n = 256 if img.dtype == np.uint8 else 512
-            self._lut = self._gradient.getLookupTable(n, alpha=alpha)
+            self._lut = self._gradient.getLookupTable(n)
         return self._lut
 
     def regionChanging(self):
@@ -155,7 +149,7 @@ class ImageHistogramEditor(pg.GraphicsWidget):
             # auto_levels = True
             self._lri.setRegion(self._image_item.getLevels())
 
-    def setColorMap(self, cm):
+    def setColorMap(self, cm: ColorMap):
         self._gradient.setColorMap(cm)
 
     def getLevels(self):
@@ -192,7 +186,8 @@ class PlotArea(pg.GraphicsWidget):
                  parent=None):
         super().__init__(parent=parent)
 
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding,
+                           QSizePolicy.Policy.Expanding)
 
         self._items = set()
         self._plot_items = set()

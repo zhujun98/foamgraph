@@ -1,12 +1,12 @@
-from ..Qt import QtGui, QtCore
-from .GraphicsObject import GraphicsObject
-from .InfiniteLine import InfiniteLine
-from .. import functions as fn
+from .backend.QtGui import QBrush, QColor
+from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 
-__all__ = ['LinearRegionItem']
+from . import pyqtgraph_be as pg
+from .pyqtgraph_be import functions as fn
+from .infinite_line import InfiniteLine
 
 
-class LinearRegionItem(GraphicsObject):
+class LinearRegionItem(pg.GraphicsObject):
     """A horizontal or vertical region in a plot.
 
     The region can be dragged and is bounded by lines which can be dragged
@@ -14,10 +14,10 @@ class LinearRegionItem(GraphicsObject):
     """
     # Emitted when the user has finished dragging the region (or one of its lines)
     # and when the region is changed programmatically.
-    region_change_finished_sgn = QtCore.Signal(object)
+    region_change_finished_sgn = pyqtSignal(object)
     # Emitted while the user is dragging the region (or one of its lines)
     # and when the region is changed programmatically.
-    region_changed_sgn = QtCore.Signal(object)
+    region_changed_sgn = pyqtSignal(object)
 
     Vertical = 0
     Horizontal = 1
@@ -64,7 +64,7 @@ class LinearRegionItem(GraphicsObject):
         """
         super().__init__()
         self.orientation = orientation
-        self.bounds = QtCore.QRectF()
+        self.bounds = QRectF()
         self.blockLineSignal = False
         self.moving = False
         self.mouseHovering = False
@@ -88,14 +88,14 @@ class LinearRegionItem(GraphicsObject):
                 # with respect to region. This ensures that placing a '<|' 
                 # marker on lines[0] causes it to point left in vertical mode
                 # and down in horizontal mode. 
-                InfiniteLine(QtCore.QPointF(0, values[0]), angle=0, **lineKwds), 
-                InfiniteLine(QtCore.QPointF(0, values[1]), angle=0, **lineKwds)]
+                InfiniteLine(QPointF(0, values[0]), angle=0, **lineKwds),
+                InfiniteLine(QPointF(0, values[1]), angle=0, **lineKwds)]
             self.lines[0].scale(1, -1)
             self.lines[1].scale(1, -1)
         elif orientation in ('vertical', LinearRegionItem.Vertical):
             self.lines = [
-                InfiniteLine(QtCore.QPointF(values[0], 0), angle=90, **lineKwds), 
-                InfiniteLine(QtCore.QPointF(values[1], 0), angle=90, **lineKwds)]
+                InfiniteLine(QPointF(values[0], 0), angle=90, **lineKwds),
+                InfiniteLine(QPointF(values[1], 0), angle=90, **lineKwds)]
         else:
             raise Exception("Orientation must be 'vertical' or 'horizontal'.")
         
@@ -106,7 +106,7 @@ class LinearRegionItem(GraphicsObject):
         self.lines[1].sigPositionChanged.connect(lambda: self.lineMoved(1))
             
         if brush is None:
-            brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 50))
+            brush = QBrush(QColor(0, 0, 255, 50))
         self.setBrush(brush)
         
         if hoverBrush is None:
@@ -236,11 +236,11 @@ class LinearRegionItem(GraphicsObject):
         self.region_change_finished_sgn.emit(self)
 
     def mouseDragEvent(self, ev):
-        if not self.movable or int(ev.button() & QtCore.Qt.MouseButton.LeftButton) == 0:
+        if not self.movable or int(ev.button() & Qt.MouseButton.LeftButton) == 0:
             return
         ev.accept()
         
-        if ev.isStart():
+        if ev.entering():
             bdp = ev.buttonDownPos()
             self.cursorOffsets = [l.pos() - bdp for l in self.lines]
             self.startPositions = [l.pos() for l in self.lines]
@@ -255,14 +255,14 @@ class LinearRegionItem(GraphicsObject):
         self.lines[0].blockSignals(False)
         self.prepareGeometryChange()
         
-        if ev.isFinish():
+        if ev.exiting():
             self.moving = False
             self.region_change_finished_sgn.emit(self)
         else:
             self.region_changed_sgn.emit(self)
             
     def mouseClickEvent(self, ev):
-        if self.moving and ev.button() == QtCore.Qt.MouseButton.RightButton:
+        if self.moving and ev.button() == Qt.MouseButton.RightButton:
             ev.accept()
             for i, l in enumerate(self.lines):
                 l.setPos(self.startPositions[i])
@@ -271,7 +271,7 @@ class LinearRegionItem(GraphicsObject):
             self.region_change_finished_sgn.emit(self)
 
     def hoverEvent(self, ev):
-        if self.movable and (not ev.isExit()) and ev.acceptDrags(QtCore.Qt.MouseButton.LeftButton):
+        if self.movable and (not ev.isExit()) and ev.acceptDrags(Qt.MouseButton.LeftButton):
             self.setMouseHover(True)
         else:
             self.setMouseHover(False)

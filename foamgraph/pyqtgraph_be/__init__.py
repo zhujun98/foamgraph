@@ -110,26 +110,21 @@ from .graphicsItems.GraphicsWidget import *
 from .graphicsItems.TextItem import *
 from .graphicsItems.UIGraphicsItem import *
 from .graphicsItems.GraphicsObject import *
-from .graphicsItems.InfiniteLine import *
 from .graphicsItems.GraphicsItem import *
 from .graphicsItems.ViewBox import *
 from .graphicsItems.ArrowItem import *
 from .graphicsItems.AxisItem import *
 from .graphicsItems.LabelItem import *
 from .graphicsItems.GraphicsWidgetAnchor import *
-from .graphicsItems.GradientEditorItem import *
-from .graphicsItems.LinearRegionItem import *
 from .graphicsItems.LegendItem import *
 from .graphicsItems.ItemGroup import *
 
-from .widgets.SpinBox import *
 from .widgets.GraphicsView import *
 
 from .WidgetGroup import *
 from .Point import Point
 from .SRTTransform import SRTTransform
 from .functions import *
-from .SignalProxy import *
 from .colormap import *
 from .ptime import time
 from .Qt import isQObjectAlive

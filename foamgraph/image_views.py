@@ -15,7 +15,7 @@ from .backend.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from . import pyqtgraph_be as pg
 
-from .aesthetics import colorMapFactory
+from .aesthetics import ColorMap
 from .config import config
 from .graphics_widgets import ImageHistogramEditor
 from .plot_widgets import PlotWidgetF
@@ -35,7 +35,7 @@ class HistogramLUTWidget(pg.GraphicsView):
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.setMinimumWidth(95)
 
-    def setColorMap(self, cm):
+    def setColorMap(self, cm: ColorMap):
         self._item.setColorMap(cm)
 
 
@@ -99,9 +99,9 @@ class ImageViewF(QWidget):
         self._hist_widget = HistogramLUTWidget(self._image_item)
 
         if color_map is None:
-            self.setColorMap(colorMapFactory[config["COLOR_MAP"]])
+            self.setColorMap(ColorMap.fromName(config["COLOR_MAP"]))
         else:
-            self.setColorMap(colorMapFactory["thermal"])
+            self.setColorMap(ColorMap.fromName("thermal"))
 
         self._is_initialized = False
         self._image = None
@@ -240,7 +240,7 @@ class ImageViewF(QWidget):
         """
         self._hist_widget.setLevels(*args, **kwargs)
 
-    def setColorMap(self, cm):
+    def setColorMap(self, cm: ColorMap):
         """Set colormap for the displayed image.
 
         :param cm: a ColorMap object.

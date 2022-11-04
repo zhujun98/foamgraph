@@ -6,6 +6,7 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 import abc
+from enum import Enum
 from math import cos, sin
 from typing import Union
 
@@ -68,12 +69,12 @@ class RoiHandle(pg.UIGraphicsItem):
             return
 
         ev.accept()
-        if ev.isFinish():
+        if ev.exiting():
             if self._moving:
                 self.parentItem().stateChangeFinished()
             self._moving = False
             self.update()
-        elif ev.isStart():
+        elif ev.entering():
             self.parentItem().handleMoveStarted()
             self._moving = True
             # TODO: check why cursor_offset needs to be an attribute
@@ -115,6 +116,11 @@ class RoiHandle(pg.UIGraphicsItem):
 
 class ROI(pg.GraphicsObject):
     """Generic region-of-interest graphics object."""
+
+    class DragMode(Enum):
+        NONE = 0
+        TRANSLATE = 1
+
     # Emitted when the user starts dragging the ROI (or one of its handles).
     region_change_started_sgn = pyqtSignal(object)
 
@@ -149,7 +155,7 @@ class ROI(pg.GraphicsObject):
         self._mouse_hovering = False
         self._moving = False
         self._cursor_offset = None
-        self._drag_mode = None
+        self._drag_mode = self.DragMode.NONE
 
         self._pen = FColor.mkPen("roi")
         self._hover_pen = FColor.mkPen("roi_hover")
@@ -282,32 +288,35 @@ class ROI(pg.GraphicsObject):
             return
 
         self._mouse_hovering = hover
+        # update because color changed
         self.update()
 
     def mouseDragEvent(self, ev: MouseDragEvent):
-        if ev.isStart():
+        drag_mode = self.DragMode
+        if ev.entering():
             if ev.button() == Qt.MouseButton.LeftButton:
-                self.setSelected(True)
-                if self._translatable:
-                    self._drag_mode = 'translate'
-                else:
-                    self._drag_mode = None
+                # self.setSelected(True)
 
-                if self._drag_mode is not None:
+                if self._translatable:
+                    self._drag_mode = drag_mode.TRANSLATE
+                else:
+                    self._drag_mode = drag_mode.NONE
+
+                if self._drag_mode != drag_mode.NONE:
                     self.moveStarted()
                     self._cursor_offset = self.pos() - self.mapToParent(ev.buttonDownPos())
                     ev.accept()
                 else:
                     ev.ignore()
             else:
-                self._drag_mode = None
+                self._drag_mode = drag_mode.NONE
                 ev.ignore()
 
-        if ev.isFinish() and self._drag_mode is not None:
+        if ev.exiting() and self._drag_mode != drag_mode.NONE:
             self.moveFinished()
             return
 
-        if self._drag_mode == 'translate':
+        if self._drag_mode == drag_mode.TRANSLATE:
             self.translate(
                 self.mapToParent(ev.pos()) + self._cursor_offset - self.pos(),
                 finish=False)
