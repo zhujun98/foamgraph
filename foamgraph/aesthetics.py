@@ -7,12 +7,9 @@ Author: Jun Zhu
 """
 from typing import Union
 
-import numpy as np
-
-from .backend.QtCore import QPointF, Qt
-from .backend.QtGui import QBrush, QColor, QLinearGradient, QPen, QPalette
-
-from .pyqtgraph_be import functions as fn
+from .backend.QtCore import Qt, QSize
+from .backend.QtGui import QBrush, QColor, QIcon, QPen
+from .backend.QtWidgets import QPushButton
 
 from .config import config
 
@@ -263,3 +260,19 @@ def set_button_color(btn, color: Union[QColor, str]):
         palette.setColor(QPalette.ColorRole.Button, QualitativeColor.mkColor(color))
     btn.setAutoFillBackground(True)
     btn.setPalette(palette)
+
+def createIconButton(filepath: str, size: int, *, description: str = ""):
+    """Create a QPushButton with icon.
+
+    :param filename: path of the icon file.
+    :param size: size of the icon (button).
+    :param description: tool tip of the button.
+    """
+    btn = QPushButton()
+    icon = QIcon(filepath)
+    btn.setIcon(icon)
+    btn.setIconSize(QSize(size, size))
+    btn.setFixedSize(btn.minimumSizeHint())
+    if description:
+        btn.setToolTip(description)
+    return btn
