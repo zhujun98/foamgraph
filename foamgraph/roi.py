@@ -39,8 +39,8 @@ class RoiHandle(pg.UIGraphicsItem):
         self._size = 10
         self._edges = 4
 
-        self._pen = FColor.mkPen("roi_handle", width=0)
-        self._hover_pen = FColor.mkPen("roi_handle_hover", width=0)
+        self._pen = FColor.mkPen("c", width=0)
+        self._hover_pen = FColor.mkPen("y", width=0)
 
         self._mouse_hovering = False
         self._moving = False
@@ -53,31 +53,31 @@ class RoiHandle(pg.UIGraphicsItem):
         self.setZValue(11)
 
     def hoverEvent(self, ev: HoverEvent):
-        hover = False
+        hovering = False
         if not ev.isExit():
             if ev.acceptDrags(Qt.MouseButton.LeftButton):
-                hover = True
+                hovering = True
 
-        if self._mouse_hovering == hover:
+        if self._mouse_hovering == hovering:
             return
 
-        self._mouse_hovering = hover
+        self._mouse_hovering = hovering
         self.update()
 
     def mouseDragEvent(self, ev: MouseDragEvent):
         if ev.button() != Qt.MouseButton.LeftButton:
             return
-
         ev.accept()
+
         if ev.exiting():
             if self._moving:
                 self.parentItem().stateChangeFinished()
             self._moving = False
+            self._cursor_offset = 0
             self.update()
         elif ev.entering():
             self.parentItem().handleMoveStarted()
             self._moving = True
-            # TODO: check why cursor_offset needs to be an attribute
             self._cursor_offset = self.scenePos() - ev.buttonDownScenePos()
 
         if self._moving:
@@ -95,7 +95,7 @@ class RoiHandle(pg.UIGraphicsItem):
             else:
                 self._path.lineTo(x, y)
 
-    def paint(self, p, *args):
+    def paint(self, p, *args) -> None:
         p.setRenderHints(p.RenderHint.Antialiasing, True)
         if self._mouse_hovering:
             p.setPen(self._hover_pen)
@@ -103,7 +103,8 @@ class RoiHandle(pg.UIGraphicsItem):
             p.setPen(self._pen)
         p.drawPath(self._path)
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
+        """Override."""
         return self._path.boundingRect()
 
     def viewTransformChanged(self):
@@ -157,8 +158,8 @@ class ROI(pg.GraphicsObject):
         self._cursor_offset = None
         self._drag_mode = self.DragMode.NONE
 
-        self._pen = FColor.mkPen("roi")
-        self._hover_pen = FColor.mkPen("roi_hover")
+        self._pen = FColor.mkPen("k")
+        self._hover_pen = FColor.mkPen("w")
 
         self._handles = []
 

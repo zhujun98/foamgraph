@@ -719,7 +719,7 @@ class GraphicsScene(QGraphicsScene):
                     if hasattr(item, 'mouseClickEvent'):
                         ev.currentItem = item
                         item.mouseClickEvent(ev)
-                            
+
                         if ev.isAccepted():
                             if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:
                                 item.setFocus(QtCore.Qt.FocusReason.MouseFocusReason)

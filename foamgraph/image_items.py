@@ -16,6 +16,7 @@ from .backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
 from .pyqtgraph_be import functions as fn
+from .pyqtgraph_be.GraphicsScene import HoverEvent
 
 from .aesthetics import FColor
 from .algorithms import quick_min_max
@@ -79,10 +80,10 @@ class ImageItem(pg.GraphicsObject):
             self._fast_lut = None
             self.setImage(auto_levels=False)
 
-    def getLevels(self):
+    def levels(self) -> tuple:
         return self._levels
 
-    def setLookupTable(self, lut, update=True):
+    def setLookupTable(self, lut, update=True) -> None:
         if lut is not self._lut:
             self._lut = lut
             self._fast_lut = None
@@ -323,7 +324,7 @@ class ImageItem(pg.GraphicsObject):
             self._qimage = None
             self.update()
 
-    def hoverEvent(self, ev):
+    def hoverEvent(self, ev: HoverEvent):
         """Override."""
         if ev.isExit():
             x = -1  # out of image

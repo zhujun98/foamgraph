@@ -5,8 +5,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from typing import Union
-
 from .backend.QtCore import Qt, QSize
 from .backend.QtGui import QBrush, QColor, QIcon, QPen
 from .backend.QtWidgets import QPushButton
@@ -19,25 +17,52 @@ class QualitativeColor:
     foreground = config["FOREGROUND_COLOR"]  # black
     background = config["BACKGROUND_COLOR"]  # white-like
 
+    # Base colors from matplotlib
+    # ---------------------------
+    r = (255, 0, 0)  # red
+    g = (0, 128, 0)  # green
+    b = (0, 0, 255)  # blue
+    c = (0, 192, 192)  # cyan
+    m = (192, 0, 192)  # magenta
+    y = (192, 192, 0)  # yellow
     k = (0, 0, 0)  # black
-    i = (251, 154, 153)  # pink
-    r = (227, 26, 28)  # red
-    o = (255, 127, 0)  # orange
-    y = (255, 255, 153)  # yellow
-    c = (166, 206, 227)  # cyan
-    b = (31, 120, 180)  # blue
-    s = (178, 223, 138)  # grass green
-    g = (51, 160, 44)  # green
-    p = (106, 61, 154)  # purple
-    d = (202, 178, 214)  # orchid
-    n = (177, 89, 40)  # brown
-    v = (192, 192, 192)  # silver
     w = (255, 255, 255)  # white
 
-    roi = (255, 255, 255)
-    roi_hover = (255, 255, 0)
-    roi_handle = (150, 255, 255)
-    roi_handle_hover = (255, 255, 0)
+    # CSS colors
+    # ----------
+
+    FireBrick = (178, 34, 34)
+    Red = (255, 0, 0)
+
+    Pink = (255, 192, 203)
+
+    DarkOrange = (255, 140, 0)
+    Orange = (255, 165, 0)
+
+    Yellow = (255, 255, 0)
+    Khaki = (240, 230, 140)
+
+    Violet = (238, 130, 238)
+    Orchid = (218, 112, 214)
+    Magenta = (255, 0, 255)
+    Purple = (128, 0, 128)
+
+    ForestGreen = (34, 139, 34)
+    Green = (0, 128, 0)
+    DarkGreen = (0, 100, 0)
+
+    Cyan = (0, 255, 255)
+    DodgerBlue = (30, 144, 255)
+    Blue = (0, 0, 255)
+
+    Chocolate = (210, 105, 30)
+    Brown = (165, 42, 42)
+
+    White = (255, 255, 255)
+
+    Silver = (192, 192, 192)
+    Gray = (128, 128, 128)
+    Black = (0, 0, 0)
 
     @classmethod
     def mkColor(cls, c, *, alpha=255):
@@ -250,16 +275,6 @@ class ColorMap:
     def fromName(cls, name: str):
         return ColorMap(*cls.gradients[name])
 
-
-def set_button_color(btn, color: Union[QColor, str]):
-    """Set color for a given button."""
-    palette = btn.palette()
-    if isinstance(color, QColor):
-        palette.setColor(QPalette.ColorRole.Button, color)
-    else:
-        palette.setColor(QPalette.ColorRole.Button, QualitativeColor.mkColor(color))
-    btn.setAutoFillBackground(True)
-    btn.setPalette(palette)
 
 def createIconButton(filepath: str, size: int, *, description: str = ""):
     """Create a QPushButton with icon.

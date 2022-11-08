@@ -1,13 +1,14 @@
-from .backend.QtGui import QBrush, QColor
 from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
+from .backend.QtGui import QBrush, QPen
+from .aesthetics import FColor
 
 from . import pyqtgraph_be as pg
-from .pyqtgraph_be import functions as fn
-from .infinite_line import InfiniteLine
+from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
+from .infinite_line import InfiniteHorizontalLine, InfiniteVerticalLine
 
 
 class LinearRegionItem(pg.GraphicsObject):
-    """A horizontal or vertical region in a plot.
+    """A horizontal or vertical region inbetween two lines.
 
     The region can be dragged and is bounded by lines which can be dragged
     individually.
@@ -18,186 +19,99 @@ class LinearRegionItem(pg.GraphicsObject):
     # Emitted while the user is dragging the region (or one of its lines)
     # and when the region is changed programmatically.
     region_changed_sgn = pyqtSignal(object)
-
-    Vertical = 0
-    Horizontal = 1
-    _orientation_axis = {
-        Vertical: 0,
-        Horizontal: 1,
-        'vertical': 0,
-        'horizontal': 1,
-        }
     
-    def __init__(self, values=(0, 1), orientation='vertical', brush=None, pen=None,
-                 hoverBrush=None, hoverPen=None, movable=True, bounds=None, 
-                 span=(0, 1), swapMode='sort'):
+    def __init__(self, region: tuple = (0, 1), *,
+                 orientation: Qt.Orientation = Qt.Orientation.Vertical,
+                 draggable=True):
         """Create a new LinearRegionItem.
-        
-        ==============  =====================================================================
-        **Arguments:**
-        values          A list of the positions of the lines in the region. These are not
-                        limits; limits can be set by specifying bounds.
-        orientation     Options are 'vertical' or 'horizontal', indicating the 
-                        The default is 'vertical', indicating that the 
-        brush           Defines the brush that fills the region. Can be any arguments that
-                        are valid for :func:`mkBrush <pyqtgraph.mkBrush>`. Default is
-                        transparent blue.
-        pen             The pen to use when drawing the lines that bound the region.
-        hoverBrush      The brush to use when the mouse is hovering over the region.
-        hoverPen        The pen to use when the mouse is hovering over the region.
-        movable         If True, the region and individual lines are movable by the user; if
-                        False, they are static.
-        bounds          Optional [min, max] bounding values for the region
-        span            Optional [min, max] giving the range over the view to draw
-                        the region. For example, with a vertical line, use
-                        ``span=(0.5, 1)`` to draw only on the top half of the
-                        view.
-        swapMode        Sets the behavior of the region when the lines are moved such that
-                        their order reverses. "block" means the user cannot drag
-                        one line past the other. "push" causes both lines to be
-                        moved if one would cross the other. "sort" means that
-                        lines may trade places, but the output of getRegion
-                        always gives the line positions in ascending order. None
-                        means that no attempt is made to handle swapped line
-                        positions. The default is "sort".
-        ==============  =====================================================================
+
+        :param region: initial positions of the two boundary lines.
+        :param orientation: orientation of the boundary lines of the region.
+        :param draggable: whether the region can be changed by mouse dragging.
         """
         super().__init__()
-        self.orientation = orientation
-        self.bounds = QRectF()
-        self.blockLineSignal = False
-        self.moving = False
-        self.mouseHovering = False
-        self.span = span
-        self.swapMode = swapMode
+        self._orientation = orientation
+        self._moving = False
+        self._cursor_offset = 0
+        self._mouse_hovering = False
         self._bounds = None
-        
-        # note LinearRegionItem.Horizontal and LinearRegionItem.Vertical
-        # are kept for backward compatibility.
-        lineKwds = dict(
-            movable=movable,
-            bounds=bounds,
-            span=span,
-            pen=pen,
-            hoverPen=hoverPen,
-            )
             
-        if orientation in ('horizontal', LinearRegionItem.Horizontal):
-            self.lines = [
-                # rotate lines to 180 to preserve expected line orientation 
-                # with respect to region. This ensures that placing a '<|' 
-                # marker on lines[0] causes it to point left in vertical mode
-                # and down in horizontal mode. 
-                InfiniteLine(QPointF(0, values[0]), angle=0, **lineKwds),
-                InfiniteLine(QPointF(0, values[1]), angle=0, **lineKwds)]
-            self.lines[0].scale(1, -1)
-            self.lines[1].scale(1, -1)
-        elif orientation in ('vertical', LinearRegionItem.Vertical):
-            self.lines = [
-                InfiniteLine(QPointF(values[0], 0), angle=90, **lineKwds),
-                InfiniteLine(QPointF(values[1], 0), angle=90, **lineKwds)]
+        if orientation == Qt.Orientation.Horizontal:
+            self._lines = [
+                InfiniteHorizontalLine(v, draggable=draggable, parent=self)
+                for v in region]
+            self._lines[0].scale(1, -1)
+            self._lines[1].scale(1, -1)
+        elif orientation == Qt.Orientation.Vertical:
+            self._lines = [
+                InfiniteVerticalLine(v, draggable=draggable, parent=self)
+                for v in region]
         else:
-            raise Exception("Orientation must be 'vertical' or 'horizontal'.")
-        
-        for l in self.lines:
-            l.setParentItem(self)
-            l.sigPositionChangeFinished.connect(self.lineMoveFinished)
-        self.lines[0].sigPositionChanged.connect(lambda: self.lineMoved(0))
-        self.lines[1].sigPositionChanged.connect(lambda: self.lineMoved(1))
-            
-        if brush is None:
-            brush = QBrush(QColor(0, 0, 255, 50))
-        self.setBrush(brush)
-        
-        if hoverBrush is None:
-            c = self.brush.color()
-            c.setAlpha(min(c.alpha() * 2, 255))
-            hoverBrush = fn.mkBrush(c)
-        self.setHoverBrush(hoverBrush)
-        
-        self.setMovable(movable)
-        
-    def getRegion(self):
-        """Return the values at the edges of the region."""
-        r = (self.lines[0].value(), self.lines[1].value())
-        if self.swapMode == 'sort':
-            return min(r), max(r)
-        else:
-            return r
+            raise ValueError(f"Unknown orientation value: {orientation}")
 
-    def setRegion(self, rgn):
+        self.setAcceptHoverEvents(draggable)
+
+        for i, line in enumerate(self._lines):
+            line.position_change_finished_sgn.connect(self.lineMoveFinished)
+            line.position_changed_sgn.connect(lambda: self.lineMoved(i))
+
+        self.setLinePen(FColor.mkPen("Gray"))
+
+        self._pen = FColor.mkPen(None)
+        self._brush = None
+        self.setBrush(FColor.mkBrush("b", alpha=80))
+        self._hover_brush = None
+        self.setHoverBrush(FColor.mkBrush("b", alpha=40))
+
+    def setBrush(self, brush: QBrush) -> None:
+        """Set the QBrush used to fill the region."""
+        self._brush = brush
+        self.update()
+
+    def setHoverBrush(self, brush: QBrush) -> None:
+        """Set the QBrush used to fill the region when mouse is hovering."""
+        self._hover_brush = brush
+        self.update()
+
+    def setLinePen(self, pen: QPen) -> None:
+        for line in self._lines:
+            line.setPen(pen)
+
+    def setLineHoverPen(self, pen: QPen) -> None:
+        for line in self._lines:
+            line.setHoverPen(pen)
+
+    def region(self) -> tuple:
+        """Return the values at the edges of the region."""
+        return self._lines[0].value(), self._lines[1].value()
+
+    def setRegion(self, region: tuple):
         """Set the values for the edges of the region.
         
-        ==============   ==============================================
-        **Arguments:**
-        rgn              A list or tuple of the lower and upper values.
-        ==============   ==============================================
+        :param region:
         """
-        if self.lines[0].value() == rgn[0] and self.lines[1].value() == rgn[1]:
-            return
-        self.blockLineSignal = True
-        self.lines[0].setValue(rgn[0])
-        self.blockLineSignal = False
-        self.lines[1].setValue(rgn[1])
+        self._lines[0].setValue(region[0])
+        self._lines[1].setValue(region[1])
         self.lineMoved(0)
         self.lineMoved(1)
         self.lineMoveFinished()
 
-    def setBrush(self, *br, **kargs):
-        """Set the brush that fills the region. Can have any arguments that are valid
-        for :func:`mkBrush <pyqtgraph.mkBrush>`.
-        """
-        self.brush = fn.mkBrush(*br, **kargs)
-        self.currentBrush = self.brush
-
-    def setHoverBrush(self, *br, **kargs):
-        """Set the brush that fills the region when the mouse is hovering over.
-        Can have any arguments that are valid
-        for :func:`mkBrush <pyqtgraph.mkBrush>`.
-        """
-        self.hoverBrush = fn.mkBrush(*br, **kargs)
-
-    def setBounds(self, bounds):
-        """Optional [min, max] bounding values for the region. To have no bounds on the
-        region use [None, None].
-        Does not affect the current position of the region unless it is outside the new bounds. 
-        See :func:`setRegion <pyqtgraph.LinearRegionItem.setRegion>` to set the position 
-        of the region."""
-        for l in self.lines:
-            l.setBounds(bounds)
-        
-    def setMovable(self, m):
-        """Set lines to be movable by the user, or not. If lines are movable, they will 
-        also accept HoverEvents."""
-        for l in self.lines:
-            l.setMovable(m)
-        self.movable = m
-        self.setAcceptHoverEvents(m)
-
-    def setSpan(self, mn, mx):
-        if self.span == (mn, mx):
-            return
-        self.span = (mn, mx)
-        self.lines[0].setSpan(mn, mx)
-        self.lines[1].setSpan(mn, mx)
-        self.update()
-
     def boundingRect(self):
         br = self.viewRect()  # bounds of containing ViewBox mapped to local coords.
         
-        rng = self.getRegion()
-        if self.orientation in ('vertical', LinearRegionItem.Vertical):
+        rng = self.region()
+        if self._orientation == Qt.Orientation.Vertical:
             br.setLeft(rng[0])
             br.setRight(rng[1])
             length = br.height()
-            br.setBottom(br.top() + length * self.span[1])
-            br.setTop(br.top() + length * self.span[0])
+            br.setBottom(br.top())
+            br.setTop(br.top() + length)
         else:
             br.setTop(rng[0])
             br.setBottom(rng[1])
             length = br.width()
-            br.setRight(br.left() + length * self.span[1])
-            br.setLeft(br.left() + length * self.span[0])
+            br.setRight(br.left())
+            br.setLeft(br.left() + length)
 
         br = br.normalized()
         
@@ -208,26 +122,23 @@ class LinearRegionItem(pg.GraphicsObject):
         return br
         
     def paint(self, p, *args):
-        p.setBrush(self.currentBrush)
-        p.setPen(fn.mkPen(None))
+        if self._mouse_hovering:
+            p.setBrush(self._hover_brush)
+        else:
+            p.setBrush(self._brush)
+        p.setPen(self._pen)
         p.drawRect(self.boundingRect())
 
     def dataBounds(self, axis, frac=1.0, orthoRange=None):
-        if axis == self._orientation_axis[self.orientation]:
-            return self.getRegion()
-        else:
-            return None
+        if self._orientation == Qt.Orientation.Vertical and axis == 0:
+            return self.region()
+        if self._orientation == Qt.Orientation.Horizontal and axis == 1:
+            return self.region()
+        return None
 
     def lineMoved(self, i):
-        if self.blockLineSignal:
-            return
-
-        # lines swapped
-        if self.lines[0].value() > self.lines[1].value():
-            if self.swapMode == 'block':
-                self.lines[i].setValue(self.lines[1-i].value())
-            elif self.swapMode == 'push':
-                self.lines[1-i].setValue(self.lines[i].value())
+        if self._lines[0].value() > self._lines[1].value():
+            self._lines[i].setValue(self._lines[1-i].value())
         
         self.prepareGeometryChange()
         self.region_changed_sgn.emit(self)
@@ -235,54 +146,37 @@ class LinearRegionItem(pg.GraphicsObject):
     def lineMoveFinished(self):
         self.region_change_finished_sgn.emit(self)
 
-    def mouseDragEvent(self, ev):
-        if not self.movable or int(ev.button() & Qt.MouseButton.LeftButton) == 0:
+    def mouseDragEvent(self, ev: MouseDragEvent) -> None:
+        if ev.button() != Qt.MouseButton.LeftButton:
             return
         ev.accept()
-        
+
         if ev.entering():
             bdp = ev.buttonDownPos()
-            self.cursorOffsets = [l.pos() - bdp for l in self.lines]
-            self.startPositions = [l.pos() for l in self.lines]
-            self.moving = True
+            self._cursor_offset = [l.pos() - bdp for l in self._lines]
+            self._moving = True
             
-        if not self.moving:
+        if not self._moving:
             return
-            
-        self.lines[0].blockSignals(True)  # only want to update once
-        for i, l in enumerate(self.lines):
-            l.setPos(self.cursorOffsets[i] + ev.pos())
-        self.lines[0].blockSignals(False)
-        self.prepareGeometryChange()
-        
-        if ev.exiting():
-            self.moving = False
-            self.region_change_finished_sgn.emit(self)
-        else:
-            self.region_changed_sgn.emit(self)
-            
-    def mouseClickEvent(self, ev):
-        if self.moving and ev.button() == Qt.MouseButton.RightButton:
-            ev.accept()
-            for i, l in enumerate(self.lines):
-                l.setPos(self.startPositions[i])
-            self.moving = False
-            self.region_changed_sgn.emit(self)
-            self.region_change_finished_sgn.emit(self)
 
-    def hoverEvent(self, ev):
-        if self.movable and (not ev.isExit()) and ev.acceptDrags(Qt.MouseButton.LeftButton):
-            self.setMouseHover(True)
+        self._lines[0].blockSignals(True)  # only want to update once
+        for i, l in enumerate(self._lines):
+            l.setPos(self._cursor_offset[i] + ev.pos())
+        self._lines[0].blockSignals(False)
+        self.prepareGeometryChange()
+
+        if ev.exiting():
+            self._moving = False
+            self.region_change_finished_sgn.emit(self)
         else:
-            self.setMouseHover(False)
-            
-    def setMouseHover(self, hover):
-        # Inform the item that the mouse is(not) hovering over it
-        if self.mouseHovering == hover:
+            self.region_changed_sgn.emit(self)
+
+    def hoverEvent(self, ev: HoverEvent) -> None:
+        hovering = False
+        if not ev.isExit() and ev.acceptDrags(Qt.MouseButton.LeftButton):
+            hovering = True
+
+        if self._mouse_hovering == hovering:
             return
-        self.mouseHovering = hover
-        if hover:
-            self.currentBrush = self.hoverBrush
-        else:
-            self.currentBrush = self.brush
+        self._mouse_hovering = hovering
         self.update()

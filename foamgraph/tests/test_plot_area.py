@@ -4,7 +4,7 @@ from unittest.mock import patch
 from foamgraph.backend.QtTest import QSignalSpy
 
 from foamgraph import mkQApp
-from foamgraph.graphics_widgets import ImageHistogramEditor, PlotArea
+from foamgraph.plot_area import PlotArea
 from foamgraph.image_items import ImageItem
 from foamgraph.plot_items import (
     CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
@@ -290,9 +290,3 @@ class TestPlotArea(unittest.TestCase):
 
                 area.setAnnotationList([1], [4], [2])
                 mocked_value.assert_called_with("2.0000")
-
-
-class TestImageHistogramEditor(unittest.TestCase):
-    def testGeneral(self):
-        image_item = ImageItem()
-        item = ImageHistogramEditor(image_item, parent=None)

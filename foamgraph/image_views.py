@@ -17,7 +17,7 @@ from . import pyqtgraph_be as pg
 
 from .aesthetics import ColorMap
 from .config import config
-from .graphics_widgets import ImageHistogramEditor
+from .image_colorbar_widget import ImageColorbarWidget
 from .plot_widgets import PlotWidgetF
 from .image_items import ImageItem
 from .roi import RectROI
@@ -30,7 +30,7 @@ class HistogramLUTWidget(pg.GraphicsView):
         if not isinstance(image_item, ImageItem):
             raise TypeError
 
-        self._item = ImageHistogramEditor(image_item)
+        self._item = ImageColorbarWidget(image_item)
         self.setCentralWidget(self._item)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.setMinimumWidth(95)
@@ -70,7 +70,7 @@ class ImageViewF(QWidget):
         self._mouse_hover_v_rounding_decimals = 1
 
         self._rois = []
-        self._roi_colors = ['b', 'r', 'g', 'o']
+        self._roi_colors = ['b', 'r', 'g', 'y']
         if n_rois > 4:
             raise ValueError("Maximum number of ROIs is 4.")
         self._initializeROIs(n_rois, roi_position, roi_size)
@@ -236,7 +236,7 @@ class ImageViewF(QWidget):
     def setLevels(self, *args, **kwargs):
         """Set the min/max (bright and dark) levels.
 
-        See ImageHistogramEditor.setLevels.
+        See ImageColorbarWidget.setLevels.
         """
         self._hist_widget.setLevels(*args, **kwargs)
 

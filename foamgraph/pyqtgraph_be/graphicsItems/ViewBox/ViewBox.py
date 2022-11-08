@@ -11,6 +11,7 @@ from ....backend.QtGui import QSizePolicy, QTransform
 from ...Point import Point
 from ... import functions as fn
 from .. ItemGroup import ItemGroup
+from ...GraphicsScene import MouseClickEvent, MouseDragEvent
 from ..GraphicsWidget import GraphicsWidget
 from ... import getConfigOption
 
@@ -1214,7 +1215,7 @@ class ViewBox(GraphicsWidget):
         ev.accept()
         self.sigRangeChangedManually.emit(mask)
 
-    def mouseClickEvent(self, ev):
+    def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton and self.menuEnabled():
             ev.accept()
             self.raiseContextMenu(ev)
@@ -1231,7 +1232,7 @@ class ViewBox(GraphicsWidget):
     def getContextMenus(self, event):
         return self.menu.actions() if self.menuEnabled() else []
 
-    def mouseDragEvent(self, ev, axis=None):
+    def mouseDragEvent(self, ev: MouseDragEvent, axis=None):
         # if axis is specified, event will only affect that axis.
         ev.accept()  # we accept all buttons
 

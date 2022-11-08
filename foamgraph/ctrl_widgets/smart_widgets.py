@@ -37,7 +37,7 @@ class SmartLineEdit(QLineEdit):
     def onTextChanged(self):
         if not self._text_modified:
             self.setStyleSheet(
-                f"QLineEdit {{ background: rgb{FColor.o}}}")
+                f"QLineEdit {{ background: rgb{FColor.Orange}}}")
             self._text_modified = True
 
     def setText(self, text):

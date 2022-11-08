@@ -41,7 +41,8 @@ class ScatterPlot(PlotWidgetF):
         self.setLabel('bottom', "x (arb. u.)")
         self.setLabel('left', "y (arb. u.)")
 
-        self._plot = self.plotScatter(brush=FColor.mkBrush('p', alpha=150))
+        self._plot = self.plotScatter(
+            brush=FColor.mkBrush('Purple', alpha=150))
 
     def updateF(self, data):
         """Override."""
@@ -57,8 +58,8 @@ class BarPlot(PlotWidgetF):
         self.setLabel('bottom', "x (arb. u.)")
         self.setLabel('left', "y (arb. u.)")
 
-        self._plot = self.plotBar(
-            pen=FColor.mkPen('s'), brush=FColor.mkBrush('b'))
+        self._plot = self.plotBar(pen=FColor.mkPen('ForestGreen'),
+                                  brush=FColor.mkBrush('DodgerBlue'))
 
     def updateF(self, data):
         """Override."""
@@ -75,8 +76,9 @@ class ErrorbarPlot(TimedPlotWidgetF):
         self.setLabel('left', "y (arb. u.)")
 
         self._plot1 = self.plotErrorbar(
-            beam=1, pen=FColor.mkPen('o'))
-        self._plot2 = self.plotCurve(pen=FColor.mkPen('o', width=2))
+            beam=1, pen=FColor.mkPen('Orange'))
+        self._plot2 = self.plotCurve(
+            pen=FColor.mkPen('Orange', width=2))
 
     def refresh(self):
         """Override."""
@@ -98,7 +100,7 @@ class MultiLinePlot(PlotWidgetF):
         self._plot2 = self.plotCurve(
             name='Line B', pen=FColor.mkPen('b', width=2))
         self._plot3 = self.plotCurve(
-            name='Line C', pen=FColor.mkPen('c', width=2))
+            name='Line C', pen=FColor.mkPen('r', width=2))
 
         self.addLegend()
 
@@ -119,10 +121,12 @@ class DoubleYPlot(PlotWidgetF):
         self.setLabel('left', "y (arb. u.)")
         self.setLabel('right', "y2 (arg. u.)")
 
-        self._plot = self.plotCurve(name="Data", pen=FColor.mkPen('w'))
-        self._plot1 = self.plotScatter(symbol='x', pen=FColor.mkPen('w'))
+        self._plot = self.plotCurve(
+            name="Data", pen=FColor.mkPen('Brown'))
+        self._plot1 = self.plotScatter(
+            symbol='x', pen=FColor.mkPen('Brown'))
         self._plot2 = self.plotBar(
-            name="Count", y2=True, brush=FColor.mkBrush('i', alpha=150))
+            name="Count", y2=True, brush=FColor.mkBrush('Silver', alpha=150))
         self.addLegend()
 
     def updateF(self, data):

@@ -125,7 +125,6 @@ from .WidgetGroup import *
 from .Point import Point
 from .SRTTransform import SRTTransform
 from .functions import *
-from .colormap import *
 from .ptime import time
 from .Qt import isQObjectAlive
 

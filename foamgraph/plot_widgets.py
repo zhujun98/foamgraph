@@ -16,8 +16,8 @@ from .backend.QtWidgets import QSizePolicy
 
 from . import pyqtgraph_be as pg
 
-from .graphics_widgets import PlotArea
-from .infinite_line import InfiniteLine
+from .plot_area import PlotArea
+from .infinite_line import InfiniteHorizontalLine, InfiniteVerticalLine
 from .plot_items import (
     BarGraphItem, CurvePlotItem, ScatterPlotItem, ErrorbarItem
 )
@@ -58,8 +58,8 @@ class PlotWidgetF(pg.GraphicsView):
         self._v_line = None
         self._h_line = None
         if enable_meter:
-            self._v_line = InfiniteLine(angle=90, movable=False)
-            self._h_line = InfiniteLine(angle=0, movable=False)
+            self._v_line = InfiniteVerticalLine(0., draggable=False)
+            self._h_line = InfiniteHorizontalLine(0., draggable=False)
             self._v_line.hide()
             self._h_line.hide()
             self._plot_area.addItem(self._v_line, ignore_bounds=True)
@@ -184,8 +184,8 @@ class PlotWidgetF(pg.GraphicsView):
     def onMouseMoved(self, pos):
         m_pos = self._plot_area.mapSceneToView(pos[0])
         x, y = m_pos.x(), m_pos.y()
-        self._v_line.setPos(x)
-        self._h_line.setPos(y)
+        self._v_line.setValue(x)
+        self._h_line.setValue(y)
         self._plot_area.setMeter((x, y))
 
     def closeEvent(self, event):
