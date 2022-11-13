@@ -8,9 +8,6 @@ Author: Jun Zhu
 import warnings
 from itertools import chain
 
-import numpy as np
-
-from .backend.QtGui import QPainter
 from .backend.QtCore import pyqtSignal, pyqtSlot, Qt
 from .backend.QtWidgets import (
     QCheckBox, QGraphicsGridLayout, QHBoxLayout, QLabel, QMenu, QSizePolicy,
@@ -18,152 +15,8 @@ from .backend.QtWidgets import (
 )
 
 from . import pyqtgraph_be as pg
-from .pyqtgraph_be import Point
-from .pyqtgraph_be import functions as fn
-from .plot_items import CurvePlotItem, PlotItem
+from .plot_items import PlotItem
 from .aesthetics import FColor
-
-
-class ImageHistogramEditor(pg.GraphicsWidget):
-    """GraphicsWidget for adjusting the display of an image.
-
-    Implemented based on pyqtgraph.HistogramLUTItem.
-    """
-
-    lut_changed_sgn = pyqtSignal(object)
-
-    def __init__(self, image_item, parent=None):
-        super().__init__(parent=parent)
-        self._lut = None
-
-        gradient = pg.GradientEditorItem()
-        gradient.setOrientation('right')
-        gradient.loadPreset('grey')
-        self._gradient = gradient
-        self._gradient.show()
-
-        lri = pg.LinearRegionItem([0, 1], 'horizontal', swapMode='block')
-        lri.setZValue(1000)
-        lri.lines[0].addMarker('<|', 0.5)
-        lri.lines[1].addMarker('|>', 0.5)
-        self._lri = lri
-
-        self._hist = CurvePlotItem(pen=FColor.mkPen('k'))
-        self._hist.rotate(90)
-
-        vb = pg.ViewBox(parent=self)
-        vb.setMaximumWidth(152)
-        vb.setMinimumWidth(45)
-        vb.setMouseEnabled(x=False, y=True)
-        vb.addItem(self._hist)
-        vb.addItem(self._lri)
-        vb.enableAutoRange(pg.ViewBox.XYAxes)
-        self._vb = vb
-
-        self._axis = pg.AxisItem(
-            'left', linkView=self._vb, maxTickLength=-10, parent=self)
-
-        self.initUI()
-        self.initConnections()
-
-        image_item.image_changed_sgn.connect(self.onImageChanged)
-        # send function pointer, not the result
-        image_item.setLookupTable(self.getLookupTable)
-        self._image_item = image_item
-        # If image_item._image is None, the following line does not initialize
-        # image_item._levels
-        self.onImageChanged(auto_levels=True)
-        # synchronize levels
-        image_item.setLevels(self.getLevels())
-
-    def initUI(self):
-        layout = QGraphicsGridLayout()
-        layout.setContentsMargins(1, 1, 1, 1)
-        layout.setSpacing(0)
-        layout.addItem(self._axis, 0, 0)
-        layout.addItem(self._vb, 0, 1)
-        layout.addItem(self._gradient, 0, 2)
-        self.setLayout(layout)
-
-    def initConnections(self):
-        self._lri.sigRegionChanged.connect(self.regionChanging)
-        self._lri.sigRegionChangeFinished.connect(self.regionChanged)
-
-        self._gradient.sigGradientChanged.connect(self.gradientChanged)
-
-        self._vb.sigRangeChanged.connect(self.update)
-
-    def paint(self, p, *args):
-        """Override."""
-        pen = self._lri.lines[0].pen
-        rgn = self.getLevels()
-        p1 = self._vb.mapFromViewToItem(
-            self, Point(self._vb.viewRect().center().x(), rgn[0]))
-        p2 = self._vb.mapFromViewToItem(
-            self, Point(self._vb.viewRect().center().x(), rgn[1]))
-
-        rect = self._gradient.mapRectToParent(self._gradient.gradRect.rect())
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        for pen in [fn.mkPen((0, 0, 0, 100), width=3), pen]:
-            p.setPen(pen)
-            p.drawLine(p1 + Point(0, 5), rect.bottomLeft())
-            p.drawLine(p2 - Point(0, 5), rect.topLeft())
-            p.drawLine(rect.topLeft(), rect.topRight())
-            p.drawLine(rect.bottomLeft(), rect.bottomRight())
-
-    def gradientChanged(self):
-        if self._gradient.isLookupTrivial():
-            # lambda x: x.astype(np.uint8))
-            self._image_item.setLookupTable(None)
-        else:
-            # send function pointer, not the result
-            self._image_item.setLookupTable(self.getLookupTable)
-
-        self._lut = None
-        self.lut_changed_sgn.emit(self)
-
-    def getLookupTable(self, img=None, n=None, alpha=None):
-        """Return the look-up table."""
-        if self._lut is None:
-            if n is None:
-                n = 256 if img.dtype == np.uint8 else 512
-            self._lut = self._gradient.getLookupTable(n, alpha=alpha)
-        return self._lut
-
-    def regionChanging(self):
-        """One line of the region is being dragged."""
-        self._image_item.setLevels(self.getLevels())
-        self.update()
-
-    def regionChanged(self):
-        """Line dragging has finished."""
-        self._image_item.setLevels(self.getLevels())
-
-    def onImageChanged(self, auto_levels=False):
-        hist, bin_centers = self._image_item.histogram()
-
-        if hist is None:
-            self._hist.setData([], [])
-            return
-
-        self._hist.setData(bin_centers, hist)
-        if auto_levels:
-            self._lri.setRegion((bin_centers[0], bin_centers[-1]))
-        else:
-            # synchronize levels if ImageItem updated its image with
-            # auto_levels = True
-            self._lri.setRegion(self._image_item.getLevels())
-
-    def setColorMap(self, cm):
-        self._gradient.setColorMap(cm)
-
-    def getLevels(self):
-        return self._lri.getRegion()
-
-    def setLevels(self, levels):
-        """Called by ImageHistogramEditor."""
-        self._lri.setRegion(levels)
 
 
 class PlotArea(pg.GraphicsWidget):
@@ -192,7 +45,8 @@ class PlotArea(pg.GraphicsWidget):
                  parent=None):
         super().__init__(parent=parent)
 
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding,
+                           QSizePolicy.Policy.Expanding)
 
         self._items = set()
         self._plot_items = set()

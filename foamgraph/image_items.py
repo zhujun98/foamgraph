@@ -16,6 +16,7 @@ from .backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
 from .pyqtgraph_be import functions as fn
+from .pyqtgraph_be.GraphicsScene import HoverEvent
 
 from .aesthetics import FColor
 from .algorithms import quick_min_max
@@ -79,10 +80,10 @@ class ImageItem(pg.GraphicsObject):
             self._fast_lut = None
             self.setImage(auto_levels=False)
 
-    def getLevels(self):
+    def levels(self) -> tuple:
         return self._levels
 
-    def setLookupTable(self, lut, update=True):
+    def setLookupTable(self, lut, update=True) -> None:
         if lut is not self._lut:
             self._lut = lut
             self._fast_lut = None
@@ -323,7 +324,7 @@ class ImageItem(pg.GraphicsObject):
             self._qimage = None
             self.update()
 
-    def hoverEvent(self, ev):
+    def hoverEvent(self, ev: HoverEvent):
         """Override."""
         if ev.isExit():
             x = -1  # out of image
@@ -362,58 +363,6 @@ class ImageItem(pg.GraphicsObject):
             self.draw_finished_sgn.emit()
         else:
             ev.ignore()
-
-
-class RectROI(pg.ROI):
-    """Rectangular ROI widget.
-
-    Note: the widget is slightly different from pyqtgraph.RectROI
-    """
-    def __init__(self, idx: int, *,
-                 pos: tuple = (0, 0),
-                 size: tuple = (1, 1),
-                 color: str = 'k',
-                 parent=None):
-        """Initialization.
-
-        :param idx: index of the ROI.
-        :param pos: (x, y) of the left-upper corner.
-        :param size: (w, h) of the ROI.
-        :param color: ROI display color.
-        """
-        # TODO: make 'color' an attribute of the parent class
-        self._color = color
-        pen = FColor.mkPen(color, width=2, style=Qt.PenStyle.SolidLine)
-        super().__init__(pos, size,
-                         translateSnap=True,
-                         scaleSnap=True,
-                         pen=pen,
-                         parent=parent)
-
-        self._index = idx
-
-    @property
-    def index(self):
-        return self._index
-
-    @property
-    def color(self):
-        return self._color
-
-    def setLocked(self, locked):
-        if locked:
-            self.translatable = False
-            self.removeHandle(0)
-            self._handle_info = None
-        else:
-            self.translatable = True
-            self._addHandle()
-            self._handle_info = self.handles[0]
-
-    def _addHandle(self):
-        """An alternative to addHandle in parent class."""
-        # position, scaling center
-        self.addScaleHandle([1, 1], [0, 0])
 
 
 class GeometryItem(pg.GraphicsObject):

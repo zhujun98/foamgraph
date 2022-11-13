@@ -3,12 +3,14 @@ from .GraphicsObject import GraphicsObject
 if QT_LIB in ['PyQt5']:
     import sip
 
+from ..Point import Point
+
 __all__ = ['UIGraphicsItem']
 
 
 class UIGraphicsItem(GraphicsObject):
-    """
-    Base class for graphics items with boundaries relative to a GraphicsView or ViewBox.
+    """Base class for graphics items with boundaries relative to a GraphicsView or ViewBox.
+
     The purpose of this class is to allow the creation of GraphicsItems which live inside 
     a scalable view, but whose boundaries will always stay fixed relative to the view's boundaries.
     For example: GridItem, InfiniteLine
@@ -18,7 +20,7 @@ class UIGraphicsItem(GraphicsObject):
     NOTE: Only the item's boundingRect is affected; the item is not transformed in any way. Use viewRangeChanged
     to respond to changes in the view.
     """
-
+    # TODO: make parent the first argument
     def __init__(self, bounds=None, parent=None):
         """
         ============== =============================================================================
@@ -27,7 +29,7 @@ class UIGraphicsItem(GraphicsObject):
                        which means the item will have the same bounds as the view.
         ============== =============================================================================
         """
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges)
             
         if bounds is None:
@@ -37,15 +39,12 @@ class UIGraphicsItem(GraphicsObject):
             
         self._boundingRect = None
         self._updateView()
-        
-    def paint(self, *args):
-        pass
     
     def itemChange(self, change, value):
         ret = GraphicsObject.itemChange(self, change, value)
             
-        ## workaround for pyqt bug:
-        ## http://www.riverbankcomputing.com/pipermail/pyqt/2012-August/031818.html
+        # workaround for pyqt bug:
+        # http://www.riverbankcomputing.com/pipermail/pyqt/2012-August/031818.html
         if QT_LIB in ['PyQt5'] and change == self.ItemParentChange and isinstance(ret, QtGui.QGraphicsItem):
             ret = sip.cast(ret, QtGui.QGraphicsItem)
         
@@ -54,12 +53,12 @@ class UIGraphicsItem(GraphicsObject):
         return ret
 
     def boundingRect(self):
+        """Override."""
         if self._boundingRect is None:
             br = self.viewRect()
             if br is None:
                 return QtCore.QRectF()
-            else:
-                self._boundingRect = br
+            self._boundingRect = br
         return QtCore.QRectF(self._boundingRect)
     
     def dataBounds(self, axis, frac=1.0, orthoRange=None):
@@ -74,13 +73,14 @@ class UIGraphicsItem(GraphicsObject):
         
     def setNewBounds(self):
         """Update the item's bounding rect to match the viewport"""
-        self._boundingRect = None  ## invalidate bounding rect, regenerate later if needed.
+        self._boundingRect = None  # invalidate bounding rect, regenerate later if needed.
         self.prepareGeometryChange()
 
-    def setPos(self, *args):
-        GraphicsObject.setPos(self, *args)
+    def setPos(self, pos: Point):
+        """Override."""
+        super().setPos(pos)
         self.setNewBounds()
-        
+
     def mouseShape(self):
         """Return the shape of this item after Policy.Expanding by 2 pixels"""
         shape = self.shape()

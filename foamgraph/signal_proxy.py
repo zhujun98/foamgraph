@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
-from .Qt import QtCore
-from .ptime import time
-from . import ThreadsafeTimer
 import weakref
 
-__all__ = ['SignalProxy']
+from .backend.QtCore import pyqtSignal, QObject
 
-class SignalProxy(QtCore.QObject):
+from foamgraph.pyqtgraph_be.ptime import time
+from foamgraph.pyqtgraph_be import ThreadsafeTimer
+
+
+class SignalProxy(QObject):
     """Object which collects rapid-fire signals and condenses them
     into a single signal or a rate-limited stream of signals. 
     Used, for example, to prevent a SpinBox from generating multiple 
@@ -14,19 +14,20 @@ class SignalProxy(QtCore.QObject):
     
     Emits sigDelayed after input signals have stopped for a certain period of time.
     """
+
+    sigDelayed = pyqtSignal(object)
     
-    sigDelayed = QtCore.Signal(object)
-    
-    def __init__(self, signal, delay=0.3, rateLimit=0, slot=None):
-        """Initialization arguments:
-        signal - a bound Signal or pyqtSignal instance
-        delay - Time (in seconds) to wait for signals to stop before emitting (default 0.3s)
-        slot - Optional function to connect sigDelayed to.
-        rateLimit - (signals/sec) if greater than 0, this allows signals to stream out at a 
-                    steady rate while they are being received.
+    def __init__(self, signal, delay: float = 0.3, rateLimit=0, slot=None):
+        """Initialization.
+
+        :param signal: A bound Signal or pyqtSignal instance.
+        :param delay: Time (in seconds) to wait for signals to stop before emitting (default 0.3s).
+        :param rateLimit: (signals/sec) if greater than 0, this allows signals to stream out at a
+            steady rate while they are being received.
+        :param slot: Optional function to connect sigDelayed to.
         """
-        
-        QtCore.QObject.__init__(self)
+        super().__init__()
+
         signal.connect(self.signalReceived)
         self.signal = signal
         self.delay = delay
@@ -61,8 +62,7 @@ class SignalProxy(QtCore.QObject):
                 
             self.timer.stop()
             self.timer.start((min(leakTime, self.delay)*1000)+1)
-            
-        
+
     def flush(self):
         """If there is a signal queued up, send it now."""
         if self.args is None or self.block:
@@ -70,17 +70,5 @@ class SignalProxy(QtCore.QObject):
         args, self.args = self.args, None
         self.timer.stop()
         self.lastFlushTime = time()
-        #self.emit(self.signal, *self.args)
         self.sigDelayed.emit(args)
         return True
-        
-    def disconnect(self):
-        self.block = True
-        try:
-            self.signal.disconnect(self.signalReceived)
-        except:
-            pass
-        try:
-            self.sigDelayed.disconnect(self.slot)
-        except:
-            pass

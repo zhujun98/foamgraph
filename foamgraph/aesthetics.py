@@ -5,13 +5,9 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from typing import Union
-
-from .backend.QtCore import Qt
-from .backend.QtGui import QBrush, QColor, QPen, QPalette
-
-from .pyqtgraph_be import ColorMap
-from .pyqtgraph_be.graphicsItems.GradientEditorItem import Gradients
+from .backend.QtCore import Qt, QSize
+from .backend.QtGui import QBrush, QColor, QIcon, QPen
+from .backend.QtWidgets import QPushButton
 
 from .config import config
 
@@ -21,19 +17,52 @@ class QualitativeColor:
     foreground = config["FOREGROUND_COLOR"]  # black
     background = config["BACKGROUND_COLOR"]  # white-like
 
+    # Base colors from matplotlib
+    # ---------------------------
+    r = (255, 0, 0)  # red
+    g = (0, 128, 0)  # green
+    b = (0, 0, 255)  # blue
+    c = (0, 192, 192)  # cyan
+    m = (192, 0, 192)  # magenta
+    y = (192, 192, 0)  # yellow
     k = (0, 0, 0)  # black
-    n = (251, 154, 153)  # pink
-    r = (227, 26, 28)  # red
-    o = (255, 127, 0)  # orange
-    y = (255, 255, 153)  # yellow
-    c = (166, 206, 227)  # cyan
-    b = (31, 120, 180)  # blue
-    s = (178, 223, 138)  # grass green
-    g = (51, 160, 44)  # green
-    p = (106, 61, 154)  # purple
-    d = (202, 178, 214)  # orchid
-    w = (177, 89, 40)  # brown
-    i = (192, 192, 192)  # silver
+    w = (255, 255, 255)  # white
+
+    # CSS colors
+    # ----------
+
+    FireBrick = (178, 34, 34)
+    Red = (255, 0, 0)
+
+    Pink = (255, 192, 203)
+
+    DarkOrange = (255, 140, 0)
+    Orange = (255, 165, 0)
+
+    Yellow = (255, 255, 0)
+    Khaki = (240, 230, 140)
+
+    Violet = (238, 130, 238)
+    Orchid = (218, 112, 214)
+    Magenta = (255, 0, 255)
+    Purple = (128, 0, 128)
+
+    ForestGreen = (34, 139, 34)
+    Green = (0, 128, 0)
+    DarkGreen = (0, 100, 0)
+
+    Cyan = (0, 255, 255)
+    DodgerBlue = (30, 144, 255)
+    Blue = (0, 0, 255)
+
+    Chocolate = (210, 105, 30)
+    Brown = (165, 42, 42)
+
+    White = (255, 255, 255)
+
+    Silver = (192, 192, 192)
+    Gray = (128, 128, 128)
+    Black = (0, 0, 0)
 
     @classmethod
     def mkColor(cls, c, *, alpha=255):
@@ -144,22 +173,121 @@ class SequentialColor:
             yield QBrush(QColor(*c, alpha))
 
 
-# Valid keys: thermal, flame, yellowy, bipolar, spectrum, cyclic, greyclip, grey
-colorMapFactory = \
-    {name: ColorMap(*zip(*Gradients[name]["ticks"]))
-     for name in Gradients.keys()}
+class ColorMap:
+    """
+    A ColorMap defines a relationship between a scalar value and a range of colors.
+    ColorMaps are commonly used for false-coloring monochromatic images, coloring
+    scatter-plot points, and coloring surface plots by height.
+
+    Each color map is defined by a set of colors, each corresponding to a
+    particular scalar value. For example:
+
+        | 0.0  -> black
+        | 0.2  -> red
+        | 0.6  -> yellow
+        | 1.0  -> white
+
+    The colors for intermediate values are determined by interpolating between
+    the two nearest colors in either RGB or HSV color space.
+
+    To provide user-defined color mappings, see :class:`GradientWidget <pyqtgraph.GradientWidget>`.
+    """
+
+    gradients = {
+        'thermal': (
+            [0, 0.3333, 0.6666, 1],
+            [
+                (0, 0, 0, 255),
+                (185, 0, 0, 255),
+                (255, 220, 0, 255),
+                (255, 255, 255, 255)
+            ],
+        ),
+        'flame': (
+            [0.0, 0.2, 0.5, 0.8, 1.0],
+            [
+                (0, 0, 0, 255),
+                (7, 0, 220, 255),
+                (236, 0, 134, 255),
+                (246, 246, 0, 255),
+                (255, 255, 255, 255)
+            ]
+        ),
+        'grey': (
+            [0.0, 1.0],
+            [
+                (0, 0, 0, 255),
+                (255, 255, 255, 255)
+            ]
+        ),
+        'viridis': (
+            [0.0, 0.25, 0.5, 0.75, 1.0],
+            [
+                (68, 1, 84, 255),
+                (58, 82, 139, 255),
+                (32, 144, 140, 255),
+                (94, 201, 97, 255),
+                (253, 231, 36, 255)
+            ]
+        ),
+        'inferno': (
+            [0.0, 0.25, 0.5, 0.75, 1.0],
+            [
+                (0, 0, 3, 255),
+                (87, 15, 109, 255),
+                (187, 55, 84, 255),
+                (249, 142, 8, 255),
+                (252, 254, 164, 255)
+            ]
+        ),
+        'plasma': (
+            [0.0, 0.25, 0.5, 0.75, 1.0],
+            [
+                (12, 7, 134, 255),
+                (126, 3, 167, 255),
+                (203, 71, 119, 255),
+                (248, 149, 64, 255),
+                (239, 248, 33, 255)
+            ]
+        ),
+        'magma': (
+            [0.0, 0.25, 0.5, 0.75, 1.0],
+            [
+                (0, 0, 3, 255),
+                (80, 18, 123, 255),
+                (182, 54, 121, 255),
+                (251, 136, 97, 255),
+                (251, 252, 191, 255)
+            ]
+        ),
+    }
+
+    def __init__(self, positions: list, colors: list[tuple]):
+        """Initialization.
+
+        :param positions: Position for each color.
+        :param colors: Color (RGBA) at each position.
+        """
+        self.positions = positions
+        self.colors = [QColor(*c) for c in colors]
+
+    @classmethod
+    def fromName(cls, name: str):
+        return ColorMap(*cls.gradients[name])
 
 
-lookupTableFactory = {name: cmap.getLookupTable()
-                      for name, cmap in colorMapFactory.items()}
+def createIconButton(filepath: str, size: int, *, description: str = ""):
+    """Create a QPushButton with icon.
 
-
-def set_button_color(btn, color: Union[QColor, str]):
-    """Set color for a given button."""
-    palette = btn.palette()
-    if isinstance(color, QColor):
-        palette.setColor(QPalette.ColorRole.Button, color)
-    else:
-        palette.setColor(QPalette.ColorRole.Button, QualitativeColor.mkColor(color))
-    btn.setAutoFillBackground(True)
-    btn.setPalette(palette)
+    :param filename: path of the icon file.
+    :param size: size of the icon (button).
+    :param description: tool tip of the button.
+    """
+    btn = QPushButton()
+    icon = QIcon(filepath)
+    btn.setIcon(icon)
+    btn.setIconSize(QSize(size, size))
+    btn.setFixedSize(btn.minimumSizeHint())
+    if description:
+        btn.setToolTip(description)
+    return btn

@@ -7,6 +7,7 @@ import weakref
 from .. import functions as fn
 from .. import getConfigOption
 from .GraphicsWidget import GraphicsWidget
+from ..GraphicsScene import MouseClickEvent, MouseDragEvent
 
 __all__ = ['AxisItem']
 class AxisItem(GraphicsWidget):
@@ -1125,17 +1126,17 @@ class AxisItem(GraphicsWidget):
             lv.wheelEvent(ev, axis=0)
         ev.accept()
 
-    def mouseDragEvent(self, event):
+    def mouseDragEvent(self, ev: MouseDragEvent):
         lv = self.linkedView()
         if lv is None:
             return
         if self.orientation in ['left', 'right']:
-            return lv.mouseDragEvent(event, axis=1)
+            return lv.mouseDragEvent(ev, axis=1)
         else:
-            return lv.mouseDragEvent(event, axis=0)
+            return lv.mouseDragEvent(ev, axis=0)
 
-    def mouseClickEvent(self, event):
+    def mouseClickEvent(self, ev: MouseClickEvent):
         lv = self.linkedView()
         if lv is None:
             return
-        return lv.mouseClickEvent(event)
+        return lv.mouseClickEvent(ev)

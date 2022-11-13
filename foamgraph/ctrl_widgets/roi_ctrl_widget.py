@@ -15,7 +15,7 @@ from ..backend.QtWidgets import (
 from .base_ctrl_widgets import AbstractCtrlWidget, AbstractGroupBoxCtrlWidget
 from .smart_widgets import SmartLineEdit
 from ..aesthetics import FColor
-from ..image_items import RectROI
+from ..roi import RectROI
 
 
 class RoiCtrlWidget(AbstractCtrlWidget):
@@ -89,7 +89,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         self._px_le.value_changed_sgn.connect(self.onRoiPositionEdited)
         self._py_le.value_changed_sgn.connect(self.onRoiPositionEdited)
 
-        self._roi.sigRegionChangeFinished.connect(
+        self._roi.region_change_finished_sgn.connect(
             self.onRoiGeometryChangeFinished)
 
         self._activate_cb.stateChanged.connect(self.onToggleRoiActivation)
@@ -128,8 +128,8 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         # If 'update' == False, the state change will be remembered
         # but not processed and no signals will be emitted.
         self._roi.setPos((x, y), update=False)
-        # trigger sigRegionChanged which moves the handler(s)
-        # finish=False -> sigRegionChangeFinished will not emit, which
+        # trigger region_changed_sgn which moves the handler(s)
+        # finish=False -> region_change_finished_sgn will not emit, which
         # otherwise triggers infinite recursion
         self._roi.stateChanged(finish=False)
 
@@ -149,8 +149,8 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         # If 'update' == False, the state change will be remembered
         # but not processed and no signals will be emitted.
         self._roi.setSize((w, h), update=False)
-        # trigger sigRegionChanged which moves the handler(s)
-        # finish=False -> sigRegionChangeFinished will not emit, which
+        # trigger region_changed_sgn which moves the handler(s)
+        # finish=False -> region_change_finished_sgn will not emit, which
         # otherwise triggers infinite recursion
         self._roi.stateChanged(finish=False)
 
@@ -169,7 +169,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 
     def notifyRoiParams(self):
         # fill the QLineEdit(s) and Redis
-        self._roi.sigRegionChangeFinished.emit(self._roi)
+        self._roi.region_change_finished_sgn.emit(self._roi)
 
     def _updateParameters(self, x, y, w, h):
         self.roi_geometry_change_sgn.disconnect()

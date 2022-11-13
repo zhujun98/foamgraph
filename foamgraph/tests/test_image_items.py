@@ -18,7 +18,7 @@ class TestImageItem(unittest.TestCase):
 
 class TestGeometryItem(unittest.TestCase):
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
         cls._widget = PlotWidgetF()
         if _display():
             cls._widget.show()

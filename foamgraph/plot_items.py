@@ -64,17 +64,17 @@ class PlotItem(pg.GraphicsObject):
         self.informViewBoundsChanged()
 
     @abc.abstractmethod
-    def _prepareGraph(self):
+    def _prepareGraph(self) -> None:
         raise NotImplementedError
 
-    def paint(self, p, *args):
+    def paint(self, p, *args) -> None:
         """Override."""
         if self._graph is None:
             self._prepareGraph()
         p.setPen(self._pen)
         p.drawPath(self._graph)
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
         """Override."""
         if self._graph is None:
             self._prepareGraph()
@@ -156,7 +156,7 @@ class CurvePlotItem(PlotItem):
                 self.toLogScale(self._y)
                 if self._log_y_mode else np.nan_to_num(self._y))
 
-    def _prepareGraph(self):
+    def _prepareGraph(self) -> None:
         """Override."""
         x, y = self.transformedData()
         self._graph = self.array2Path(x, y)
@@ -224,7 +224,7 @@ class BarGraphItem(PlotItem):
         """Override."""
         return self._x, self._y
 
-    def _prepareGraph(self):
+    def _prepareGraph(self) -> None:
         """Override."""
         self._graph = QPicture()
         p = QPainter(self._graph)
@@ -250,7 +250,7 @@ class BarGraphItem(PlotItem):
             self._prepareGraph()
         self._graph.play(p)
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
         """Override."""
         return QRectF(super().boundingRect())
 
@@ -281,7 +281,7 @@ class ErrorbarItem(PlotItem):
 
         self._beam = 0.0 if beam is None else beam
         self._line = line
-        self._pen = FColor.mkPen('p') if pen is None else pen
+        self._pen = FColor.mkPen('m') if pen is None else pen
 
         self.setData(x, y, y_min=y_min, y_max=y_max)
 
@@ -337,7 +337,7 @@ class ErrorbarItem(PlotItem):
     def setBeam(self, w):
         self._beam = w
 
-    def _prepareGraph(self):
+    def _prepareGraph(self) -> None:
         p = QPainterPath()
 
         x, y, y_min, y_max = self.transformedData()
@@ -516,7 +516,7 @@ class ScatterPlotItem(PlotItem):
     def pixelPadding(self):
         return 0.7072 * self._symbol_width
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
         """Override."""
         xmn, xmx = self.dataBounds(ax=0)
         ymn, ymx = self.dataBounds(ax=1)

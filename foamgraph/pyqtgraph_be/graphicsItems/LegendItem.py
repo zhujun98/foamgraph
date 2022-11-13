@@ -4,6 +4,7 @@ from ..Qt import QtGui, QtCore
 from .. import functions as fn
 from ..Point import Point
 from .GraphicsWidgetAnchor import GraphicsWidgetAnchor
+from ..GraphicsScene import HoverEvent, MouseDragEvent
 
 __all__ = ['LegendItem']
 
@@ -262,10 +263,10 @@ class LegendItem(GraphicsWidget, GraphicsWidgetAnchor):
             p.setBrush(self.opts['brush'])
             p.drawRect(self.boundingRect())
 
-    def hoverEvent(self, ev):
+    def hoverEvent(self, ev: HoverEvent):
         ev.acceptDrags(QtCore.Qt.MouseButton.LeftButton)
 
-    def mouseDragEvent(self, ev):
+    def mouseDragEvent(self, ev: MouseDragEvent):
         if ev.button() == QtCore.Qt.MouseButton.LeftButton:
             ev.accept()
             dpos = ev.pos() - ev.lastPos()
