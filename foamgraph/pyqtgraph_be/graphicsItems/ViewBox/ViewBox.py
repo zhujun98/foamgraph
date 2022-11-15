@@ -148,7 +148,7 @@ class ViewBox(GraphicsWidget):
         GraphicsWidget.__init__(self, parent)
         self.name = None
         self.linksBlocked = False
-        self.addedItems = []
+        self._items = []
         self._matrixNeedsUpdate = True  # indicates that range has changed, but matrix update was deferred
         self._autoRangeNeedsUpdate = True # indicates auto-range needs to be recomputed.
 
@@ -411,13 +411,13 @@ class ViewBox(GraphicsWidget):
         item.setParentItem(self.childGroup)
 
         if not ignoreBounds:
-            self.addedItems.append(item)
+            self._items.append(item)
         self.updateAutoRange()
 
     def removeItem(self, item):
         """Remove an item from this view."""
         try:
-            self.addedItems.remove(item)
+            self._items.remove(item)
         except:
             pass
 
@@ -429,7 +429,7 @@ class ViewBox(GraphicsWidget):
         self.updateAutoRange()
 
     def clear(self):
-        for i in self.addedItems[:]:
+        for i in self._items:
             self.removeItem(i)
         for ch in self.childGroup.childItems():
             ch.setParentItem(None)
@@ -1351,7 +1351,7 @@ class ViewBox(GraphicsWidget):
         Values may be None if there are no specific bounds for an axis.
         """
         if items is None:
-            items = self.addedItems
+            items = self._items
 
         # measure pixel dimensions in view box
         px, py = [v.length() if v is not None else 0 for v in self.childGroup.pixelVectors()]

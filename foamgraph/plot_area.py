@@ -50,7 +50,7 @@ class PlotArea(pg.GraphicsWidget):
 
         self._items = set()
         self._plot_items = set()
-        self._plot_items2 = set()
+        self._plot_items_y2 = set()
         self._annotation_items = []
         self._n_vis_annotation_items = 0
 
@@ -204,7 +204,7 @@ class PlotArea(pg.GraphicsWidget):
 
     def clearAllPlotItems(self):
         """Clear data on all the plot items."""
-        for item in chain(self._plot_items, self._plot_items2):
+        for item in chain(self._plot_items, self._plot_items_y2):
             item.setData([], [])
 
     @pyqtSlot(bool)
@@ -222,7 +222,7 @@ class PlotArea(pg.GraphicsWidget):
 
     @pyqtSlot(bool)
     def _onLogXChanged(self, state):
-        for item in chain(self._plot_items, self._plot_items2):
+        for item in chain(self._plot_items, self._plot_items_y2):
             item.setLogX(state)
         self.getAxis("bottom").setLogMode(state)
         self._vb.autoRange(disableAutoRange=False)
@@ -247,7 +247,7 @@ class PlotArea(pg.GraphicsWidget):
                 if self._log_x_cb.isChecked():
                     item.setLogX(True)
 
-                self._plot_items2.add(item)
+                self._plot_items_y2.add(item)
             else:
                 if self._log_x_cb.isChecked():
                     item.setLogX(True)
@@ -294,8 +294,8 @@ class PlotArea(pg.GraphicsWidget):
 
         self._items.remove(item)
 
-        if item in self._plot_items2:
-            self._plot_items2.remove(item)
+        if item in self._plot_items_y2:
+            self._plot_items_y2.remove(item)
             if self._legend is not None and item.name():
                 self._legend.removeItem(item)
             self._vb2.removeItem(item)
@@ -311,7 +311,7 @@ class PlotArea(pg.GraphicsWidget):
     def removeAllItems(self):
         """Remove all graphics items from the ViewBox."""
         for item in self._items:
-            if item in self._plot_items2:
+            if item in self._plot_items_y2:
                 self._vb2.removeItem(item)
             else:
                 self._vb.removeItem(item)
@@ -320,7 +320,7 @@ class PlotArea(pg.GraphicsWidget):
             self._legend.clear()
 
         self._plot_items.clear()
-        self._plot_items2.clear()
+        self._plot_items_y2.clear()
         self._annotation_items.clear()
         self._n_vis_annotation_items = 0
         self._items.clear()
@@ -354,7 +354,7 @@ class PlotArea(pg.GraphicsWidget):
             self._legend = pg.LegendItem(offset=offset, pen='k', **kwargs)
             self._legend.setParentItem(self._vb)
 
-            for item in chain(self._plot_items, self._plot_items2):
+            for item in chain(self._plot_items, self._plot_items_y2):
                 name = item.name()
                 if name:
                     self._legend.addItem(item, name)
