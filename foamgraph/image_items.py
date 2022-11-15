@@ -231,7 +231,7 @@ class ImageItem(pg.GraphicsObject):
         argb, alpha = fn.makeARGB(image, lut=lut, levels=levels)
         self._qimage = fn.makeQImage(argb, alpha, transpose=False)
 
-    def paint(self, p, *args):
+    def paint(self, p, *args) -> None:
         """Override."""
         if self._image is None:
             return
@@ -324,7 +324,7 @@ class ImageItem(pg.GraphicsObject):
             self._qimage = None
             self.update()
 
-    def hoverEvent(self, ev: HoverEvent):
+    def hoverEvent(self, ev: HoverEvent) -> None:
         """Override."""
         if ev.isExit():
             x = -1  # out of image
@@ -401,7 +401,7 @@ class GeometryItem(pg.GraphicsObject):
             self._drawPicture()
         return QRectF(self._picture.boundingRect())
 
-    def paint(self, p, *args):
+    def paint(self, p, *args) -> None:
         """Override."""
         if self._picture is None:
             self._drawPicture()

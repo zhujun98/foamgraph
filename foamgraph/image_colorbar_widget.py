@@ -85,7 +85,7 @@ class ImageColorbarWidget(pg.GraphicsWidget):
 
         self._vb.sigRangeChanged.connect(self.update)
 
-    def paint(self, p, *args):
+    def paint(self, p, *args) -> None:
         """Override."""
         levels = self.levels()
         p1 = self._vb.mapFromViewToItem(

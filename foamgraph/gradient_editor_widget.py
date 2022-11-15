@@ -1,3 +1,10 @@
+"""
+Distributed under the terms of the BSD 3-Clause License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Author: Jun Zhu
+"""
 import numpy as np
 
 from .backend.QtGui import (
@@ -32,11 +39,13 @@ class GradientEditorWidget(pg.GraphicsWidget):
         self._width = 20
         self._orientation = orientation
         if self._orientation == Qt.Orientation.Vertical:
-            self.setFixedWidth(self._width)
+            self.setMaximumWidth(self._width)
+            self.setMinimumWidth(self._width)
             self.setSizePolicy(QSizePolicy.Policy.Fixed,
                                QSizePolicy.Policy.Expanding)
         elif orientation == Qt.Orientation.Horizontal:
-            self.setFixedHeight(self._width)
+            self.setMaximumHeight(self._width)
+            self.setMinimumHeight(self._width)
             self.setSizePolicy(QSizePolicy.Policy.Expanding,
                                QSizePolicy.Policy.Fixed)
         else:
@@ -131,9 +140,9 @@ class GradientEditorWidget(pg.GraphicsWidget):
         self._colormap = colormap
 
         if self._orientation == Qt.Orientation.Vertical:
-            gradient = QLinearGradient(0., 0., 0., self.height())
+            gradient = QLinearGradient(0., 0., 0., self.geometry().height())
         else:
-            gradient = QLinearGradient(0., 0., self.width(), 0.)
+            gradient = QLinearGradient(0., 0., self.geometry().width(), 0.)
 
         gradient.setStops([
             (x, QColor(c)) for x, c in zip(self._colormap.positions,
@@ -143,8 +152,10 @@ class GradientEditorWidget(pg.GraphicsWidget):
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent) -> None:
         if self._orientation in ['bottom', 'top']:
-            return self._gradient.setRect(0, 0, self.width(), self._gradient_width)
-        self._gradient.setRect(0, 0, self._gradient_width, self.height())
+            return self._gradient.setRect(
+                0, 0, self.geometry().width(), self._gradient_width)
+        self._gradient.setRect(
+            0, 0, self._gradient_width, self.geometry().height())
 
     def mouseClickEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         if ev.button() == Qt.MouseButton.RightButton:

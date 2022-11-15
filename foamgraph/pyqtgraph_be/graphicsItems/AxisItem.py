@@ -1126,7 +1126,7 @@ class AxisItem(GraphicsWidget):
             lv.wheelEvent(ev, axis=0)
         ev.accept()
 
-    def mouseDragEvent(self, ev: MouseDragEvent):
+    def mouseDragEvent(self, ev: MouseDragEvent) -> None:
         lv = self.linkedView()
         if lv is None:
             return

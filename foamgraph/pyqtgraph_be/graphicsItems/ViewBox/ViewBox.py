@@ -671,7 +671,7 @@ class ViewBox(GraphicsWidget):
             self.setRange(bounds, padding=padding, disableAutoRange=disableAutoRange)
 
     def suggestPadding(self, axis):
-        l = self.width() if axis==0 else self.height()
+        l = self.geometry().width() if axis == 0 else self.geometry().height()
         if l > 0:
             padding = np.clip(1./(l**0.5), 0.02, 0.1)
         else:
@@ -1427,8 +1427,7 @@ class ViewBox(GraphicsWidget):
         # Now expand any bounds that have a pixel margin
         # This must be done _after_ we have a good estimate of the new range
         # to ensure that the pixel size is roughly accurate.
-        w = self.width()
-        h = self.height()
+        w, h = self.geometry().width(), self.geometry().height()
         if w > 0 and range[0] is not None:
             pxSize = (range[0][1] - range[0][0]) / w
             for bounds, useX, useY, px in itemBounds:
@@ -1589,6 +1588,7 @@ class ViewBox(GraphicsWidget):
         self.sigTransformChanged.emit(self)  # segfaults here: 1
 
     def paint(self, p, opt, widget):
+        """Override."""
         if self.border is not None:
             bounds = self.shape()
             p.setPen(self.border)

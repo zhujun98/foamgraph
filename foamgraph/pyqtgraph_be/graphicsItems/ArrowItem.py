@@ -88,6 +88,7 @@ class ArrowItem(QGraphicsPathItem):
             self.setFlags(self.flags() & ~self.ItemIgnoresTransformations)
 
     def paint(self, p, *args):
+        """Override."""
         p.setRenderHint(QPainter.Antialiasing)
         QGraphicsPathItem.paint(self, p, *args)
 

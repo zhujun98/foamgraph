@@ -15,6 +15,7 @@ from .backend.QtWidgets import (
 )
 
 from . import pyqtgraph_be as pg
+from .legend_widget import LegendWidget
 from .plot_items import PlotItem
 from .aesthetics import FColor
 
@@ -234,6 +235,11 @@ class PlotArea(pg.GraphicsWidget):
         self.getAxis("left").setLogMode(state)
         self._vb.autoRange(disableAutoRange=False)
 
+    def _updateY2View(self):
+        self._vb_y2.setGeometry(self._vb.sceneBoundingRect())
+        # not sure this is required
+        # vb.linkedViewChanged(self._plot_area.vb, vb.XAxis)
+
     def addItem(self, item, ignore_bounds=False, y2=False):
         """Add a graphics item to ViewBox."""
         if item in self._items:
@@ -277,11 +283,6 @@ class PlotArea(pg.GraphicsWidget):
 
         vb.addItem(item, ignoreBounds=ignore_bounds)
 
-    def _updateY2View(self):
-        self._vb_y2.setGeometry(self._vb.sceneBoundingRect())
-        # not sure this is required
-        # vb.linkedViewChanged(self._plot_area.vb, vb.XAxis)
-
     def removeItem(self, item):
         """Add a graphics item to ViewBox."""
         if item not in self._items:
@@ -317,7 +318,7 @@ class PlotArea(pg.GraphicsWidget):
                 self._vb.removeItem(item)
 
         if self._legend is not None:
-            self._legend.clear()
+            self._legend.removeAllItems()
 
         self._plot_items.clear()
         self._plot_items_y2.clear()
@@ -349,9 +350,9 @@ class PlotArea(pg.GraphicsWidget):
             s.hide()
 
     def addLegend(self, offset=(30, 30), **kwargs):
-        """Add a LegendItem if it does not exist."""
+        """Add a LegendWidget if it does not exist."""
         if self._legend is None:
-            self._legend = pg.LegendItem(offset=offset, pen='k', **kwargs)
+            self._legend = LegendWidget(offset=offset, **kwargs)
             self._legend.setParentItem(self._vb)
 
             for item in chain(self._plot_items, self._plot_items_y2):
