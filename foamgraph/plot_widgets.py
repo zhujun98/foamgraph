@@ -7,11 +7,12 @@ Author: Jun Zhu
 """
 import abc
 from string import Template
-from typing import final
+from typing import final, Optional
 
 import numpy as np
 
 from .backend.QtCore import pyqtSlot, QTimer
+from .backend.QtGui import QCloseEvent
 from .backend.QtWidgets import QSizePolicy
 
 from . import pyqtgraph_be as pg
@@ -136,6 +137,18 @@ class PlotWidgetF(pg.GraphicsView):
     def setLabel(self, *args, **kwargs):
         self._plot_area.setLabel(*args, **kwargs)
 
+    def setXLabel(self, label: str):
+        self._plot_area.setLabel("bottom", label)
+
+    def setYLabel(self, label: str):
+        self._plot_area.setLabel("left", label)
+
+    def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):
+        self._plot_area.setLabel("bottom", x)
+        self._plot_area.setLabel("left", y)
+        if y2 is not None:
+            self._plot_area.setLabel("right", y2)
+
     def setTitle(self, *args, **kwargs):
         self._plot_area.setTitle(*args, **kwargs)
 
@@ -156,11 +169,13 @@ class PlotWidgetF(pg.GraphicsView):
 
     def hideAxis(self):
         """Hide x and y axis."""
+        # FIXME: hide also y2?
         for v in ["left", 'bottom']:
             self._plot_area.showAxis(v, False)
 
     def showAxis(self):
         """Show x and y axis."""
+        # FIXME: hide also y2?
         for v in ["left", 'bottom']:
             self._plot_area.showAxis(v, True)
 
@@ -188,7 +203,7 @@ class PlotWidgetF(pg.GraphicsView):
         self._h_line.setValue(y)
         self._plot_area.setMeter((x, y))
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Override."""
         parent = self.parent()
         if parent is not None:
