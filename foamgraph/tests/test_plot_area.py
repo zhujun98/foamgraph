@@ -110,7 +110,7 @@ class TestPlotArea(unittest.TestCase):
         self.assertEqual(1, len(area._plot_items_y2))
         self.assertEqual(7, len(area._items))
         self.assertEqual(6, len(area._vb._items))
-        self.assertEqual(1, len(area._vb2._items))
+        self.assertEqual(1, len(area._vb_y2._items))
         self.assertEqual(3, len(area._legend.items))
         self.assertEqual(1, len(area._annotation_items))
 
@@ -126,7 +126,7 @@ class TestPlotArea(unittest.TestCase):
         self.assertEqual(1, len(area._plot_items_y2))
         self.assertEqual(7, len(area._items))
         self.assertEqual(6, len(area._vb._items))
-        self.assertEqual(1, len(area._vb2._items))
+        self.assertEqual(1, len(area._vb_y2._items))
         self.assertEqual(3, len(area._legend.items))
 
         # remove an existing item
@@ -135,7 +135,7 @@ class TestPlotArea(unittest.TestCase):
         self.assertEqual(0, len(area._plot_items_y2))
         self.assertEqual(6, len(area._items))
         self.assertEqual(6, len(area._vb._items))
-        self.assertEqual(0, len(area._vb2._items))
+        self.assertEqual(0, len(area._vb_y2._items))
         self.assertEqual(2, len(area._legend.items))
 
         # remove an existing item which is not a PlotItem
@@ -144,7 +144,7 @@ class TestPlotArea(unittest.TestCase):
         self.assertEqual(0, len(area._plot_items_y2))
         self.assertEqual(5, len(area._items))
         self.assertEqual(5, len(area._vb._items))
-        self.assertEqual(0, len(area._vb2._items))
+        self.assertEqual(0, len(area._vb_y2._items))
         self.assertEqual(2, len(area._legend.items))
 
         # remove a PlotItem which does not has a name and hence was not added
@@ -160,7 +160,7 @@ class TestPlotArea(unittest.TestCase):
         self.assertEqual(0, len(area._plot_items_y2))
         self.assertEqual(0, len(area._items))
         self.assertEqual(0, len(area._vb._items))
-        self.assertEqual(0, len(area._vb2._items))
+        self.assertEqual(0, len(area._vb_y2._items))
         self.assertEqual(0, len(area._legend.items))
 
     def testContextMenu(self):

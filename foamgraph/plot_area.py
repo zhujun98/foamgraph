@@ -55,7 +55,7 @@ class PlotArea(pg.GraphicsWidget):
         self._n_vis_annotation_items = 0
 
         self._vb = pg.ViewBox(parent=self)
-        self._vb2 = None
+        self._vb_y2 = None
 
         if name is not None:
             self._vb.register(name)
@@ -262,7 +262,7 @@ class PlotArea(pg.GraphicsWidget):
                 self._legend.addItem(item, name)
 
         if y2:
-            vb = self._vb2
+            vb = self._vb_y2
             if vb is None:
                 vb = pg.ViewBox()
                 self.scene().addItem(vb)
@@ -270,7 +270,7 @@ class PlotArea(pg.GraphicsWidget):
                 right_axis.linkToView(vb)
                 right_axis.show()
                 vb.setXLink(self._vb)
-                self._vb2 = vb
+                self._vb_y2 = vb
                 self._vb.sigResized.connect(self._updateY2View)
         else:
             vb = self._vb
@@ -278,7 +278,7 @@ class PlotArea(pg.GraphicsWidget):
         vb.addItem(item, ignoreBounds=ignore_bounds)
 
     def _updateY2View(self):
-        self._vb2.setGeometry(self._vb.sceneBoundingRect())
+        self._vb_y2.setGeometry(self._vb.sceneBoundingRect())
         # not sure this is required
         # vb.linkedViewChanged(self._plot_area.vb, vb.XAxis)
 
@@ -298,7 +298,7 @@ class PlotArea(pg.GraphicsWidget):
             self._plot_items_y2.remove(item)
             if self._legend is not None and item.name():
                 self._legend.removeItem(item)
-            self._vb2.removeItem(item)
+            self._vb_y2.removeItem(item)
             return
 
         if item in self._plot_items:
@@ -312,7 +312,7 @@ class PlotArea(pg.GraphicsWidget):
         """Remove all graphics items from the ViewBox."""
         for item in self._items:
             if item in self._plot_items_y2:
-                self._vb2.removeItem(item)
+                self._vb_y2.removeItem(item)
             else:
                 self._vb.removeItem(item)
 
