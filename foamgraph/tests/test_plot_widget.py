@@ -1,4 +1,3 @@
-import unittest
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -12,11 +11,13 @@ from . import _display
 app = mkQApp()
 
 
-class TestPlotWidget(unittest.TestCase):
+class TestPlotWidget:
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         # test addLegend before adding plot items
         widget = PlotWidgetF()
+        widget.setXLabel("x label")
+        widget.setYLabel("y label")
         widget.addLegend()
         cls._curve1 = widget.plotCurve(name="curve1")
         cls._scatter1 = widget.plotScatter(name="scatter1")
@@ -24,10 +25,11 @@ class TestPlotWidget(unittest.TestCase):
         cls._statistics2 = widget.plotErrorbar(name="errorbar2", y2=True)
         cls._widget1 = widget
         if _display():
-            cls._widget1.show()
+            widget.show()
 
         # test addLegend after adding plot items
         widget = PlotWidgetF()
+        widget.setXYLabels("x label", "y label", y2="y2 label")
         cls._bar1 = widget.plotBar(name="bar1")
         cls._statistics1 = widget.plotErrorbar(name="errorbar1")
         cls._curve2 = widget.plotCurve(name="curve2", y2=True)
@@ -35,16 +37,16 @@ class TestPlotWidget(unittest.TestCase):
         widget.addLegend()
         cls._widget2 = widget
         if _display():
-            cls._widget2.show()
+            widget.show()
 
         cls._plot_items1 = [cls._curve1, cls._scatter1, cls._bar2, cls._statistics2]
         cls._plot_items2 = [cls._bar1, cls._statistics1, cls._curve2, cls._scatter2]
 
-    def testAddPlots(self):
-        self.assertEqual(len(self._widget1._plot_area._items), 6)
-        self.assertEqual(len(self._widget2._plot_area._items), 6)
+    def test_plots(self):
+        assert len(self._widget1._plot_area._items) == 6
+        assert len(self._widget2._plot_area._items) == 6
 
-    def testForwardMethod(self):
+    def test_forwarded_methods(self):
         widget = self._widget1
 
         for method in ["removeAllItems", "setAspectLocked", "setLabel", "setTitle",
@@ -53,24 +55,24 @@ class TestPlotWidget(unittest.TestCase):
                 getattr(widget, method)()
                 mocked.assert_called_once()
 
-    def testShowHideAxisLegend(self):
+    def test_axis_and_legend(self):
         widget = self._widget1
 
         widget.showAxis()
-        self.assertTrue(widget._plot_area.getAxis("left").isVisible())
-        self.assertTrue(widget._plot_area.getAxis("left").isVisible())
+        assert widget._plot_area.getAxis("left").isVisible()
+        assert widget._plot_area.getAxis("left").isVisible()
         widget.hideAxis()
-        self.assertFalse(widget._plot_area.getAxis("left").isVisible())
-        self.assertFalse(widget._plot_area.getAxis("left").isVisible())
+        assert not widget._plot_area.getAxis("left").isVisible()
+        assert not widget._plot_area.getAxis("left").isVisible()
 
         widget.addLegend()
-        self.assertTrue(widget._plot_area._legend.isVisible())
+        assert widget._plot_area._legend.isVisible()
         widget.hideLegend()
-        self.assertFalse(widget._plot_area._legend.isVisible())
+        assert not widget._plot_area._legend.isVisible()
         widget.showLegend()
-        self.assertTrue(widget._plot_area._legend.isVisible())
+        assert widget._plot_area._legend.isVisible()
 
-    def testPlot1(self):
+    def test_plot1(self):
         # widget1
 
         for i, plot in enumerate(self._plot_items1):
@@ -113,23 +115,23 @@ class TestPlotWidget(unittest.TestCase):
             plot.setData([], [])
             _display()
 
-    def testCrossCursor(self):
+    def test_cross_cursor(self):
         widget = self._widget1
-        self.assertFalse(widget._v_line.isVisible())
-        self.assertFalse(widget._h_line.isVisible())
+        assert not widget._v_line.isVisible()
+        assert not widget._h_line.isVisible()
         widget._plot_area._show_cross_cb.setChecked(True)
-        self.assertTrue(widget._v_line.isVisible())
-        self.assertTrue(widget._h_line.isVisible())
+        assert widget._v_line.isVisible()
+        assert widget._h_line.isVisible()
 
         # TODO: test mouse move
 
 
-class TestTimedPlotWidgetF(unittest.TestCase):
-    def testUpdate(self):
+class TestTimedPlotWidgetF:
+    def test_update(self):
         widget = TimedPlotWidgetF()
         widget.refresh = MagicMock()
 
-        self.assertIsNone(widget._data)
+        assert widget._data is None
         widget._refresh_imp()
         widget.refresh.assert_not_called()
 
@@ -138,7 +140,7 @@ class TestTimedPlotWidgetF(unittest.TestCase):
         widget.refresh.assert_called_once()
 
 
-class TestHistPlotWidgetF(unittest.TestCase):
-    def testUpdate(self):
+class TestHistPlotWidgetF:
+    def test_update(self):
         widget = HistWidgetF()
         # TODO

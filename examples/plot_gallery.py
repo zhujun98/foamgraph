@@ -22,8 +22,7 @@ class LinePlot(PlotWidgetF):
         super().__init__(parent=parent)
 
         self.setTitle('Line plot')
-        self.setLabel('bottom', "x (arb. u.)")
-        self.setLabel('left', "y (arb. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot = self.plotCurve()
 
@@ -38,8 +37,7 @@ class ScatterPlot(PlotWidgetF):
         super().__init__(parent=parent)
 
         self.setTitle('Scatter plot')
-        self.setLabel('bottom', "x (arb. u.)")
-        self.setLabel('left', "y (arb. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot = self.plotScatter(
             brush=FColor.mkBrush('Purple', alpha=150))
@@ -55,8 +53,7 @@ class BarPlot(PlotWidgetF):
         super().__init__(parent=parent)
 
         self.setTitle('Bar plot')
-        self.setLabel('bottom', "x (arb. u.)")
-        self.setLabel('left', "y (arb. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot = self.plotBar(pen=FColor.mkPen('ForestGreen'),
                                   brush=FColor.mkBrush('DodgerBlue'))
@@ -72,8 +69,7 @@ class ErrorbarPlot(TimedPlotWidgetF):
         super().__init__(1000, parent=parent)
 
         self.setTitle('Timed error-bar plot')
-        self.setLabel('bottom', "x (arb. u.)")
-        self.setLabel('left', "y (arb. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot1 = self.plotErrorbar(
             beam=1, pen=FColor.mkPen('Orange'))
@@ -92,8 +88,7 @@ class MultiLinePlot(PlotWidgetF):
         super().__init__(parent=parent)
 
         self.setTitle('Multi-line plot')
-        self.setLabel('bottom', "x (arb. u.)")
-        self.setLabel('left', "y (arb. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot1 = self.plotCurve(
             name='Line A', pen=FColor.mkPen('k', width=2))
@@ -117,9 +112,7 @@ class DoubleYPlot(PlotWidgetF):
         super().__init__(parent=parent)
 
         self.setTitle('Double-y plot')
-        self.setLabel('bottom', "x (arb. u.)")
-        self.setLabel('left', "y (arb. u.)")
-        self.setLabel('right', "y2 (arg. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arg. u.)")
 
         self._plot = self.plotCurve(
             name="Data", pen=FColor.mkPen('Brown'))
