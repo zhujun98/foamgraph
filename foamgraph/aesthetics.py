@@ -279,7 +279,7 @@ class ColorMap:
 def createIconButton(filepath: str, size: int, *, description: str = ""):
     """Create a QPushButton with icon.
 
-    :param filename: path of the icon file.
+    :param filepath: path of the icon file.
     :param size: size of the icon (button).
     :param description: tool tip of the button.
     """

@@ -1307,7 +1307,7 @@ class ViewBox(GraphicsWidget):
             self.scaleHistory(-1)
         elif ev.text() in ['+', '=']:
             self.scaleHistory(1)
-        elif ev.key() == Qt.Key_Backspace:
+        elif ev.key() == Qt.Key.Key_Backspace:
             self.scaleHistory(len(self.axHistory))
         else:
             ev.ignore()
