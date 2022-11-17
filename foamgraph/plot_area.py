@@ -39,7 +39,7 @@ class PlotArea(pg.GraphicsWidget):
 
     _MAX_ANNOTATION_ITEMS = 10
 
-    def __init__(self, name=None, *,
+    def __init__(self, *,
                  enable_meter: bool = True,
                  enable_grid: bool = True,
                  enable_transform: bool = True,
@@ -57,9 +57,6 @@ class PlotArea(pg.GraphicsWidget):
 
         self._vb = pg.ViewBox(parent=self)
         self._vb_y2 = None
-
-        if name is not None:
-            self._vb.register(name)
 
         self._legend = None
         self._axes = {}
@@ -240,10 +237,12 @@ class PlotArea(pg.GraphicsWidget):
         # not sure this is required
         # vb.linkedViewChanged(self._plot_area.vb, vb.XAxis)
 
-    def addItem(self, item, ignore_bounds=False, y2=False):
+    def addItem(self, item, *,
+                ignore_bounds: bool = False,
+                y2: bool = False) -> None:
         """Add a graphics item to ViewBox."""
         if item in self._items:
-            warnings.warn(f'Item {item} already added to PlotItem, ignoring.')
+            warnings.warn(f"Item {item} already added to PlotItem.")
             return
 
         self._items.add(item)
@@ -330,18 +329,18 @@ class PlotArea(pg.GraphicsWidget):
         """Override."""
         return self._menus
 
-    def getAxis(self, axis):
+    def getAxis(self, axis: str):
         """Return the specified AxisItem.
 
-        :param str axis: one of 'left', 'bottom', 'right', or 'top'.
+        :param axis: one of 'left', 'bottom', 'right', or 'top'.
         """
         return self._axes[axis]['item']
 
-    def showAxis(self, axis, show=True):
+    def showAxis(self, axis: str, show: bool = True) -> None:
         """Show or hide the given axis.
 
-        :param str axis: one of 'left', 'bottom', 'right', or 'top'.
-        :param bool show: whether to show the axis.
+        :param axis: one of 'left', 'bottom', 'right', or 'top'.
+        :param show: whether to show the axis.
         """
         s = self.getAxis(axis)
         if show:
@@ -362,7 +361,7 @@ class PlotArea(pg.GraphicsWidget):
 
         return self._legend
 
-    def showLegend(self, show=True):
+    def showLegend(self, show=True) -> None:
         """Show or hide the legend.
 
         :param bool show: whether to show the legend.
@@ -372,7 +371,7 @@ class PlotArea(pg.GraphicsWidget):
         else:
             self._legend.hide()
 
-    def setLabel(self, axis, text=None, units=None, **args):
+    def setLabel(self, axis, text=None, units=None, **args) -> None:
         """Set the label for an axis. Basic HTML formatting is allowed.
 
         :param str axis: one of 'left', 'bottom', 'right', or 'top'.
@@ -381,7 +380,7 @@ class PlotArea(pg.GraphicsWidget):
         self.getAxis(axis).setLabel(text=text, units=units, **args)
         self.showAxis(axis)
 
-    def showLabel(self, axis, show=True):
+    def showLabel(self, axis, show=True) -> None:
         """Show or hide one of the axis labels.
 
         :param str axis: one of 'left', 'bottom', 'right', or 'top'.
@@ -454,7 +453,7 @@ class PlotArea(pg.GraphicsWidget):
             a_items[i].setPos(x[i], y[i])
             a_items[i].setText(f"{values[i]:.4f}")
 
-    def setTitle(self, *args, **kwargs):
+    def setTitle(self, *args, **kwargs) -> None:
         """Set the title of the plot."""
         row = self._TITLE_ROW
         title = None if len(args) == 0 else args[0]
@@ -468,16 +467,16 @@ class PlotArea(pg.GraphicsWidget):
             self._title.setText(title, **kwargs)
             self._title.setVisible(True)
 
-    def setAspectLocked(self, *args, **kwargs):
+    def setAspectLocked(self, *args, **kwargs) -> None:
         self._vb.setAspectLocked(*args, **kwargs)
 
-    def invertX(self, *args, **kwargs):
+    def invertX(self, *args, **kwargs) -> None:
         self._vb.invertX(*args, **kwargs)
 
-    def invertY(self, *args, **kwargs):
+    def invertY(self, *args, **kwargs) -> None:
         self._vb.invertY(*args, **kwargs)
 
-    def autoRange(self, *args, **kwargs):
+    def autoRange(self, *args, **kwargs) -> None:
         self._vb.autoRange(*args, **kwargs)
 
     def mapSceneToView(self, *args, **kwargs):
