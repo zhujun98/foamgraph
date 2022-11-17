@@ -1,3 +1,10 @@
+"""
+Distributed under the terms of the BSD 3-Clause License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Author: Jun Zhu
+"""
 from typing import Union
 
 from .backend.QtGui import QPainterPath, QPen, QPolygonF, QTransform
@@ -9,7 +16,7 @@ from .pyqtgraph_be import Point
 from .aesthetics import FColor
 
 
-class InfiniteLine(pg.GraphicsObject):
+class InfiniteLineItem(pg.GraphicsObject):
     """A line of infinite length."""
 
     position_change_finished_sgn = pyqtSignal(object)
@@ -117,6 +124,7 @@ class InfiniteLine(pg.GraphicsObject):
         return self._boundingRect
 
     def paint(self, p, *args) -> None:
+        """Override."""
         p.setRenderHint(p.RenderHint.Antialiasing)
         
         left, right = self._endPoints
@@ -133,7 +141,7 @@ class InfiniteLine(pg.GraphicsObject):
             return None   # x axis should never be auto-scaled
         return 0, 0
 
-    def mouseDragEvent(self, ev: MouseDragEvent):
+    def mouseDragEvent(self, ev: MouseDragEvent) -> None:
         if ev.button() != Qt.MouseButton.LeftButton:
             return
         ev.accept()
@@ -149,7 +157,7 @@ class InfiniteLine(pg.GraphicsObject):
         if self._moving:
             self.setPos(self._cursor_offset + self.mapToParent(ev.pos()))
 
-    def hoverEvent(self, ev: HoverEvent):
+    def hoverEvent(self, ev: HoverEvent) -> None:
         hovering = False
         if not ev.isExit():
             if ev.acceptDrags(Qt.MouseButton.LeftButton):
@@ -161,7 +169,7 @@ class InfiniteLine(pg.GraphicsObject):
         self.update()
 
 
-class InfiniteHorizontalLine(InfiniteLine):
+class InfiniteHorizontalLineItem(InfiniteLineItem):
     """A convenient class for creating a horizontal infinite line."""
     def __init__(self, pos: float = 0., **kwargs):
         """Initialization.
@@ -182,7 +190,7 @@ class InfiniteHorizontalLine(InfiniteLine):
         super().setPos((0., v))
 
 
-class InfiniteVerticalLine(InfiniteLine):
+class InfiniteVerticalLineItem(InfiniteLineItem):
     """A convenient class for creating a vertical infinite line."""
     def __init__(self, pos: float = 0., **kwargs):
         """Initialization.

@@ -52,7 +52,7 @@ class RoiHandle(pg.UIGraphicsItem):
         self.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
         self.setZValue(11)
 
-    def hoverEvent(self, ev: HoverEvent):
+    def hoverEvent(self, ev: HoverEvent) -> None:
         hovering = False
         if not ev.isExit():
             if ev.acceptDrags(Qt.MouseButton.LeftButton):
@@ -64,7 +64,7 @@ class RoiHandle(pg.UIGraphicsItem):
         self._mouse_hovering = hovering
         self.update()
 
-    def mouseDragEvent(self, ev: MouseDragEvent):
+    def mouseDragEvent(self, ev: MouseDragEvent) -> None:
         if ev.button() != Qt.MouseButton.LeftButton:
             return
         ev.accept()
@@ -96,6 +96,7 @@ class RoiHandle(pg.UIGraphicsItem):
                 self._path.lineTo(x, y)
 
     def paint(self, p, *args) -> None:
+        """Override."""
         p.setRenderHints(p.RenderHint.Antialiasing, True)
         if self._mouse_hovering:
             p.setPen(self._hover_pen)
@@ -292,7 +293,7 @@ class ROI(pg.GraphicsObject):
         # update because color changed
         self.update()
 
-    def mouseDragEvent(self, ev: MouseDragEvent):
+    def mouseDragEvent(self, ev: MouseDragEvent) -> None:
         drag_mode = self.DragMode
         if ev.entering():
             if ev.button() == Qt.MouseButton.LeftButton:
@@ -364,6 +365,7 @@ class ROI(pg.GraphicsObject):
         return QRectF(0, 0, self._size[0], self._size[1]).normalized()
 
     def paint(self, p, *args) -> None:
+        """Override."""
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         if self._mouse_hovering:
             p.setPen(self._hover_pen)

@@ -148,7 +148,7 @@ class ViewBox(GraphicsWidget):
         GraphicsWidget.__init__(self, parent)
         self.name = None
         self.linksBlocked = False
-        self.addedItems = []
+        self._items = []
         self._matrixNeedsUpdate = True  # indicates that range has changed, but matrix update was deferred
         self._autoRangeNeedsUpdate = True # indicates auto-range needs to be recomputed.
 
@@ -411,13 +411,13 @@ class ViewBox(GraphicsWidget):
         item.setParentItem(self.childGroup)
 
         if not ignoreBounds:
-            self.addedItems.append(item)
+            self._items.append(item)
         self.updateAutoRange()
 
     def removeItem(self, item):
         """Remove an item from this view."""
         try:
-            self.addedItems.remove(item)
+            self._items.remove(item)
         except:
             pass
 
@@ -429,7 +429,7 @@ class ViewBox(GraphicsWidget):
         self.updateAutoRange()
 
     def clear(self):
-        for i in self.addedItems[:]:
+        for i in self._items:
             self.removeItem(i)
         for ch in self.childGroup.childItems():
             ch.setParentItem(None)
@@ -671,7 +671,7 @@ class ViewBox(GraphicsWidget):
             self.setRange(bounds, padding=padding, disableAutoRange=disableAutoRange)
 
     def suggestPadding(self, axis):
-        l = self.width() if axis==0 else self.height()
+        l = self.geometry().width() if axis == 0 else self.geometry().height()
         if l > 0:
             padding = np.clip(1./(l**0.5), 0.02, 0.1)
         else:
@@ -1307,7 +1307,7 @@ class ViewBox(GraphicsWidget):
             self.scaleHistory(-1)
         elif ev.text() in ['+', '=']:
             self.scaleHistory(1)
-        elif ev.key() == Qt.Key_Backspace:
+        elif ev.key() == Qt.Key.Key_Backspace:
             self.scaleHistory(len(self.axHistory))
         else:
             ev.ignore()
@@ -1351,7 +1351,7 @@ class ViewBox(GraphicsWidget):
         Values may be None if there are no specific bounds for an axis.
         """
         if items is None:
-            items = self.addedItems
+            items = self._items
 
         # measure pixel dimensions in view box
         px, py = [v.length() if v is not None else 0 for v in self.childGroup.pixelVectors()]
@@ -1427,8 +1427,7 @@ class ViewBox(GraphicsWidget):
         # Now expand any bounds that have a pixel margin
         # This must be done _after_ we have a good estimate of the new range
         # to ensure that the pixel size is roughly accurate.
-        w = self.width()
-        h = self.height()
+        w, h = self.geometry().width(), self.geometry().height()
         if w > 0 and range[0] is not None:
             pxSize = (range[0][1] - range[0][0]) / w
             for bounds, useX, useY, px in itemBounds:
@@ -1589,6 +1588,7 @@ class ViewBox(GraphicsWidget):
         self.sigTransformChanged.emit(self)  # segfaults here: 1
 
     def paint(self, p, opt, widget):
+        """Override."""
         if self.border is not None:
             bounds = self.shape()
             p.setPen(self.border)

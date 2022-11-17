@@ -13,7 +13,9 @@ import numpy as np
 from .backend.QtGui import (
     QImage, QPainter, QPainterPath, QPicture, QPixmap, QPolygonF, QTransform
 )
-from .backend.QtCore import QByteArray, QDataStream, QPointF, QRectF, Qt
+from .backend.QtCore import (
+    pyqtSignal, QByteArray, QDataStream, QPointF, QRectF, Qt
+)
 
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import functions as fn
@@ -22,12 +24,16 @@ from .aesthetics import FColor
 
 
 class PlotItem(pg.GraphicsObject):
+
+    label_changed_sgn = pyqtSignal(str)
+    visibility_changed_sgn = pyqtSignal(bool)
+
     def __init__(self, name=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._graph = None
 
-        self._name = "" if name is None else name
+        self._label = "" if name is None else name
 
         self._log_x_mode = False
         self._log_y_mode = False
@@ -109,13 +115,27 @@ class PlotItem(pg.GraphicsObject):
     def name(self):
         """An identity of the PlotItem.
 
-        Used in LegendItem.
+        Used in LegendWidget.
         """
-        return self._name
+        return self._label
+
+    def setLabel(self, label: str) -> None:
+        self._label = label
+        self.label_changed_sgn.emit(label)
 
     def drawSample(self, p):
-        """Draw a sample used in LegendItem."""
+        """Draw a sample used in LegendWidget."""
         pass
+
+    def show(self) -> None:
+        """Override."""""
+        super().show()
+        self.visibility_changed_sgn.emit(True)
+
+    def hide(self) -> None:
+        """Override."""""
+        super().hide()
+        self.visibility_changed_sgn.emit(False)
 
 
 class CurvePlotItem(PlotItem):
@@ -244,7 +264,7 @@ class BarGraphItem(PlotItem):
 
         p.end()
 
-    def paint(self, p, *args):
+    def paint(self, p, *args) -> None:
         """Override."""
         if self._graph is None:
             self._prepareGraph()

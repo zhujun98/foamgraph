@@ -16,7 +16,7 @@ app = mkQApp()
 class TestImageView:
     def testComponents(self):
         widget = ImageViewF(n_rois=4)
-        items = widget._plot_widget._plot_area._vb.addedItems
+        items = widget._plot_widget._plot_area._vb._items
         assert isinstance(items[0], ImageItem)
         for i in range(1, 5):
             assert isinstance(items[i], RectROI)

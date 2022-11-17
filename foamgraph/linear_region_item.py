@@ -1,10 +1,17 @@
+"""
+Distributed under the terms of the BSD 3-Clause License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Author: Jun Zhu
+"""
 from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 from .backend.QtGui import QBrush, QPen
 from .aesthetics import FColor
 
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
-from .infinite_line import InfiniteHorizontalLine, InfiniteVerticalLine
+from .line_items import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
 
 
 class LinearRegionItem(pg.GraphicsObject):
@@ -38,13 +45,13 @@ class LinearRegionItem(pg.GraphicsObject):
             
         if orientation == Qt.Orientation.Horizontal:
             self._lines = [
-                InfiniteHorizontalLine(v, draggable=draggable, parent=self)
+                InfiniteHorizontalLineItem(v, draggable=draggable, parent=self)
                 for v in region]
             self._lines[0].scale(1, -1)
             self._lines[1].scale(1, -1)
         elif orientation == Qt.Orientation.Vertical:
             self._lines = [
-                InfiniteVerticalLine(v, draggable=draggable, parent=self)
+                InfiniteVerticalLineItem(v, draggable=draggable, parent=self)
                 for v in region]
         else:
             raise ValueError(f"Unknown orientation value: {orientation}")
@@ -121,7 +128,8 @@ class LinearRegionItem(pg.GraphicsObject):
         
         return br
         
-    def paint(self, p, *args):
+    def paint(self, p, *args) -> None:
+        """Override."""
         if self._mouse_hovering:
             p.setBrush(self._hover_brush)
         else:

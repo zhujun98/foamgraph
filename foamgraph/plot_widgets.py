@@ -18,7 +18,7 @@ from .backend.QtWidgets import QSizePolicy
 from . import pyqtgraph_be as pg
 
 from .plot_area import PlotArea
-from .infinite_line import InfiniteHorizontalLine, InfiniteVerticalLine
+from .line_items import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
 from .plot_items import (
     BarGraphItem, CurvePlotItem, ScatterPlotItem, ErrorbarItem
 )
@@ -59,8 +59,8 @@ class PlotWidgetF(pg.GraphicsView):
         self._v_line = None
         self._h_line = None
         if enable_meter:
-            self._v_line = InfiniteVerticalLine(0., draggable=False)
-            self._h_line = InfiniteHorizontalLine(0., draggable=False)
+            self._v_line = InfiniteVerticalLineItem(0., draggable=False)
+            self._h_line = InfiniteHorizontalLineItem(0., draggable=False)
             self._v_line.hide()
             self._h_line.hide()
             self._plot_area.addItem(self._v_line, ignore_bounds=True)
@@ -99,6 +99,10 @@ class PlotWidgetF(pg.GraphicsView):
     def removeItem(self, *args, **kwargs):
         self._plot_area.removeItem(*args, **kwargs)
 
+    def removeAllItems(self):
+        """Remove all the items in the PlotArea object."""
+        self._plot_area.removeAllItems()
+
     def plotCurve(self, *args, y2=False, **kwargs):
         """Add and return a new curve plot."""
         item = CurvePlotItem(*args, **kwargs)
@@ -126,10 +130,6 @@ class PlotWidgetF(pg.GraphicsView):
         """Add and return a image item."""
         # TODO: this will be done when another branch is merged
         raise NotImplemented
-
-    def removeAllItems(self):
-        """Remove all the items in the PlotArea object."""
-        self._plot_area.removeAllItems()
 
     def setAspectLocked(self, *args, **kwargs):
         self._plot_area.setAspectLocked(*args, **kwargs)

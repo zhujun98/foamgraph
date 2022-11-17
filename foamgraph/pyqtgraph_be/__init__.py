@@ -116,7 +116,6 @@ from .graphicsItems.ArrowItem import *
 from .graphicsItems.AxisItem import *
 from .graphicsItems.LabelItem import *
 from .graphicsItems.GraphicsWidgetAnchor import *
-from .graphicsItems.LegendItem import *
 from .graphicsItems.ItemGroup import *
 
 from .widgets.GraphicsView import *

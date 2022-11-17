@@ -4,6 +4,7 @@ from unittest.mock import patch
 from foamgraph.backend.QtTest import QSignalSpy
 
 from foamgraph import mkQApp
+from foamgraph.legend_widget import LegendWidget
 from foamgraph.plot_area import PlotArea
 from foamgraph.image_items import ImageItem
 from foamgraph.plot_items import (
@@ -60,12 +61,12 @@ class TestPlotArea(unittest.TestCase):
         self.assertIsNone(area._legend)
 
         legend = area.addLegend((-30, -30))
-        self.assertIsInstance(area._legend, pg.LegendItem)
+        self.assertIsInstance(area._legend, LegendWidget)
         self.assertIs(legend, area._legend)
 
         # test addLegend when legend already exists
         area.addLegend((-10, -10))
-        self.assertIsInstance(area._legend, pg.LegendItem)
+        self.assertIsInstance(area._legend, LegendWidget)
         self.assertIs(legend, area._legend)
 
     def testTitle(self):
@@ -107,11 +108,11 @@ class TestPlotArea(unittest.TestCase):
         area.setAnnotationList([0], [0], [1])
 
         self.assertEqual(3, len(area._plot_items))
-        self.assertEqual(1, len(area._plot_items2))
+        self.assertEqual(1, len(area._plot_items_y2))
         self.assertEqual(7, len(area._items))
-        self.assertEqual(6, len(area._vb.addedItems))
-        self.assertEqual(1, len(area._vb2.addedItems))
-        self.assertEqual(3, len(area._legend.items))
+        self.assertEqual(6, len(area._vb._items))
+        self.assertEqual(1, len(area._vb_y2._items))
+        self.assertEqual(3, len(area._legend._items))
         self.assertEqual(1, len(area._annotation_items))
 
         with patch.object(curve_plot_item, "setData") as mocked1:
@@ -123,45 +124,45 @@ class TestPlotArea(unittest.TestCase):
         # remove an item which does not exist
         area.removeItem(BarGraphItem())
         self.assertEqual(3, len(area._plot_items))
-        self.assertEqual(1, len(area._plot_items2))
+        self.assertEqual(1, len(area._plot_items_y2))
         self.assertEqual(7, len(area._items))
-        self.assertEqual(6, len(area._vb.addedItems))
-        self.assertEqual(1, len(area._vb2.addedItems))
-        self.assertEqual(3, len(area._legend.items))
+        self.assertEqual(6, len(area._vb._items))
+        self.assertEqual(1, len(area._vb_y2._items))
+        self.assertEqual(3, len(area._legend._items))
 
         # remove an existing item
         area.removeItem(bar_graph_item)
         self.assertEqual(3, len(area._plot_items))
-        self.assertEqual(0, len(area._plot_items2))
+        self.assertEqual(0, len(area._plot_items_y2))
         self.assertEqual(6, len(area._items))
-        self.assertEqual(6, len(area._vb.addedItems))
-        self.assertEqual(0, len(area._vb2.addedItems))
-        self.assertEqual(2, len(area._legend.items))
+        self.assertEqual(6, len(area._vb._items))
+        self.assertEqual(0, len(area._vb_y2._items))
+        self.assertEqual(2, len(area._legend._items))
 
         # remove an existing item which is not a PlotItem
         area.removeItem(image_item)
         self.assertEqual(3, len(area._plot_items))
-        self.assertEqual(0, len(area._plot_items2))
+        self.assertEqual(0, len(area._plot_items_y2))
         self.assertEqual(5, len(area._items))
-        self.assertEqual(5, len(area._vb.addedItems))
-        self.assertEqual(0, len(area._vb2.addedItems))
-        self.assertEqual(2, len(area._legend.items))
+        self.assertEqual(5, len(area._vb._items))
+        self.assertEqual(0, len(area._vb_y2._items))
+        self.assertEqual(2, len(area._legend._items))
 
         # remove a PlotItem which does not has a name and hence was not added
         # into the legend
         area.removeItem(errorbar_item)
-        self.assertEqual(2, len(area._legend.items))
+        self.assertEqual(2, len(area._legend._items))
 
         with self.assertRaisesRegex(RuntimeError, "not allowed to be removed"):
             area.removeItem(area._annotation_items[0])
 
         area.removeAllItems()
         self.assertEqual(0, len(area._plot_items))
-        self.assertEqual(0, len(area._plot_items2))
+        self.assertEqual(0, len(area._plot_items_y2))
         self.assertEqual(0, len(area._items))
-        self.assertEqual(0, len(area._vb.addedItems))
-        self.assertEqual(0, len(area._vb2.addedItems))
-        self.assertEqual(0, len(area._legend.items))
+        self.assertEqual(0, len(area._vb._items))
+        self.assertEqual(0, len(area._vb_y2._items))
+        self.assertEqual(0, len(area._legend._items))
 
     def testContextMenu(self):
         area = self._area

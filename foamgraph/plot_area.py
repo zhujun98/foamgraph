@@ -15,6 +15,7 @@ from .backend.QtWidgets import (
 )
 
 from . import pyqtgraph_be as pg
+from .legend_widget import LegendWidget
 from .plot_items import PlotItem
 from .aesthetics import FColor
 
@@ -50,12 +51,12 @@ class PlotArea(pg.GraphicsWidget):
 
         self._items = set()
         self._plot_items = set()
-        self._plot_items2 = set()
+        self._plot_items_y2 = set()
         self._annotation_items = []
         self._n_vis_annotation_items = 0
 
         self._vb = pg.ViewBox(parent=self)
-        self._vb2 = None
+        self._vb_y2 = None
 
         if name is not None:
             self._vb.register(name)
@@ -204,7 +205,7 @@ class PlotArea(pg.GraphicsWidget):
 
     def clearAllPlotItems(self):
         """Clear data on all the plot items."""
-        for item in chain(self._plot_items, self._plot_items2):
+        for item in chain(self._plot_items, self._plot_items_y2):
             item.setData([], [])
 
     @pyqtSlot(bool)
@@ -222,7 +223,7 @@ class PlotArea(pg.GraphicsWidget):
 
     @pyqtSlot(bool)
     def _onLogXChanged(self, state):
-        for item in chain(self._plot_items, self._plot_items2):
+        for item in chain(self._plot_items, self._plot_items_y2):
             item.setLogX(state)
         self.getAxis("bottom").setLogMode(state)
         self._vb.autoRange(disableAutoRange=False)
@@ -233,6 +234,11 @@ class PlotArea(pg.GraphicsWidget):
             item.setLogY(state)
         self.getAxis("left").setLogMode(state)
         self._vb.autoRange(disableAutoRange=False)
+
+    def _updateY2View(self):
+        self._vb_y2.setGeometry(self._vb.sceneBoundingRect())
+        # not sure this is required
+        # vb.linkedViewChanged(self._plot_area.vb, vb.XAxis)
 
     def addItem(self, item, ignore_bounds=False, y2=False):
         """Add a graphics item to ViewBox."""
@@ -247,7 +253,7 @@ class PlotArea(pg.GraphicsWidget):
                 if self._log_x_cb.isChecked():
                     item.setLogX(True)
 
-                self._plot_items2.add(item)
+                self._plot_items_y2.add(item)
             else:
                 if self._log_x_cb.isChecked():
                     item.setLogX(True)
@@ -262,7 +268,7 @@ class PlotArea(pg.GraphicsWidget):
                 self._legend.addItem(item, name)
 
         if y2:
-            vb = self._vb2
+            vb = self._vb_y2
             if vb is None:
                 vb = pg.ViewBox()
                 self.scene().addItem(vb)
@@ -270,17 +276,12 @@ class PlotArea(pg.GraphicsWidget):
                 right_axis.linkToView(vb)
                 right_axis.show()
                 vb.setXLink(self._vb)
-                self._vb2 = vb
+                self._vb_y2 = vb
                 self._vb.sigResized.connect(self._updateY2View)
         else:
             vb = self._vb
 
         vb.addItem(item, ignoreBounds=ignore_bounds)
-
-    def _updateY2View(self):
-        self._vb2.setGeometry(self._vb.sceneBoundingRect())
-        # not sure this is required
-        # vb.linkedViewChanged(self._plot_area.vb, vb.XAxis)
 
     def removeItem(self, item):
         """Add a graphics item to ViewBox."""
@@ -294,11 +295,11 @@ class PlotArea(pg.GraphicsWidget):
 
         self._items.remove(item)
 
-        if item in self._plot_items2:
-            self._plot_items2.remove(item)
+        if item in self._plot_items_y2:
+            self._plot_items_y2.remove(item)
             if self._legend is not None and item.name():
                 self._legend.removeItem(item)
-            self._vb2.removeItem(item)
+            self._vb_y2.removeItem(item)
             return
 
         if item in self._plot_items:
@@ -311,16 +312,16 @@ class PlotArea(pg.GraphicsWidget):
     def removeAllItems(self):
         """Remove all graphics items from the ViewBox."""
         for item in self._items:
-            if item in self._plot_items2:
-                self._vb2.removeItem(item)
+            if item in self._plot_items_y2:
+                self._vb_y2.removeItem(item)
             else:
                 self._vb.removeItem(item)
 
         if self._legend is not None:
-            self._legend.clear()
+            self._legend.removeAllItems()
 
         self._plot_items.clear()
-        self._plot_items2.clear()
+        self._plot_items_y2.clear()
         self._annotation_items.clear()
         self._n_vis_annotation_items = 0
         self._items.clear()
@@ -349,12 +350,12 @@ class PlotArea(pg.GraphicsWidget):
             s.hide()
 
     def addLegend(self, offset=(30, 30), **kwargs):
-        """Add a LegendItem if it does not exist."""
+        """Add a LegendWidget if it does not exist."""
         if self._legend is None:
-            self._legend = pg.LegendItem(offset=offset, pen='k', **kwargs)
+            self._legend = LegendWidget(offset=offset, **kwargs)
             self._legend.setParentItem(self._vb)
 
-            for item in chain(self._plot_items, self._plot_items2):
+            for item in chain(self._plot_items, self._plot_items_y2):
                 name = item.name()
                 if name:
                     self._legend.addItem(item, name)

@@ -5,7 +5,7 @@ class GraphicsWidgetAnchor(object):
     """
     Class used to allow GraphicsWidgets to anchor to a specific position on their
     parent. The item will be automatically repositioned if the parent is resized. 
-    This is used, for example, to anchor a LegendItem to a corner of its parent 
+    This is used, for example, to anchor a LegendWidget to a corner of its parent
     PlotItem.
 
     """
