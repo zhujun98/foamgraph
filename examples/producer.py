@@ -1,4 +1,6 @@
+import argparse
 import pickle
+import time
 
 import numpy as np
 import zmq
@@ -108,6 +110,11 @@ class ImageData:
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(prog="foamlight-example-euxfel")
+    parser.add_argument("--delay", type=float, default=0.001)
+
+    args = parser.parse_args()
+
     ctx = zmq.Context()
     socket = ctx.socket(zmq.PUB)
     socket.bind(f"tcp://*:5555")
@@ -136,5 +143,7 @@ if __name__ == "__main__":
         }
 
         socket.send(pickle.dumps(data))
+
+        time.sleep(args.delay)
         counter += 1
         print(f"Data #{counter} sent")
