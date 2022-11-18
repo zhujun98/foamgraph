@@ -127,7 +127,7 @@ class PlotWidgetF(pg.GraphicsView):
     def plotImage(self, *args, **kargs):
         """Add and return a image item."""
         # TODO: this will be done when another branch is merged
-        raise NotImplemented
+        raise NotImplementedError
 
     def setAspectLocked(self, *args, **kwargs):
         self._plot_area.setAspectLocked(*args, **kwargs)
