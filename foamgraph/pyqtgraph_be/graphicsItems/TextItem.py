@@ -5,6 +5,9 @@ from .. import functions as fn
 from .GraphicsObject import GraphicsObject
 
 
+__all__ = ['TextItem']
+
+
 class TextItem(GraphicsObject):
     """
     GraphicsItem displaying unscaled text (the text will always appear normal even inside a scaled ViewBox). 
