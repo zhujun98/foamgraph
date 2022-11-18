@@ -1,5 +1,4 @@
 import itertools
-from functools import reduce
 
 from ..Qt import QtGui, QtCore, isQObjectAlive
 from ..GraphicsScene import GraphicsScene
@@ -129,7 +128,6 @@ class GraphicsItem:
         self._viewWidget = None
         self._viewBox = None
         self._connectedView = None
-        self._exportOpts = False   ## If False, not currently exporting. Otherwise, contains dict of export options.
         self._cachedView = None
 
     def getViewWidget(self):
@@ -192,10 +190,6 @@ class GraphicsItem:
         Return the transform that converts local item coordinates to device coordinates (usually pixels).
         Extends deviceTransform to automatically determine the viewportTransform.
         """
-        if self._exportOpts is not False and 'painter' in self._exportOpts: # currently exporting; device transform may be different.
-            scaler = self._exportOpts.get('resolutionScale', 1.0)
-            return self.sceneTransform() * QtGui.QTransform(scaler, 0, 0, scaler, 1, 1)
-
         if viewportTransform is None:
             view = self.getViewWidget()
             if view is None:
@@ -217,7 +211,7 @@ class GraphicsItem:
         if hasattr(view, 'implements') and view.implements('ViewBox'):
             tr = self.itemTransform(view.innerSceneItem())
             if isinstance(tr, tuple):
-                tr = tr[0]   ## difference between pyside and pyqt
+                tr = tr[0]   # difference between pyside and pyqt
             return tr
         return self.sceneTransform()
 
@@ -278,40 +272,15 @@ class GraphicsItem:
         pv = self._pixelVectorGlobalCache.get(key, None)
         if pv is not None:
             self._pixelVectorCache = [key, pv]
-            return tuple(map(Point,pv))  # return a *copy*
+            return tuple(map(Point, pv))  # return a *copy*
 
-        ## attempt to re-scale direction vector to fit within the precision of the coordinate system
-        ## Here's the problem: we need to map the vector 'direction' from the item to the device, via transform 'dt'.
-        ## In some extreme cases, this mapping can fail unless the length of 'direction' is cleverly chosen.
-        ## Example:
-        ##   dt = [ 1, 0,    2 
-        ##          0, 2, 1e20
-        ##          0, 0,    1 ]
-        ## Then we map the origin (0,0) and direction (0,1) and get:
-        ##    o' = 2,1e20
-        ##    d' = 2,1e20  <-- should be 1e20+2, but this can't be represented with a 32-bit float
-        ##    
-        ##    |o' - d'|  == 0    <-- this is the problem.
-        
-        ## Perhaps the easiest solution is to exclude the transformation column from dt. Does this cause any other problems?
-        
-        #if direction.x() == 0:
-            #r = abs(dt.m32())/(abs(dt.m12()) + abs(dt.m22()))
-            ##r = 1.0/(abs(dt.m12()) + abs(dt.m22()))
-        #elif direction.y() == 0:
-            #r = abs(dt.m31())/(abs(dt.m11()) + abs(dt.m21()))
-            ##r = 1.0/(abs(dt.m11()) + abs(dt.m21()))
-        #else:
-            #r = ((abs(dt.m32())/(abs(dt.m12()) + abs(dt.m22()))) * (abs(dt.m31())/(abs(dt.m11()) + abs(dt.m21()))))**0.5
-        #if r == 0:
-            #r = 1.  ## shouldn't need to do this; probably means the math above is wrong?
         directionr = direction
         
         # map direction vector onto device
         dirLine = QtCore.QLineF(QtCore.QPointF(0,0), directionr)
         viewDir = dt.map(dirLine)
         if viewDir.length() == 0:
-            return None, None   ##  pixel size cannot be represented on this scale
+            return None, None   #  pixel size cannot be represented on this scale
 
         try:  
             normView = viewDir.unitVector()
@@ -430,24 +399,16 @@ class GraphicsItem:
         return self.mapToView(self.mapFromParent(self.pos()))
     
     def parentItem(self):
-        ## PyQt bug -- some items are returned incorrectly.
+        # PyQt bug -- some items are returned incorrectly.
         return GraphicsScene.translateGraphicsItem(self._qtBaseClass.parentItem(self))
-        
-    def setParentItem(self, parent):
-        ## Workaround for Qt bug: https://bugreports.qt-project.org/browse/QTBUG-18616
-        if parent is not None:
-            pscene = parent.scene()
-            if pscene is not None and self.scene() is not pscene:
-                pscene.addItem(self)
-        return self._qtBaseClass.setParentItem(self, parent)
-    
+
     def childItems(self):
-        ## PyQt bug -- some child items are returned incorrectly.
+        # PyQt bug -- some child items are returned incorrectly.
         return list(map(GraphicsScene.translateGraphicsItem, self._qtBaseClass.childItems(self)))
 
     def sceneTransform(self):
-        ## Qt bug: do no allow access to sceneTransform() until 
-        ## the item has a scene.
+        # Qt bug: do no allow access to sceneTransform() until
+        # the item has a scene.
         
         if self.scene() is None:
             return self.transform()
@@ -551,7 +512,7 @@ class GraphicsItem:
         Called whenever the view coordinates of the ViewBox containing this item have changed.
         """
         pass
-    
+
     def viewTransformChanged(self):
         """
         Called whenever the transformation matrix of the view has changed.
@@ -568,11 +529,6 @@ class GraphicsItem:
         if view is not None and hasattr(view, 'implements') and view.implements('ViewBox'):
             view.itemBoundsChanged(self)  # inform view so it can update its range if it wants
     
-    def childrenShape(self):
-        """Return the union of the shapes of all descendants of this item in local coordinates."""
-        shapes = [self.mapFromItem(c, c.shape()) for c in self.allChildItems()]
-        return reduce(operator.add, shapes)
-    
     def allChildItems(self, root=None):
         """Return list of the entire item tree descending from this item."""
         if root is None:
@@ -582,19 +538,6 @@ class GraphicsItem:
             tree.append(ch)
             tree.extend(self.allChildItems(ch))
         return tree
-    
-    def setExportMode(self, export, opts=None):
-        """
-        This method is called by exporters to inform items that they are being drawn for export
-        with a specific set of options. Items access these via self._exportOptions.
-        When exporting is complete, _exportOptions is set to False.
-        """
-        if opts is None:
-            opts = {}
-        if export:
-            self._exportOpts = opts
-        else:
-            self._exportOpts = False
 
     def getContextMenus(self, event):
         return [self.getMenu()] if hasattr(self, "getMenu") else []

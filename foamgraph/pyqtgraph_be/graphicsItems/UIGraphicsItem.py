@@ -41,8 +41,8 @@ class UIGraphicsItem(GraphicsObject):
         self._updateView()
     
     def itemChange(self, change, value):
-        ret = GraphicsObject.itemChange(self, change, value)
-            
+        ret = super().itemChange(change, value)
+
         # workaround for pyqt bug:
         # http://www.riverbankcomputing.com/pipermail/pyqt/2012-August/031818.html
         if QT_LIB in ['PyQt5'] and change == self.ItemParentChange and isinstance(ret, QtGui.QGraphicsItem):
@@ -80,12 +80,3 @@ class UIGraphicsItem(GraphicsObject):
         """Override."""
         super().setPos(pos)
         self.setNewBounds()
-
-    def mouseShape(self):
-        """Return the shape of this item after Policy.Expanding by 2 pixels"""
-        shape = self.shape()
-        ds = self.mapToDevice(shape)
-        stroker = QtGui.QPainterPathStroker()
-        stroker.setWidh(2)
-        ds2 = stroker.createStroke(ds).united(ds)
-        return self.mapFromDevice(ds2)

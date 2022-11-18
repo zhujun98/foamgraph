@@ -85,7 +85,6 @@ class ViewBoxMenu(QMenu):
         self.export.clear()
         for opt, fn in methods.items():
             self.export.addAction(opt, self.exportMethod)
-        
 
     def viewStateChanged(self):
         self.valid = False

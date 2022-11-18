@@ -10,8 +10,8 @@ from ....backend.QtCore import pyqtSignal, QRectF, Qt, QTimer
 from ....backend.QtGui import QSizePolicy, QTransform
 from ...Point import Point
 from ... import functions as fn
-from .. ItemGroup import ItemGroup
 from ...GraphicsScene import MouseClickEvent, MouseDragEvent
+from ..GraphicsObject import GraphicsObject
 from ..GraphicsWidget import GraphicsWidget
 from ... import getConfigOption
 
@@ -39,10 +39,10 @@ class WeakList(object):
             i -= 1
 
 
-class ChildGroup(ItemGroup):
+class ChildGroup(GraphicsObject):
 
     def __init__(self, parent):
-        ItemGroup.__init__(self, parent)
+        super().__init__(parent)
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
         # Used as callback to inform ViewBox when items are added/removed from
@@ -56,8 +56,11 @@ class ChildGroup(ItemGroup):
         # excempt from telling view when transform changes
         self._GraphicsObject__inform_view_on_change = False
 
+    def addItem(self, item):
+        item.setParentItem(self)
+
     def itemChange(self, change, value):
-        ret = ItemGroup.itemChange(self, change, value)
+        ret = super().itemChange(change, value)
         if change in [
             self.GraphicsItemChange.ItemChildAddedChange,
             self.GraphicsItemChange.ItemChildRemovedChange,
@@ -79,13 +82,13 @@ class ChildGroup(ItemGroup):
     def boundingRect(self):
         return self.mapRectFromParent(self.parentItem().boundingRect())
 
+    def paint(self, p, *args):
+        """Override."""
+        ...
+
 
 class ViewBox(GraphicsWidget):
-    """
-    **Bases:** :class:`GraphicsWidget <pyqtgraph.GraphicsWidget>`
-
-    Box that allows internal scaling/panning of children by mouse drag.
-    This class is usually created automatically as part of a :class:`PlotItem <pyqtgraph.PlotItem>`.
+    """Box that allows internal scaling/panning of children by mouse drag.
 
     Features:
 
@@ -118,7 +121,6 @@ class ViewBox(GraphicsWidget):
 
     def __init__(self,
                  parent=None,
-                 border=None,
                  lockAspect=False,
                  enableMouse=True,
                  invertY=False,
@@ -129,8 +131,6 @@ class ViewBox(GraphicsWidget):
         ==============  =============================================================
         **Arguments:**
         *parent*        (QGraphicsWidget) Optional parent widget
-        *border*        (QPen) Do draw a border around the view, give any
-                        single argument accepted by :func:`mkPen <pyqtgraph.mkPen>`
         *lockAspect*    (False or float) The aspect ratio to lock the view
                         coorinates to. (or False to allow the ratio to change)
         *enableMouse*   (bool) Whether mouse can be used to scale/pan the view
@@ -145,8 +145,7 @@ class ViewBox(GraphicsWidget):
         ==============  =============================================================
         """
 
-        GraphicsWidget.__init__(self, parent)
-        self.name = None
+        super().__init__(parent)
         self.linksBlocked = False
         self._items = []
         self._matrixNeedsUpdate = True  # indicates that range has changed, but matrix update was deferred
@@ -175,8 +174,6 @@ class ViewBox(GraphicsWidget):
             'enableMenu': enableMenu,
             'wheelScaleFactor': -1.0 / 8.0,
 
-            'background': None,
-
             # Limits
             'limits': {
                 'xLimits': [None, None],   # Maximum and minimum visible X values
@@ -189,8 +186,6 @@ class ViewBox(GraphicsWidget):
         self._updatingRange = False  # Used to break recursive loops. See updateAutoRange.
         self._itemBoundsCache = weakref.WeakKeyDictionary()
 
-        self.locateGroup = None  # items displayed when using ViewBox.locate(item)
-
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
         self.setFlag(self.GraphicsItemFlag.ItemIsFocusable, True)  ## so we can receive key presses
 
@@ -199,19 +194,6 @@ class ViewBox(GraphicsWidget):
         # https://bugreports.qt.nokia.com/browse/QTBUG-23723
         self.childGroup = ChildGroup(self)
         self.childGroup.itemsChangedListeners.append(self)
-
-        self.background = QGraphicsRectItem(self.rect())
-        self.background.setParentItem(self)
-        self.background.setZValue(-1e6)
-        self.background.setPen(fn.mkPen(None))
-        self.updateBackground()
-
-        self.border = fn.mkPen(border)
-
-        self.borderRect = QGraphicsRectItem(self.rect())
-        self.borderRect.setParentItem(self)
-        self.borderRect.setZValue(1e3)
-        self.borderRect.setPen(self.border)
 
         # Make scale box that is shown when dragging on the view
         self.rbScaleBox = QGraphicsRectItem(0, 0, 1, 1)
@@ -231,7 +213,8 @@ class ViewBox(GraphicsWidget):
         self.axHistoryPointer = -1  # pointer into the history. Allows forward/backward movement, not just "undo"
 
         self.setZValue(-100)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding,
+                                       QSizePolicy.Policy.Expanding))
 
         self.setAspectLocked(lockAspect)
 
@@ -240,7 +223,6 @@ class ViewBox(GraphicsWidget):
         else:
             self.menu = None
 
-        self.register(name)
         if name is None:
             self.updateViewLists()
 
@@ -255,33 +237,11 @@ class ViewBox(GraphicsWidget):
                                                 vr.width()/vr.height())
         return currentRatio
 
-    def register(self, name):
-        """
-        Add this ViewBox to the registered list of views.
-
-        This allows users to manually link the axes of any other ViewBox to
-        this one. The specified *name* will appear in the drop-down lists for
-        axis linking in the context menus of all other views.
-
-        The same can be accomplished by initializing the ViewBox with the *name* attribute.
-        """
-        ViewBox.AllViews[self] = None
-        if self.name is not None:
-            del ViewBox.NamedViews[self.name]
-        self.name = name
-        if name is not None:
-            ViewBox.NamedViews[name] = self
-            ViewBox.updateAllViewLists()
-            sid = id(self)
-            self.destroyed.connect(lambda: ViewBox.forgetView(sid, name) if (ViewBox is not None and 'sid' in locals() and 'name' in locals()) else None)
-
     def unregister(self):
         """
         Remove this ViewBox from the list of linkable views. (see :func:`register() <pyqtgraph.ViewBox.register>`)
         """
         del ViewBox.AllViews[self]
-        if self.name is not None:
-            del ViewBox.NamedViews[self.name]
 
     def close(self):
         self.clear()
@@ -331,18 +291,6 @@ class ViewBox(GraphicsWidget):
         self._applyMenuEnabled()
         self.updateViewRange()
         self.sigStateChanged.emit(self)
-
-    def setBackgroundColor(self, color):
-        """
-        Set the background color of the ViewBox.
-
-        If color is None, then no background will be drawn.
-
-        Added in version 0.9.9
-        """
-        self.background.setVisible(color is not None)
-        self.state['background'] = color
-        self.updateBackground()
 
     def setMouseMode(self, mode):
         """
@@ -398,12 +346,13 @@ class ViewBox(GraphicsWidget):
             self.menu = None
 
     def addItem(self, item, ignoreBounds=False):
-        """
-        Add a QGraphicsItem to this view. The view will include this item when determining how to set its range
+        """Add a QGraphicsItem to this view.
+
+        The view will include this item when determining how to set its range
         automatically unless *ignoreBounds* is True.
         """
         if item.zValue() < self.zValue():
-            item.setZValue(self.zValue()+1)
+            item.setZValue(self.zValue() + 1)
 
         scene = self.scene()
         if scene is not None and scene is not item.scene():
@@ -446,9 +395,6 @@ class ViewBox(GraphicsWidget):
 
         self._matrixNeedsUpdate = True
         self.updateMatrix()
-
-        self.background.setRect(self.rect())
-        self.borderRect.setRect(self.rect())
 
         self.sigStateChanged.emit(self)
         self.sigResized.emit(self)
@@ -1103,19 +1049,6 @@ class ViewBox(GraphicsWidget):
     def xInverted(self):
         return self.state['xInverted']
 
-    def setBorder(self, *args, **kwds):
-        """
-        Set the pen used to draw border around the view
-
-        If border is None, then no border will be drawn.
-
-        Added in version 0.9.10
-
-        See :func:`mkPen <pyqtgraph.mkPen>` for arguments.
-        """
-        self.border = fn.mkPen(*args, **kwds)
-        self.borderRect.setPen(self.border)
-
     def setAspectLocked(self, lock=True, ratio=1):
         """
         If the aspect ratio is locked, view scaling must always preserve the aspect ratio.
@@ -1334,16 +1267,6 @@ class ViewBox(GraphicsWidget):
         """
         self.setRange(ax.normalized(), **kwargs) # be sure w, h are correct coordinates
         self.sigRangeChangedManually.emit(self.state['mouseEnabled'])
-
-    def allChildren(self, item=None):
-        """Return a list of all children and grandchildren of this ViewBox"""
-        if item is None:
-            item = self.childGroup
-
-        children = [item]
-        for ch in item.childItems():
-            children.extend(self.allChildren(ch))
-        return children
 
     def childrenBounds(self, frac=None, orthoRange=(None,None), items=None):
         """Return the bounding range of all children.
@@ -1587,21 +1510,6 @@ class ViewBox(GraphicsWidget):
 
         self.sigTransformChanged.emit(self)  # segfaults here: 1
 
-    def paint(self, p, opt, widget):
-        """Override."""
-        if self.border is not None:
-            bounds = self.shape()
-            p.setPen(self.border)
-            p.drawPath(bounds)
-
-    def updateBackground(self):
-        bg = self.state['background']
-        if bg is None:
-            self.background.hide()
-        else:
-            self.background.show()
-            self.background.setBrush(fn.mkBrush(bg))
-
     def updateViewLists(self):
         try:
             self.window()
@@ -1633,20 +1541,6 @@ class ViewBox(GraphicsWidget):
             v.updateViewLists()
 
     @staticmethod
-    def forgetView(vid, name):
-        if ViewBox is None:     # can happen as python is shutting down
-            return
-        if QApplication.instance() is None:
-            return
-        # Called with ID and name of view (the view itself is no longer available)
-        for v in list(ViewBox.AllViews.keys()):
-            if id(v) == vid:
-                ViewBox.AllViews.pop(v)
-                break
-        ViewBox.NamedViews.pop(name, None)
-        ViewBox.updateAllViewLists()
-
-    @staticmethod
     def quit():
         # called when the application is about to exit.
         # this disables all callbacks, which might otherwise generate errors if invoked during exit.
@@ -1662,54 +1556,6 @@ class ViewBox(GraphicsWidget):
                 pass
             except AttributeError:  # PySide has deleted signal
                 pass
-
-    def locate(self, item, timeout=3.0, children=False):
-        """
-        Temporarily display the bounding rect of an item and lines connecting to the center of the view.
-        This is useful for determining the location of items that may be out of the range of the ViewBox.
-        if allChildren is True, then the bounding rect of all item's children will be shown instead.
-        """
-        self.clearLocate()
-
-        if item.scene() is not self.scene():
-            raise Exception("Item does not share a scene with this ViewBox.")
-
-        c = self.viewRect().center()
-        if children:
-            br = self.mapFromItemToView(item, item.childrenBoundingRect()).boundingRect()
-        else:
-            br = self.mapFromItemToView(item, item.boundingRect()).boundingRect()
-
-        g = ItemGroup()
-        g.setParentItem(self.childGroup)
-        self.locateGroup = g
-        g.box = QGraphicsRectItem(br)
-        g.box.setParentItem(g)
-        g.lines = []
-        for p in (br.topLeft(), br.bottomLeft(), br.bottomRight(), br.topRight()):
-            line = QGraphicsLineItem(c.x(), c.y(), p.x(), p.y())
-            line.setParentItem(g)
-            g.lines.append(line)
-
-        for item in g.childItems():
-            item.setPen(fn.mkPen(color='y', width=3))
-        g.setZValue(1000000)
-
-        if children:
-            g.path = QGraphicsPathItem(g.childrenShape())
-        else:
-            g.path = QGraphicsPathItem(g.shape())
-        g.path.setParentItem(g)
-        g.path.setPen(fn.mkPen('g'))
-        g.path.setZValue(100)
-
-        QTimer.singleShot(timeout*1000, self.clearLocate)
-
-    def clearLocate(self):
-        if self.locateGroup is None:
-            return
-        self.scene().removeItem(self.locateGroup)
-        self.locateGroup = None
 
 
 from .ViewBoxMenu import ViewBoxMenu

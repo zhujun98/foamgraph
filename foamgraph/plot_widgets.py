@@ -28,9 +28,7 @@ from .signal_proxy import SignalProxy
 class PlotWidgetF(pg.GraphicsView):
     """PlotWidget base class.
 
-    GraphicsView widget displaying a single PlotItem.
-
-    Note: it is different from the PlotWidget in pyqtgraph.
+    GraphicsView widget displaying PlotItems.
 
     This base class should be used to display plots except images.
     For displaying images, please refer to ImageViewF class.

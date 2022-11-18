@@ -9,7 +9,9 @@ from collections import OrderedDict
 
 from .backend.QtGui import QBrush, QColor, QPainterPath, QPen
 from .backend.QtCore import QPointF, QRectF, Qt
-from .backend.QtWidgets import QGraphicsLinearLayout, QGraphicsGridLayout
+from .backend.QtWidgets import (
+    QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout
+)
 
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
@@ -96,14 +98,13 @@ class LegendWidget(pg.GraphicsWidget, pg.GraphicsWidgetAnchor):
         self._brush = brush
         self.update()
 
-    def setParentItem(self, p):
-        """Set the parent."""
-        ret = pg.GraphicsWidget.setParentItem(self, p)
+    def setParentItem(self, parent: QGraphicsItem) -> None:
+        """Override."""
+        super().setParentItem(parent)
         anchorx = 1 if self._offset[0] <= 0 else 0
         anchory = 1 if self._offset[1] <= 0 else 0
         anchor = (anchorx, anchory)
         self.anchor(itemPos=anchor, parentPos=anchor, offset=self._offset)
-        return ret
 
     def addItem(self, item: PlotItem, label: str) -> None:
         """Add a new item to the legend.

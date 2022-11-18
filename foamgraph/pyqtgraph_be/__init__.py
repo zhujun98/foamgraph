@@ -116,7 +116,6 @@ from .graphicsItems.ArrowItem import *
 from .graphicsItems.AxisItem import *
 from .graphicsItems.LabelItem import *
 from .graphicsItems.GraphicsWidgetAnchor import *
-from .graphicsItems.ItemGroup import *
 
 from .widgets.GraphicsView import *
 
@@ -147,7 +146,7 @@ def cleanup():
     if not getConfigOption('exitCleanup'):
         return
     
-    ViewBox.quit()  ## tell ViewBox that it doesn't need to deregister views anymore.
+    ViewBox.quit()  # tell ViewBox that it doesn't need to deregister views anymore.
     
     ## Workaround for Qt exit crash:
     ## ALL QGraphicsItems must have a scene before they are deleted.
