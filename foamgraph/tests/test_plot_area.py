@@ -94,16 +94,16 @@ class TestPlotArea(unittest.TestCase):
         image_item = ImageItem()
         area.addItem(image_item)
         area.addItem(RectROI(0))
-        bar_graph_item = BarGraphItem(name="bar")
+        bar_graph_item = BarGraphItem(label="bar")
         area.addItem(bar_graph_item, y2=True)
         errorbar_item = ErrorbarItem()
         area.addItem(errorbar_item)
 
         area.addLegend()  # add legend when there are already added PlotItems
 
-        curve_plot_item = CurvePlotItem(name="curve")
+        curve_plot_item = CurvePlotItem(label="curve")
         area.addItem(curve_plot_item)
-        scatter_plot_item = ScatterPlotItem(name="scatter")
+        scatter_plot_item = ScatterPlotItem(label="scatter")
         area.addItem(scatter_plot_item)
         area.setAnnotationList([0], [0], [1])
 

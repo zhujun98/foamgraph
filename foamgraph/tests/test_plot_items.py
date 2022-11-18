@@ -72,7 +72,7 @@ class TestPlotItems:
         y = x * 1.5
 
         # x and y are lists
-        item = CurvePlotItem(x.tolist(), y.tolist(), name='line')
+        item = CurvePlotItem(x.tolist(), y.tolist(), label='line')
         self._widget.addItem(item)
         self._widget.addLegend()
         assert isinstance(item._x, np.ndarray)
@@ -111,7 +111,7 @@ class TestPlotItems:
         y = x * 1.5
 
         # x and y are lists
-        item = BarGraphItem(x.tolist(), y.tolist(), name='bar')
+        item = BarGraphItem(x.tolist(), y.tolist(), label='bar')
         self._widget.addItem(item)
         self._widget.addLegend()
         assert isinstance(item._x, np.ndarray)
@@ -144,7 +144,7 @@ class TestPlotItems:
         y = np.arange(10).astype(dtype)
 
         # x and y are lists
-        item = ErrorbarItem(x.tolist(), y.tolist(), name='errorbar')
+        item = ErrorbarItem(x.tolist(), y.tolist(), label='errorbar')
         self._widget.addItem(item)
         self._widget.addLegend()
         assert isinstance(item._x, np.ndarray)
@@ -189,7 +189,7 @@ class TestPlotItems:
         for sym in ScatterPlotItem._symbol_map:
             x = np.arange(10)
             y = np.arange(10)
-            item = ScatterPlotItem(x, y, name=sym, symbol=sym, size=np.random.randint(15, 30))
+            item = ScatterPlotItem(x, y, label=sym, symbol=sym, size=np.random.randint(15, 30))
             self._widget.removeAllItems()
             self._widget.addItem(item)
             self._widget.addLegend()
@@ -200,7 +200,7 @@ class TestPlotItems:
         y = x * 1.5
 
         # x and y are lists
-        item = ScatterPlotItem(x.tolist(), y.tolist(), name='scatter')
+        item = ScatterPlotItem(x.tolist(), y.tolist(), label='scatter')
         self._widget.addItem(item)
         self._widget.addLegend()
         assert isinstance(item._x, np.ndarray)

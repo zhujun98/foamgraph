@@ -262,9 +262,9 @@ class PlotArea(pg.GraphicsWidget):
 
                 self._plot_items.add(item)
 
-            name = item.name()
-            if self._legend is not None and name:
-                self._legend.addItem(item, name)
+            label = item.label()
+            if self._legend is not None and label:
+                self._legend.addItem(item, label)
 
         if y2:
             vb = self._vb_y2
@@ -296,14 +296,14 @@ class PlotArea(pg.GraphicsWidget):
 
         if item in self._plot_items_y2:
             self._plot_items_y2.remove(item)
-            if self._legend is not None and item.name():
+            if self._legend is not None and item.label():
                 self._legend.removeItem(item)
             self._vb_y2.removeItem(item)
             return
 
         if item in self._plot_items:
             self._plot_items.remove(item)
-            if self._legend is not None and item.name():
+            if self._legend is not None and item.label():
                 self._legend.removeItem(item)
 
         self._vb.removeItem(item)
@@ -355,9 +355,9 @@ class PlotArea(pg.GraphicsWidget):
             self._legend.setParentItem(self._vb)
 
             for item in chain(self._plot_items, self._plot_items_y2):
-                name = item.name()
-                if name:
-                    self._legend.addItem(item, name)
+                label = item.label()
+                if label:
+                    self._legend.addItem(item, label)
 
         return self._legend
 

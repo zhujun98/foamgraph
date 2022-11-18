@@ -91,11 +91,11 @@ class MultiLinePlot(PlotWidgetF):
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot1 = self.plotCurve(
-            name='Line A', pen=FColor.mkPen('k', width=2))
+            label='Line A', pen=FColor.mkPen('k', width=2))
         self._plot2 = self.plotCurve(
-            name='Line B', pen=FColor.mkPen('b', width=2))
+            label='Line B', pen=FColor.mkPen('b', width=2))
         self._plot3 = self.plotCurve(
-            name='Line C', pen=FColor.mkPen('r', width=2))
+            label='Line C', pen=FColor.mkPen('r', width=2))
 
         self.addLegend()
 
@@ -115,11 +115,11 @@ class DoubleYPlot(PlotWidgetF):
         self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arg. u.)")
 
         self._plot = self.plotCurve(
-            name="Data", pen=FColor.mkPen('Brown'))
+            label="Data", pen=FColor.mkPen('Brown'))
         self._plot1 = self.plotScatter(
             symbol='x', pen=FColor.mkPen('Brown'))
         self._plot2 = self.plotBar(
-            name="Count", y2=True, brush=FColor.mkBrush('Silver', alpha=150))
+            label="Count", y2=True, brush=FColor.mkBrush('Silver', alpha=150))
         self.addLegend()
 
     def updateF(self, data):
