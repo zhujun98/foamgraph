@@ -213,7 +213,8 @@ class ViewBox(GraphicsWidget):
         self.axHistoryPointer = -1  # pointer into the history. Allows forward/backward movement, not just "undo"
 
         self.setZValue(-100)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding,
+                                       QSizePolicy.Policy.Expanding))
 
         self.setAspectLocked(lockAspect)
 
