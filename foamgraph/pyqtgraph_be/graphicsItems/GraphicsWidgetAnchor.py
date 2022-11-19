@@ -96,7 +96,7 @@ class GraphicsWidgetAnchor(object):
             return
         if self.__itemAnchor is None:
             return
-            
+
         o = self.mapToParent(Point(0,0))
         a = self.boundingRect().bottomRight() * Point(self.__itemAnchor)
         a = self.mapToParent(a)

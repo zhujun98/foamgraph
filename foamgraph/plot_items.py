@@ -7,6 +7,7 @@ Author: Jun Zhu
 """
 import abc
 from collections import OrderedDict
+from typing import Optional
 
 import numpy as np
 
@@ -26,9 +27,8 @@ from .aesthetics import FColor
 class PlotItem(pg.GraphicsObject):
 
     label_changed_sgn = pyqtSignal(str)
-    visibility_changed_sgn = pyqtSignal(bool)
 
-    def __init__(self, *args, label=None, **kwargs):
+    def __init__(self, *args, label: Optional[str] = None, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._graph = None
@@ -126,16 +126,6 @@ class PlotItem(pg.GraphicsObject):
     def drawSample(self, p):
         """Draw a sample used in LegendWidget."""
         pass
-
-    def show(self) -> None:
-        """Override."""""
-        super().show()
-        self.visibility_changed_sgn.emit(True)
-
-    def hide(self) -> None:
-        """Override."""""
-        super().hide()
-        self.visibility_changed_sgn.emit(False)
 
 
 class CurvePlotItem(PlotItem):

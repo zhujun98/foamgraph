@@ -106,16 +106,17 @@ class LegendWidget(pg.GraphicsWidget, pg.GraphicsWidgetAnchor):
         anchor = (anchorx, anchory)
         self.anchor(itemPos=anchor, parentPos=anchor, offset=self._offset)
 
-    def addItem(self, item: PlotItem, label: str) -> None:
+    def addItem(self, item: PlotItem) -> None:
         """Add a new item to the legend.
 
         :param item: plot item to be added.
-        :param label: label of the plot item.
         """
         label = pg.LabelItem(
-            label, color=self._label_text_color, justify='left')
+            item.label(), color=self._label_text_color, justify='left')
         sample = self.SampleWidget(item)
-        self._items[item] = (label, sample)
+        self._items[item] = (sample, label)
+        item.label_changed_sgn.connect(self.onItemLabelChanged)
+        item.visibleChanged.connect(self.onItemVisibleChanged)
         if self._orientation == Qt.Orientation.Horizontal:
             self._layout.addItem(sample)
             self._layout.addItem(label)
@@ -142,10 +143,9 @@ class LegendWidget(pg.GraphicsWidget, pg.GraphicsWidgetAnchor):
 
     def removeAllItems(self) -> None:
         """Remove all plot items from the legend."""
-        for sample, label_item in self._items.values():
+        for sample, label in self._items.values():
             self._layout.removeItem(sample)
-            self._layout.removeItem(label_item)
-
+            self._layout.removeItem(label)
         self._items.clear()
         self._updateSize()
 
@@ -158,7 +158,7 @@ class LegendWidget(pg.GraphicsWidget, pg.GraphicsWidgetAnchor):
                 row_height = 0
                 col_width = 0
                 item = self._layout.itemAt(row)
-                if item:
+                if item.isVisible():
                     col_width += item.geometry().width() + 3
                     row_height = max(row_height, item.geometry().height())
                 height = max(height, row_height)
@@ -169,12 +169,26 @@ class LegendWidget(pg.GraphicsWidget, pg.GraphicsWidgetAnchor):
                 col_width = 0
                 for col in range(self._layout.columnCount()):
                     item = self._layout.itemAt(row, col)
-                    if item:
+                    # There could be empty rows and cols which results in
+                    # returns of None items.
+                    if item is not None and item.isVisible():
                         col_width += item.geometry().width() + 3
                         row_height = max(row_height, item.geometry().height())
                 width = max(width, col_width)
                 height += row_height
         self.setGeometry(0, 0, width, height)
+
+    def onItemLabelChanged(self, label: str) -> None:
+        item = self.sender()
+        self._items[item][1].setText(label)
+
+    def onItemVisibleChanged(self) -> None:
+        item = self.sender()
+        sample, label = self._items[item]
+        state = item.isVisible()
+        label.setVisible(state)
+        sample.setVisible(state)
+        self._updateSize()
 
     def paint(self, p, *args) -> None:
         """Override."""
