@@ -106,7 +106,7 @@ path = os.path.split(__file__)[0]
 if __version__ is None and not hasattr(sys, 'frozen') and sys.version_info[0] == 2: ## If we are frozen, there's a good chance we don't have the original .py files anymore.
     renamePyc(path)
 
-from .graphicsItems.GraphicsWidget import *
+from .graphicsItems.GraphicsWidgets import *
 from .graphicsItems.TextItem import *
 from .graphicsItems.UIGraphicsItem import *
 from .graphicsItems.GraphicsObject import *
@@ -115,7 +115,6 @@ from .graphicsItems.ViewBox import *
 from .graphicsItems.ArrowItem import *
 from .graphicsItems.AxisItem import *
 from .graphicsItems.LabelItem import *
-from .graphicsItems.GraphicsWidgetAnchor import *
 
 from .widgets.GraphicsView import *
 

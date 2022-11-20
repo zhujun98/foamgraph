@@ -20,7 +20,7 @@ from .aesthetics import FColor
 from .plot_items import PlotItem
 
 
-class LegendWidget(pg.GraphicsWidget, pg.GraphicsWidgetAnchor):
+class LegendWidget(pg.GraphicsAnchorWidget):
     """Displays a legend used for describing the contents of a plot."""
 
     class SampleWidget(pg.GraphicsWidget):
@@ -48,8 +48,7 @@ class LegendWidget(pg.GraphicsWidget, pg.GraphicsWidgetAnchor):
             legend must be anchored manually by calling anchor() or
             positioned by calling setPos().
         """
-        pg.GraphicsWidget.__init__(self)
-        pg.GraphicsWidgetAnchor.__init__(self)
+        super().__init__()
         self.setFlag(self.GraphicsItemFlag.ItemIgnoresTransformations)
 
         self._orientation = orientation
@@ -104,7 +103,7 @@ class LegendWidget(pg.GraphicsWidget, pg.GraphicsWidgetAnchor):
         anchorx = 1 if self._offset[0] <= 0 else 0
         anchory = 1 if self._offset[1] <= 0 else 0
         anchor = (anchorx, anchory)
-        self.anchor(itemPos=anchor, parentPos=anchor, offset=self._offset)
+        self._anchor(itemPos=anchor, parentPos=anchor, offset=self._offset)
 
     def addItem(self, item: PlotItem) -> None:
         """Add a new item to the legend.
@@ -205,5 +204,4 @@ class LegendWidget(pg.GraphicsWidget, pg.GraphicsWidgetAnchor):
 
         if ev.button() == Qt.MouseButton.LeftButton:
             ev.accept()
-            dpos = ev.pos() - ev.lastPos()
-            self.autoAnchor(self.pos() + dpos)
+            self.autoAnchor(self.pos() + ev.pos() - ev.lastPos())

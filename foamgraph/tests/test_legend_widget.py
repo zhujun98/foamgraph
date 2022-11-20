@@ -2,7 +2,8 @@ import pytest
 
 from foamgraph import mkQApp, PlotWidgetF
 
-from . import _display
+from foamgraph.backend.QtCore import QPoint, Qt
+from foamgraph.backend.QtTest import QTest
 
 
 app = mkQApp()
@@ -86,3 +87,11 @@ class TestLegendWidget:
         assert legend._items[widget.plot4][1].text == ""
         widget.plot4.setLabel("new 4")
         assert legend._items[widget.plot4][1].text == "new 4"
+
+    def test_dragging(self):
+        widget = self.FooPlotWidget()
+        widget.addLegend()
+
+        # FIXME:
+        QTest.mouseClick(widget, Qt.MouseButton.LeftButton,
+                         pos=QPoint(int(widget.width() / 2), int(widget.height() / 2)))

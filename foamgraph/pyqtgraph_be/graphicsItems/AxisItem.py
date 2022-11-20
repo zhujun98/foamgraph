@@ -6,7 +6,7 @@ import sys
 import weakref
 from .. import functions as fn
 from .. import getConfigOption
-from .GraphicsWidget import GraphicsWidget
+from .GraphicsWidgets import GraphicsWidget
 from ..GraphicsScene import MouseClickEvent, MouseDragEvent
 
 __all__ = ['AxisItem']

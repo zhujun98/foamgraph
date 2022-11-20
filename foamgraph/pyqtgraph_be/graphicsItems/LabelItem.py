@@ -1,24 +1,20 @@
 from ..Qt import QtGui, QtCore
 from .. import functions as fn
-from .GraphicsWidget import GraphicsWidget
-from .GraphicsWidgetAnchor import GraphicsWidgetAnchor
+from .GraphicsWidgets import GraphicsAnchorWidget
 from .. import getConfigOption
 
 
 __all__ = ['LabelItem']
 
-class LabelItem(GraphicsWidget, GraphicsWidgetAnchor):
+class LabelItem(GraphicsAnchorWidget):
     """
     GraphicsWidget displaying text.
     Used mainly as axis labels, titles, etc.
     
     Note: To display text inside a scaled view (ViewBox, PlotWidget, etc) use TextItem
     """
-    
-    
     def __init__(self, text=' ', parent=None, angle=0, **args):
-        GraphicsWidget.__init__(self, parent)
-        GraphicsWidgetAnchor.__init__(self)
+        super().__init__(parent=parent)
         self.item = QtGui.QGraphicsTextItem(self)
         self.opts = {
             'color': None,
