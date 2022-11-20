@@ -19,10 +19,10 @@ class TestPlotWidget:
         widget.setXLabel("x label")
         widget.setYLabel("y label")
         widget.addLegend()
-        cls._curve1 = widget.plotCurve(name="curve1")
-        cls._scatter1 = widget.plotScatter(name="scatter1")
-        cls._bar2 = widget.plotBar(name="bar2", y2=True)
-        cls._statistics2 = widget.plotErrorbar(name="errorbar2", y2=True)
+        cls._curve1 = widget.plotCurve(label="curve1")
+        cls._scatter1 = widget.plotScatter(label="scatter1")
+        cls._bar2 = widget.plotBar(label="bar2", y2=True)
+        cls._statistics2 = widget.plotErrorbar(label="errorbar2", y2=True)
         cls._widget1 = widget
         if _display():
             widget.show()
@@ -30,10 +30,10 @@ class TestPlotWidget:
         # test addLegend after adding plot items
         widget = PlotWidgetF()
         widget.setXYLabels("x label", "y label", y2="y2 label")
-        cls._bar1 = widget.plotBar(name="bar1")
-        cls._statistics1 = widget.plotErrorbar(name="errorbar1")
-        cls._curve2 = widget.plotCurve(name="curve2", y2=True)
-        cls._scatter2 = widget.plotScatter(name="scatter2", y2=True)
+        cls._bar1 = widget.plotBar(label="bar1")
+        cls._statistics1 = widget.plotErrorbar(label="errorbar1")
+        cls._curve2 = widget.plotCurve(label="curve2", y2=True)
+        cls._scatter2 = widget.plotScatter(label="scatter2", y2=True)
         widget.addLegend()
         cls._widget2 = widget
         if _display():

@@ -7,6 +7,7 @@ Author: Jun Zhu
 """
 import abc
 from collections import OrderedDict
+from typing import Optional
 
 import numpy as np
 
@@ -26,14 +27,13 @@ from .aesthetics import FColor
 class PlotItem(pg.GraphicsObject):
 
     label_changed_sgn = pyqtSignal(str)
-    visibility_changed_sgn = pyqtSignal(bool)
 
-    def __init__(self, name=None, *args, **kwargs):
+    def __init__(self, *args, label: Optional[str] = None, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._graph = None
 
-        self._label = "" if name is None else name
+        self._label = "" if label is None else label
 
         self._log_x_mode = False
         self._log_y_mode = False
@@ -112,7 +112,7 @@ class PlotItem(pg.GraphicsObject):
         ret[ret < 0] = 0
         return np.log10(ret + 1)
 
-    def name(self):
+    def label(self):
         """An identity of the PlotItem.
 
         Used in LegendWidget.
@@ -127,24 +127,14 @@ class PlotItem(pg.GraphicsObject):
         """Draw a sample used in LegendWidget."""
         pass
 
-    def show(self) -> None:
-        """Override."""""
-        super().show()
-        self.visibility_changed_sgn.emit(True)
-
-    def hide(self) -> None:
-        """Override."""""
-        super().hide()
-        self.visibility_changed_sgn.emit(False)
-
 
 class CurvePlotItem(PlotItem):
     """CurvePlotItem."""
 
     def __init__(self, x=None, y=None, *,
-                 pen=None, name=None, check_finite=True, parent=None):
+                 pen=None, label=None, check_finite=True, parent=None):
         """Initialization."""
-        super().__init__(name=name, parent=parent)
+        super().__init__(label=label, parent=parent)
 
         self._x = None
         self._y = None
@@ -215,9 +205,9 @@ class CurvePlotItem(PlotItem):
 class BarGraphItem(PlotItem):
     """BarGraphItem"""
     def __init__(self, x=None, y=None, *, width=1.0, pen=None, brush=None,
-                 name=None, parent=None):
+                 label=None, parent=None):
         """Initialization."""
-        super().__init__(name=name, parent=parent)
+        super().__init__(label=label, parent=parent)
 
         self._x = None
         self._y = None
@@ -287,12 +277,12 @@ class ErrorbarItem(PlotItem):
 
     def __init__(self, x=None, y=None, *, y_min=None, y_max=None, beam=None,
                  line=False, pen=None,
-                 name=None, parent=None):
+                 label=None, parent=None):
         """Initialization.
 
         Note: y is not used for now.
         """
-        super().__init__(name=name, parent=parent)
+        super().__init__(label=label, parent=parent)
 
         self._x = None
         self._y = None
@@ -454,9 +444,9 @@ class ScatterPlotItem(PlotItem):
     _symbol_map = createSymbols.__func__()
 
     def __init__(self, x=None, y=None, *, symbol='o', size=8,
-                 pen=None, brush=None, name=None, parent=None):
+                 pen=None, brush=None, label=None, parent=None):
         """Initialization."""
-        super().__init__(name=name, parent=parent)
+        super().__init__(label=label, parent=parent)
 
         self._x = None
         self._y = None

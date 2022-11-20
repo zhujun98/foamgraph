@@ -63,14 +63,14 @@ class BenchmarkPlotItemSpeed:
             self._widget.addLegend()
 
             if plot_type == "line":
-                self._graph = self._widget.plotCurve(name=plot_type)
+                self._graph = self._widget.plotCurve(label=plot_type)
             elif plot_type == "scatter":
-                self._graph = self._widget.plotScatter(name=plot_type)
+                self._graph = self._widget.plotScatter(label=plot_type)
             elif plot_type == "bar":
-                self._graph = self._widget.plotBar(name=plot_type, width=1.0)
+                self._graph = self._widget.plotBar(label=plot_type, width=1.0)
             elif plot_type == "errorbar":
                 self._graph = self._widget.plotErrorbar(
-                    name=plot_type, beam=1.0)
+                    label=plot_type, beam=1.0)
             else:
                 raise ValueError(f"Unsupported plot type: {plot_type}")
         self._plot_type = plot_type

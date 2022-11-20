@@ -5,6 +5,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from collections import OrderedDict
 import warnings
 from itertools import chain
 
@@ -22,8 +23,6 @@ from .aesthetics import FColor
 
 class PlotArea(pg.GraphicsWidget):
     """GraphicsWidget implementing a standard 2D plotting area with axes.
-
-    Implemented based on pyqtgraph.PlotItem.
 
     It has the following functionalities:
 
@@ -50,8 +49,14 @@ class PlotArea(pg.GraphicsWidget):
                            QSizePolicy.Policy.Expanding)
 
         self._items = set()
-        self._plot_items = set()
-        self._plot_items_y2 = set()
+        # The insertion order of PlotItems must be kept because of the legend.
+        # Although QGraphicsScene maintain the sequence of QGraphicsItem, the
+        # LegendWidget does not guarantee this since legend can be enabled after
+        # all the PlotItems are added, so it must get the order information
+        # from somewhere. Therefore, we use OrderedDict here to maintain the
+        # insertion order of PlotItems.
+        self._plot_items = OrderedDict()  # PlotItem: None
+        self._plot_items_y2 = OrderedDict()  # PlotItem: None
         self._annotation_items = []
         self._n_vis_annotation_items = 0
 
@@ -252,7 +257,7 @@ class PlotArea(pg.GraphicsWidget):
                 if self._log_x_cb.isChecked():
                     item.setLogX(True)
 
-                self._plot_items_y2.add(item)
+                self._plot_items_y2[item] = None
             else:
                 if self._log_x_cb.isChecked():
                     item.setLogX(True)
@@ -260,11 +265,10 @@ class PlotArea(pg.GraphicsWidget):
                 if self._log_y_cb.isChecked():
                     item.setLogY(True)
 
-                self._plot_items.add(item)
+                self._plot_items[item] = None
 
-            name = item.name()
-            if self._legend is not None and name:
-                self._legend.addItem(item, name)
+            if self._legend is not None:
+                self._legend.addItem(item)
 
         if y2:
             vb = self._vb_y2
@@ -295,15 +299,15 @@ class PlotArea(pg.GraphicsWidget):
         self._items.remove(item)
 
         if item in self._plot_items_y2:
-            self._plot_items_y2.remove(item)
-            if self._legend is not None and item.name():
+            del self._plot_items_y2[item]
+            if self._legend is not None:
                 self._legend.removeItem(item)
             self._vb_y2.removeItem(item)
             return
 
         if item in self._plot_items:
-            self._plot_items.remove(item)
-            if self._legend is not None and item.name():
+            del self._plot_items[item]
+            if self._legend is not None:
                 self._legend.removeItem(item)
 
         self._vb.removeItem(item)
@@ -355,9 +359,7 @@ class PlotArea(pg.GraphicsWidget):
             self._legend.setParentItem(self._vb)
 
             for item in chain(self._plot_items, self._plot_items_y2):
-                name = item.name()
-                if name:
-                    self._legend.addItem(item, name)
+                self._legend.addItem(item)
 
         return self._legend
 

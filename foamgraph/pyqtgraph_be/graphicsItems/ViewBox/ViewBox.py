@@ -12,7 +12,7 @@ from ...Point import Point
 from ... import functions as fn
 from ...GraphicsScene import MouseClickEvent, MouseDragEvent
 from ..GraphicsObject import GraphicsObject
-from ..GraphicsWidget import GraphicsWidget
+from ..GraphicsWidgets import GraphicsWidget
 from ... import getConfigOption
 
 __all__ = ['ViewBox']
