@@ -47,13 +47,11 @@ class DoubleYPlot(PlotWidgetF):
         super().__init__(parent=parent)
 
         self.setTitle('Double-y plot')
-        self.setLabel('bottom', "x (arb. u.)")
-        self.setLabel('left', "y (arb. u.)")
-        self.setLabel('right', "y2 (arg. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arg. u.)")
 
-        self._plot = self.plotCurve(name="Data", pen=FColor.mkPen('w'))
+        self._plot = self.plotCurve(label="Data", pen=FColor.mkPen('w'))
         self._plot2 = self.plotBar(
-            name="Count", y2=True, brush=FColor.mkBrush('i', alpha=150))
+            label="Count", y2=True, brush=FColor.mkBrush('i', alpha=150))
         self.addLegend()
 
     def updateF(self, data):
