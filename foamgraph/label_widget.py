@@ -1,33 +1,32 @@
-from ..Qt import QtGui, QtCore
-from .. import functions as fn
-from .GraphicsWidgets import GraphicsAnchorWidget
-from .. import getConfigOption
+"""
+Distributed under the terms of the BSD 3-Clause License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Author: Jun Zhu
+"""
+from .backend.QtCore import QPointF, QSizeF, Qt
+from .backend.QtWidgets import QGraphicsTextItem
+from . import pyqtgraph_be as pg
 
 
-__all__ = ['LabelItem']
-
-class LabelItem(GraphicsAnchorWidget):
+class LabelWidget(pg.GraphicsAnchorWidget):
     """
     GraphicsWidget displaying text.
     Used mainly as axis labels, titles, etc.
     
     Note: To display text inside a scaled view (ViewBox, PlotWidget, etc) use TextItem
     """
-    def __init__(self, text=' ', parent=None, angle=0, **args):
+    def __init__(self, text=' ', parent=None, angle=0):
         super().__init__(parent=parent)
-        self.item = QtGui.QGraphicsTextItem(self)
+        self.item = QGraphicsTextItem(self)
         self.opts = {
             'color': None,
             'justify': 'center'
         }
-        self.opts.update(args)
         self._sizeHint = {}
         self.setText(text)
         self.setAngle(angle)
-            
-    def setAttr(self, attr, value):
-        """Set default text properties. See setText() for accepted parameters."""
-        self.opts[attr] = value
         
     def setText(self, text, **args):
         """Set the text and text properties in the label. Accepts optional arguments for auto-generating
@@ -68,7 +67,7 @@ class LabelItem(GraphicsAnchorWidget):
     def resizeEvent(self, ev):
         self.item.setPos(0,0)
         bounds = self.itemRect()
-        left = self.mapFromItem(self.item, QtCore.QPointF(0,0)) - self.mapFromItem(self.item, QtCore.QPointF(1,0))
+        left = self.mapFromItem(self.item, QPointF(0,0)) - self.mapFromItem(self.item, QPointF(1,0))
         rect = self.rect()
         
         if self.opts['justify'] == 'left':
@@ -105,17 +104,17 @@ class LabelItem(GraphicsAnchorWidget):
         self.setMinimumHeight(bounds.height())
         
         self._sizeHint = {
-            QtCore.Qt.SizeHint.MinimumSize: (bounds.width(), bounds.height()),
-            QtCore.Qt.SizeHint.PreferredSize: (bounds.width(), bounds.height()),
-            QtCore.Qt.SizeHint.MaximumSize: (-1, -1),  #bounds.width()*2, bounds.height()*2),
-            QtCore.Qt.SizeHint.MinimumDescent: (0, 0)  ##?? what is this?
+            Qt.SizeHint.MinimumSize: (bounds.width(), bounds.height()),
+            Qt.SizeHint.PreferredSize: (bounds.width(), bounds.height()),
+            Qt.SizeHint.MaximumSize: (-1, -1),  #bounds.width()*2, bounds.height()*2),
+            Qt.SizeHint.MinimumDescent: (0, 0)  ##?? what is this?
         }
         self.updateGeometry()
         
     def sizeHint(self, hint, constraint):
         if hint not in self._sizeHint:
-            return QtCore.QSizeF(0, 0)
-        return QtCore.QSizeF(*self._sizeHint[hint])
+            return QSizeF(0, 0)
+        return QSizeF(*self._sizeHint[hint])
         
     def itemRect(self):
         return self.item.mapRectToParent(self.item.boundingRect())

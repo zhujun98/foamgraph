@@ -16,9 +16,11 @@ from .backend.QtWidgets import (
 )
 
 from . import pyqtgraph_be as pg
+from .aesthetics import FColor
+from .label_widget import LabelWidget
 from .legend_widget import LegendWidget
 from .plot_items import PlotItem
-from .aesthetics import FColor
+from .text_item import TextItem
 
 
 class PlotArea(pg.GraphicsWidget):
@@ -65,9 +67,9 @@ class PlotArea(pg.GraphicsWidget):
 
         self._legend = None
         self._axes = {}
-        self._meter = pg.LabelItem(
+        self._meter = LabelWidget(
             '', size='11pt', justify='left', color='6A3D9A', parent=self)
-        self._title = pg.LabelItem('', size='11pt', parent=self)
+        self._title = LabelWidget('', size='11pt', parent=self)
 
         # context menu
         self._show_cross_cb = QCheckBox("Cross cursor")
@@ -438,7 +440,7 @@ class PlotArea(pg.GraphicsWidget):
         n_items = len(a_items)
         if n_items < n_pts:
             for i in range(n_pts - n_items):
-                item = pg.TextItem(color=FColor.mkColor('b'), anchor=(0.5, 2))
+                item = TextItem(color=FColor.mkColor('b'), anchor=(0.5, 2))
                 self.addItem(item)
                 a_items.append(item)
 

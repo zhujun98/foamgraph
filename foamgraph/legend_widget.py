@@ -17,6 +17,7 @@ from . import pyqtgraph_be as pg
 from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
 from .pyqtgraph_be import Point
 from .aesthetics import FColor
+from .label_widget import LabelWidget
 from .plot_items import PlotItem
 
 
@@ -110,7 +111,7 @@ class LegendWidget(pg.GraphicsAnchorWidget):
 
         :param item: plot item to be added.
         """
-        label = pg.LabelItem(
+        label = LabelWidget(
             item.label(), color=self._label_text_color, justify='left')
         sample = self.SampleWidget(item)
         self._items[item] = (sample, label)

@@ -1,14 +1,20 @@
-import numpy as np
-from ..Qt import QtCore, QtGui
-from ..Point import Point
-from .. import functions as fn
-from .GraphicsObject import GraphicsObject
+"""
+Distributed under the terms of the BSD 3-Clause License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Author: Jun Zhu
+"""
+from .backend.QtGui import QTransform
+from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
+from .backend.QtWidgets import QGraphicsTextItem
+
+from . import pyqtgraph_be as pg
+from .pyqtgraph_be import Point
+from .aesthetics import FColor
 
 
-__all__ = ['TextItem']
-
-
-class TextItem(GraphicsObject):
+class TextItem(pg.GraphicsObject):
     """
     GraphicsItem displaying unscaled text (the text will always appear normal even inside a scaled ViewBox). 
     """
@@ -43,16 +49,15 @@ class TextItem(GraphicsObject):
         * rotateAxis=(0, 1), angle=0 -> text aligned with y axis of its parent
         * rotateAxis=(1, 0), angle=90 -> text orthogonal to x axis of its parent        
         """
-                     
         self.anchor = Point(anchor)
         self.rotateAxis = None if rotateAxis is None else Point(rotateAxis)
         #self.angle = 0
-        GraphicsObject.__init__(self)
-        self.textItem = QtGui.QGraphicsTextItem()
+        super().__init__()
+        self.textItem = QGraphicsTextItem()
         self.textItem.setParentItem(self)
         self._lastTransform = None
         self._lastScene = None
-        self._bounds = QtCore.QRectF()
+        self._bounds = QRectF()
         if html is None:
             self.setColor(color)
             self.setText(text)
@@ -173,14 +178,14 @@ class TextItem(GraphicsObject):
             self.updateTransform()
             p.setTransform(self.sceneTransform())
         
-        if self.border.style() != QtCore.Qt.NoPen or self.fill.style() != QtCore.Qt.NoBrush:
+        if self.border.style() != Qt.NoPen or self.fill.style() != Qt.NoBrush:
             p.setPen(self.border)
             p.setBrush(self.fill)
             p.setRenderHint(p.Antialiasing, True)
             p.drawPolygon(self.textItem.mapToParent(self.textItem.boundingRect()))
         
     def setVisible(self, v):
-        GraphicsObject.setVisible(self, v)
+        super().setVisible(self, v)
         if v:
             self.updateTransform()
 
@@ -195,7 +200,7 @@ class TextItem(GraphicsObject):
         # does not break mouse interaction and collision detection.
         p = self.parentItem()
         if p is None:
-            pt = QtGui.QTransform()
+            pt = QTransform()
         else:
             pt = p.sceneTransform()
         

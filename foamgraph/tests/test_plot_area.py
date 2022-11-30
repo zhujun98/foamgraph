@@ -4,6 +4,7 @@ from unittest.mock import patch
 from foamgraph.backend.QtTest import QSignalSpy
 
 from foamgraph import mkQApp
+from foamgraph.label_widget import LabelWidget
 from foamgraph.legend_widget import LegendWidget
 from foamgraph.plot_area import PlotArea
 from foamgraph.image_items import ImageItem
@@ -71,7 +72,7 @@ class TestPlotArea(unittest.TestCase):
 
     def testTitle(self):
         area = self._area
-        self.assertIsInstance(area._title, pg.LabelItem)
+        self.assertIsInstance(area._title, LabelWidget)
 
         self.assertEqual(0, area._title.maximumHeight())
         self.assertFalse(area._title.isVisible())

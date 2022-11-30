@@ -107,14 +107,12 @@ if __version__ is None and not hasattr(sys, 'frozen') and sys.version_info[0] ==
     renamePyc(path)
 
 from .graphicsItems.GraphicsWidgets import *
-from .graphicsItems.TextItem import *
 from .graphicsItems.UIGraphicsItem import *
 from .graphicsItems.GraphicsObject import *
 from .graphicsItems.GraphicsItem import *
 from .graphicsItems.ViewBox import *
 from .graphicsItems.ArrowItem import *
 from .graphicsItems.AxisItem import *
-from .graphicsItems.LabelItem import *
 
 from .widgets.GraphicsView import *
 
