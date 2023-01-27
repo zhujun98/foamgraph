@@ -927,7 +927,7 @@ def makeARGB(data, lut=None, levels=None, scale=None, useRGBA=False):
             raise Exception('levels argument is required for float input types')
     if not isinstance(levels, np.ndarray):
         levels = np.array(levels)
-    levels = levels.astype(np.float)
+    levels = levels.astype(np.float32)
     if levels.ndim == 1:
         if levels.shape[0] != 2:
             raise Exception('levels argument must have length 2')
