@@ -19,7 +19,7 @@ from . import pyqtgraph_be as pg
 from .aesthetics import FColor
 from .axis_item import AxisItem
 from .label_widget import LabelWidget
-from .legend_widget import LegendWidget
+from .legend_item import LegendItem
 from .plot_items import PlotItem
 from .text_item import TextItem
 
@@ -54,7 +54,7 @@ class PlotArea(pg.GraphicsWidget):
         self._items = set()
         # The insertion order of PlotItems must be kept because of the legend.
         # Although QGraphicsScene maintain the sequence of QGraphicsItem, the
-        # LegendWidget does not guarantee this since legend can be enabled after
+        # LegendItem does not guarantee this since legend can be enabled after
         # all the PlotItems are added, so it must get the order information
         # from somewhere. Therefore, we use OrderedDict here to maintain the
         # insertion order of PlotItems.
@@ -356,9 +356,9 @@ class PlotArea(pg.GraphicsWidget):
             s.hide()
 
     def addLegend(self, offset=(30, 30), **kwargs):
-        """Add a LegendWidget if it does not exist."""
+        """Add a LegendItem if it does not exist."""
         if self._legend is None:
-            self._legend = LegendWidget(offset=offset, **kwargs)
+            self._legend = LegendItem(offset=offset, **kwargs)
             self._legend.setParentItem(self._vb)
 
             for item in chain(self._plot_items, self._plot_items_y2):

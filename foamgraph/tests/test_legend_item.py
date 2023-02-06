@@ -1,7 +1,7 @@
 import pytest
 
 from foamgraph import mkQApp, PlotWidgetF
-
+from foamgraph.aesthetics import FColor
 from foamgraph.backend.QtCore import QPoint, Qt
 from foamgraph.backend.QtTest import QTest
 
@@ -9,7 +9,8 @@ from foamgraph.backend.QtTest import QTest
 app = mkQApp()
 
 
-class TestLegendWidget:
+@pytest.fixture(scope='function')
+def widget():
     class FooPlotWidget(PlotWidgetF):
         def __init__(self):
             super().__init__()
@@ -18,16 +19,29 @@ class TestLegendWidget:
             self.plot3 = self.plotScatter(label="3")
             self.plot4 = self.plotErrorbar()
 
+            self.all_plots = [self.plot1, self.plot2, self.plot3, self.plot4]
+
+    return FooPlotWidget()
+
+
+class TestLegendItem:
+
     @pytest.mark.parametrize("orientation", ["vertical", "horizontal"])
-    def test_initialization(self, orientation):
-        widget = self.FooPlotWidget()
+    def test_initialization(self, widget, orientation):
         with pytest.raises(ValueError):
             widget.addLegend(orientation="unknown")
         widget.addLegend(orientation=orientation)
 
+        legend = widget._plot_area._legend
+
+        # test setLabelColor
+        color = FColor.mkColor('r')
+        legend.setLabelColor(color)
+        for plot in widget.all_plots:
+            assert legend._items[plot][1]._item.defaultTextColor() == color
+
     @pytest.mark.parametrize("orientation", ["vertical", "horizontal"])
-    def test_plot_item_visible_change(self, orientation):
-        widget = self.FooPlotWidget()
+    def test_plot_item_visible_change(self, widget, orientation):
         widget.addLegend(orientation=orientation)
         legend = widget._plot_area._legend
 
@@ -44,8 +58,7 @@ class TestLegendWidget:
         assert not label.isVisible()
 
     @pytest.mark.parametrize("orientation", ["vertical", "horizontal"])
-    def test_plot_item_removal(self, orientation):
-        widget = self.FooPlotWidget()
+    def test_plot_item_removal(self, widget, orientation):
         widget.addLegend(orientation=orientation)
         legend = widget._plot_area._legend
 
@@ -75,8 +88,7 @@ class TestLegendWidget:
             assert legend._layout.count() == 0
 
     @pytest.mark.parametrize("orientation", ["vertical", "horizontal"])
-    def test_plot_item_set_label(self, orientation):
-        widget = self.FooPlotWidget()
+    def test_plot_item_set_label(self, widget, orientation):
         widget.addLegend(orientation=orientation)
         legend = widget._plot_area._legend
 
@@ -88,8 +100,7 @@ class TestLegendWidget:
         widget.plot4.setLabel("new 4")
         assert legend._items[widget.plot4][1].text == "new 4"
 
-    def test_dragging(self):
-        widget = self.FooPlotWidget()
+    def test_dragging(self, widget):
         widget.addLegend()
 
         # FIXME:

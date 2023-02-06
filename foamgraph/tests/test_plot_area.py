@@ -8,7 +8,7 @@ from foamgraph import pyqtgraph_be as pg
 from foamgraph.axis_item import AxisItem
 from foamgraph.image_items import ImageItem
 from foamgraph.label_widget import LabelWidget
-from foamgraph.legend_widget import LegendWidget
+from foamgraph.legend_item import LegendItem
 from foamgraph.plot_area import PlotArea
 from foamgraph.plot_items import (
     CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
@@ -63,12 +63,12 @@ class TestPlotArea(unittest.TestCase):
         self.assertIsNone(area._legend)
 
         legend = area.addLegend((-30, -30))
-        self.assertIsInstance(area._legend, LegendWidget)
+        self.assertIsInstance(area._legend, LegendItem)
         self.assertIs(legend, area._legend)
 
         # test addLegend when legend already exists
         area.addLegend((-10, -10))
-        self.assertIsInstance(area._legend, LegendWidget)
+        self.assertIsInstance(area._legend, LegendItem)
         self.assertIs(legend, area._legend)
 
     def testTitle(self):

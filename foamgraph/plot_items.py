@@ -115,7 +115,7 @@ class PlotItem(pg.GraphicsObject):
     def label(self):
         """An identity of the PlotItem.
 
-        Used in LegendWidget.
+        Used in LegendItem.
         """
         return self._label
 
@@ -124,7 +124,7 @@ class PlotItem(pg.GraphicsObject):
         self.label_changed_sgn.emit(label)
 
     def drawSample(self, p):
-        """Draw a sample used in LegendWidget."""
+        """Draw a sample used in LegendItem."""
         pass
 
 

@@ -10,25 +10,25 @@ from collections import OrderedDict
 from .backend.QtGui import QBrush, QColor, QPainterPath, QPen
 from .backend.QtCore import QPointF, QRectF, Qt
 from .backend.QtWidgets import (
-    QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout
+    QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout, QGraphicsTextItem
 )
 
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
 from .pyqtgraph_be import Point
 from .aesthetics import FColor
-from .label_widget import LabelWidget
+from .label_item import LabelItem
 from .plot_items import PlotItem
 
 
-class LegendWidget(pg.GraphicsAnchorWidget):
+class LegendItem(pg.GraphicsAnchorWidget):
     """Displays a legend used for describing the contents of a plot."""
 
     class SampleWidget(pg.GraphicsWidget):
-        """Used as a graphics label in a LegendWidget."""
+        """Used as a graphics label in a LegendItem."""
 
-        def __init__(self, item: PlotItem):
-            super().__init__()
+        def __init__(self, item: PlotItem, **kwargs):
+            super().__init__(**kwargs)
             self._item = item
 
         def paint(self, p, *args) -> None:
@@ -37,7 +37,7 @@ class LegendWidget(pg.GraphicsAnchorWidget):
 
     def __init__(self, offset: tuple, *,
                  orientation: str = "vertical",
-                 draggable: bool = True):
+                 draggable: bool = True, **kwargs):
         """Initialization.
 
         :param orientation: orientation of the legend layout. Must be either
@@ -49,7 +49,7 @@ class LegendWidget(pg.GraphicsAnchorWidget):
             legend must be anchored manually by calling anchor() or
             positioned by calling setPos().
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.setFlag(self.GraphicsItemFlag.ItemIgnoresTransformations)
 
         self._orientation = orientation
@@ -73,9 +73,9 @@ class LegendWidget(pg.GraphicsAnchorWidget):
         self._offset = Point(offset)
 
         self._pen = None
-        self.setPen(FColor.mkPen("k"))
-        self._label_text_color = None
-        self.setLabelColor(FColor.mkColor("k"))
+        self.setPen(FColor.mkPen('foreground'))
+        self._label_color = None
+        self.setLabelColor(FColor.mkColor('foreground'))
         self._brush = None
         self.setBrush(FColor.mkBrush(None))
 
@@ -88,9 +88,9 @@ class LegendWidget(pg.GraphicsAnchorWidget):
 
     def setLabelColor(self, color: QColor) -> None:
         """Set the color of the item labels."""
-        self._label_text_color = color
-        for sample, label in self._items:
-            label.setAttr('color', self._label_text_color)
+        self._label_color = color
+        for sample, label in self._items.values():
+            label.setColor(self._label_color)
         self.update()
 
     def setBrush(self, brush: QBrush) -> None:
@@ -111,8 +111,8 @@ class LegendWidget(pg.GraphicsAnchorWidget):
 
         :param item: plot item to be added.
         """
-        label = LabelWidget(
-            item.label(), color=self._label_text_color, justify='left')
+        label = LabelItem(item.label())
+        label.setColor(self._label_color)
         sample = self.SampleWidget(item)
         self._items[item] = (sample, label)
         item.label_changed_sgn.connect(self.onItemLabelChanged)
