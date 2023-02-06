@@ -17,6 +17,7 @@ from .backend.QtWidgets import (
 
 from . import pyqtgraph_be as pg
 from .aesthetics import FColor
+from .axis_item import AxisItem
 from .label_widget import LabelWidget
 from .legend_widget import LegendWidget
 from .plot_items import PlotItem
@@ -194,7 +195,7 @@ class PlotArea(pg.GraphicsWidget):
                             ('bottom', (4, 1)),
                             ('left', (3, 0)),
                             ('right', (3, 2))):
-            axis = pg.AxisItem(orientation=orient, parent=self)
+            axis = AxisItem(orientation=orient, parent=self)
 
             axis.linkToView(self._vb)
             self._axes[orient] = {'item': axis, 'pos': pos}

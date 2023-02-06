@@ -14,10 +14,11 @@ from .backend.QtWidgets import QGraphicsGridLayout
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
 
+from .aesthetics import ColorMap, FColor
+from .axis_item import AxisItem
 from .gradient_editor_widget import GradientEditorWidget
 from .linear_region_item import LinearRegionItem
 from .plot_items import CurvePlotItem
-from .aesthetics import ColorMap, FColor
 
 
 class ImageColorbarWidget(pg.GraphicsWidget):
@@ -52,7 +53,7 @@ class ImageColorbarWidget(pg.GraphicsWidget):
         vb.enableAutoRange(pg.ViewBox.XYAxes)
         self._vb = vb
 
-        self._axis = pg.AxisItem(
+        self._axis = AxisItem(
             'left', linkView=self._vb, maxTickLength=-10, parent=self)
 
         self.initUI()

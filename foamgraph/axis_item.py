@@ -1,24 +1,19 @@
-# -*- coding: utf-8 -*-
-from ..Qt import QtGui, QtCore
+from foamgraph.pyqtgraph_be.Qt import QtGui, QtCore
 import numpy as np
-from ..Point import Point
+from foamgraph.pyqtgraph_be.Point import Point
 import sys
 import weakref
-from .. import functions as fn
-from .. import getConfigOption
-from .GraphicsWidgets import GraphicsWidget
-from ..GraphicsScene import MouseClickEvent, MouseDragEvent
+from foamgraph.pyqtgraph_be import functions as fn
+from foamgraph.pyqtgraph_be import getConfigOption
+from foamgraph.pyqtgraph_be.graphicsItems.GraphicsWidgets import GraphicsWidget
+from foamgraph.pyqtgraph_be.GraphicsScene import MouseClickEvent, MouseDragEvent
+from foamgraph.aesthetics import FColor
 
-__all__ = ['AxisItem']
+
 class AxisItem(GraphicsWidget):
-    """
-    GraphicsItem showing a single plot axis with ticks, values, and label.
-    Can be configured to fit on any side of a plot, and can automatically synchronize its displayed scale with ViewBox items.
-    Ticks can be extended to draw a grid.
-    If maxTickLength is negative, ticks point into the plot.
-    """
+    """A single plot axis with ticks, values, and label."""
 
-    def __init__(self, orientation, pen=None, textPen=None, linkView=None, parent=None, maxTickLength=-5, showValues=True, text='', units='', unitPrefix='', **args):
+    def __init__(self, orientation, linkView=None, parent=None, maxTickLength=-5, showValues=True, text='', units='', unitPrefix='', **args):
         """
         ==============  ===============================================================
         **Arguments:**
@@ -41,7 +36,7 @@ class AxisItem(GraphicsWidget):
         ==============  ===============================================================
         """
 
-        GraphicsWidget.__init__(self, parent)
+        super().__init__(parent=parent)
         self.label = QtGui.QGraphicsTextItem(self)
         self.picture = None
         self.orientation = orientation
@@ -93,15 +88,9 @@ class AxisItem(GraphicsWidget):
 
         self.setRange(0, 1)
 
-        if pen is None:
-            self.setPen()
-        else:
-            self.setPen(pen)
+        self.setPen()
 
-        if textPen is None:
-            self.setTextPen()
-        else:
-            self.setTextPen(pen)
+        self.setTextPen()
 
         self._linkedView = None
         if linkView is not None:
@@ -631,7 +620,6 @@ class AxisItem(GraphicsWidget):
         self.picture = None
         self.update()
 
-
     def tickSpacing(self, minVal, maxVal, size):
         """Return values describing the desired spacing and offset of ticks.
 
@@ -684,28 +672,6 @@ class AxisItem(GraphicsWidget):
 
         return levels
 
-        ##### This does not work -- switching between 2/5 confuses the automatic text-level-selection
-        ### Determine major/minor tick spacings which flank the optimal spacing.
-        #intervals = np.array([1., 2., 5., 10., 20., 50., 100.]) * p10unit
-        #minorIndex = 0
-        #while intervals[minorIndex+1] <= optimalSpacing:
-            #minorIndex += 1
-
-        ### make sure we never see 5 and 2 at the same time
-        #intIndexes = [
-            #[0,1,3],
-            #[0,2,3],
-            #[2,3,4],
-            #[3,4,6],
-            #[3,5,6],
-        #][minorIndex]
-
-        #return [
-            #(intervals[intIndexes[2]], 0),
-            #(intervals[intIndexes[1]], 0),
-            #(intervals[intIndexes[0]], 0)
-        #]
-
     def tickValues(self, minVal, maxVal, size):
         """
         Return the values and spacing of ticks to draw::
@@ -724,7 +690,6 @@ class AxisItem(GraphicsWidget):
 
         minVal *= self.scale
         maxVal *= self.scale
-        #size *= self.scale
 
         ticks = []
         tickLevels = self.tickSpacing(minVal, maxVal, size)
@@ -747,15 +712,6 @@ class AxisItem(GraphicsWidget):
 
         if self.logMode:
             return self.logTickValues(minVal, maxVal, size, ticks)
-
-
-        #nticks = []
-        #for t in ticks:
-            #nvals = []
-            #for v in t[1]:
-                #nvals.append(v/self.scale)
-            #nticks.append((t[0]/self.scale,nvals))
-        #ticks = nticks
 
         return ticks
 

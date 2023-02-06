@@ -4,15 +4,16 @@ from unittest.mock import patch
 from foamgraph.backend.QtTest import QSignalSpy
 
 from foamgraph import mkQApp
+from foamgraph import pyqtgraph_be as pg
+from foamgraph.axis_item import AxisItem
+from foamgraph.image_items import ImageItem
 from foamgraph.label_widget import LabelWidget
 from foamgraph.legend_widget import LegendWidget
 from foamgraph.plot_area import PlotArea
-from foamgraph.image_items import ImageItem
 from foamgraph.plot_items import (
     CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
 )
 from foamgraph.roi import RectROI
-from foamgraph import pyqtgraph_be as pg
 
 
 app = mkQApp()
@@ -33,7 +34,7 @@ class TestPlotArea(unittest.TestCase):
         self.assertEqual(4, len(area._axes))
         for name, pos in [('left', (3, 0)), ('bottom', (4, 1))]:
             left_axis = area._axes[name]
-            self.assertIsInstance(left_axis['item'], pg.AxisItem)
+            self.assertIsInstance(left_axis['item'], AxisItem)
             self.assertTrue(left_axis['item'].isVisible())
             self.assertTupleEqual(pos, left_axis['pos'])
             self.assertIs(area.getAxis(name), left_axis['item'])
