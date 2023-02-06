@@ -3,25 +3,25 @@ from ...backend.QtWidgets import QGraphicsItem, QGraphicsWidget
 from ..Point import Point
 from .GraphicsItem import GraphicsItem
 
-__all__ = ['GraphicsWidget', 'GraphicsAnchorWidget']
-
 
 class GraphicsWidget(GraphicsItem, QGraphicsWidget):
     
     _qtBaseClass = QGraphicsWidget
 
-    def __init__(self, *args, **kwargs):
-        QGraphicsWidget.__init__(self, *args, **kwargs)
+    def __init__(self, *args, parent: QGraphicsItem = None, **kwargs):
+        QGraphicsWidget.__init__(self, parent=parent, *args, **kwargs)
         GraphicsItem.__init__(self)
 
 
 class GraphicsAnchorWidget(GraphicsWidget):
     """GraphicsWidget which anchors to its parent item.
 
-    It will be automatically repositioned if the parent is resized.
+    It will be automatically re-positioned if the parent is resized.
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args,  parent: QGraphicsItem, **kwargs):
+        super().__init__(*args, parent=parent, **kwargs)
+        # if parent is None:
+        #     raise ValueError(f"GraphicsAnchorWidget must have a parent item.")
         self.__parentAnchor = None
         self.__itemAnchor = None
         self.__offset = (0, 0)
@@ -33,8 +33,7 @@ class GraphicsAnchorWidget(GraphicsWidget):
 
     def setParentItem(self, parent: QGraphicsItem):
         """Override."""
-        if self.parentItem() is not None:
-            self.parentItem().disconnect(self.__onGeometryChanged)
+        self.parentItem().disconnect(self.__onGeometryChanged)
         super().setParentItem(parent)
         parent.geometryChanged.connect(self.__onGeometryChanged)
 
@@ -51,9 +50,6 @@ class GraphicsAnchorWidget(GraphicsWidget):
 
             box.anchor(itemPos=(1,0), parentPos=(1,0), offset=(-10,10))
         """
-        if self.parentItem() is None:
-            raise Exception("Cannot anchor; parent is not set.")
-
         self.__itemAnchor = itemPos
         self.__parentAnchor = parentPos
         self.__offset = offset
@@ -104,8 +100,6 @@ class GraphicsAnchorWidget(GraphicsWidget):
             self._anchor(anchorPos, anchorPos, offset)
 
     def __onGeometryChanged(self):
-        if self.parentItem() is None:
-            return
         if self.__itemAnchor is None:
             return
 

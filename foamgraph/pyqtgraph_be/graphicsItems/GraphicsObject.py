@@ -34,7 +34,7 @@ class GraphicsObject(GraphicsItem, QGraphicsObject):
             if inform_view_on_change and change in [self.GraphicsItemChange.ItemPositionHasChanged,
                                                     self.GraphicsItemChange.ItemTransformHasChanged]:
                 self.informViewBoundsChanged()
-            
+
         # workaround for pyqt bug:
         # http://www.riverbankcomputing.com/pipermail/pyqt/2012-August/031818.html
         if QT_LIB in ['PyQt5'] and change == self.ItemParentChange and isinstance(ret, QGraphicsItem):

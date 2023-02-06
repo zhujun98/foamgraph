@@ -11,17 +11,16 @@ from itertools import chain
 
 from .backend.QtCore import pyqtSignal, pyqtSlot, Qt
 from .backend.QtWidgets import (
-    QCheckBox, QGraphicsGridLayout, QHBoxLayout, QLabel, QMenu, QSizePolicy,
-    QSlider, QWidget, QWidgetAction
+    QCheckBox, QGraphicsGridLayout, QGraphicsItem, QGraphicsTextItem, QHBoxLayout,
+    QLabel, QMenu, QSizePolicy, QSlider, QWidget, QWidgetAction
 )
 
 from . import pyqtgraph_be as pg
 from .aesthetics import FColor
 from .axis_item import AxisItem
-from .label_widget import LabelWidget
+from .label_item import LabelItem
 from .legend_item import LegendItem
 from .plot_items import PlotItem
-from .text_item import TextItem
 
 
 class PlotArea(pg.GraphicsWidget):
@@ -45,7 +44,7 @@ class PlotArea(pg.GraphicsWidget):
                  enable_meter: bool = True,
                  enable_grid: bool = True,
                  enable_transform: bool = True,
-                 parent=None):
+                 parent: QGraphicsItem = None):
         super().__init__(parent=parent)
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding,
@@ -68,9 +67,8 @@ class PlotArea(pg.GraphicsWidget):
 
         self._legend = None
         self._axes = {}
-        self._meter = LabelWidget(
-            '', size='11pt', justify='left', color='6A3D9A', parent=self)
-        self._title = LabelWidget('', size='11pt', parent=self)
+        self._meter = LabelItem('')
+        self._title = LabelItem('')
 
         # context menu
         self._show_cross_cb = QCheckBox("Cross cursor")
@@ -106,7 +104,8 @@ class PlotArea(pg.GraphicsWidget):
         layout.setVerticalSpacing(0)
 
         layout.addItem(self._meter, self._METER_ROW, 1)
-        layout.addItem(self._title, self._TITLE_ROW, 1)
+        layout.addItem(self._title, self._TITLE_ROW, 1,
+                       alignment=Qt.AlignCenter)
         layout.addItem(self._vb, 3, 1)
 
         for i in range(5):
@@ -358,8 +357,7 @@ class PlotArea(pg.GraphicsWidget):
     def addLegend(self, offset=(30, 30), **kwargs):
         """Add a LegendItem if it does not exist."""
         if self._legend is None:
-            self._legend = LegendItem(offset=offset, **kwargs)
-            self._legend.setParentItem(self._vb)
+            self._legend = LegendItem(offset, parent=self._vb, **kwargs)
 
             for item in chain(self._plot_items, self._plot_items_y2):
                 self._legend.addItem(item)
@@ -441,7 +439,8 @@ class PlotArea(pg.GraphicsWidget):
         n_items = len(a_items)
         if n_items < n_pts:
             for i in range(n_pts - n_items):
-                item = TextItem(color=FColor.mkColor('b'), anchor=(0.5, 2))
+                item = QGraphicsTextItem()
+                item.setDefaultTextColor(FColor.mkColor('b'))
                 self.addItem(item)
                 a_items.append(item)
 
@@ -458,7 +457,7 @@ class PlotArea(pg.GraphicsWidget):
             a_items[i].setPos(x[i], y[i])
             a_items[i].setText(f"{values[i]:.4f}")
 
-    def setTitle(self, *args, **kwargs) -> None:
+    def setTitle(self, *args) -> None:
         """Set the title of the plot."""
         row = self._TITLE_ROW
         title = None if len(args) == 0 else args[0]
@@ -469,7 +468,7 @@ class PlotArea(pg.GraphicsWidget):
         else:
             self._title.setMaximumHeight(30)
             self._layout.setRowFixedHeight(row, 30)
-            self._title.setText(title, **kwargs)
+            self._title.setPlainText(title)
             self._title.setVisible(True)
 
     def setAspectLocked(self, *args, **kwargs) -> None:

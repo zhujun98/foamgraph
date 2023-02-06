@@ -14,7 +14,7 @@ from .backend.QtGui import (
     QWidgetAction
 )
 from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
-from .backend.QtWidgets import QSizePolicy
+from .backend.QtWidgets import QGraphicsItem, QSizePolicy
 
 from . import pyqtgraph_be as pg
 
@@ -25,12 +25,12 @@ class GradientEditorWidget(pg.GraphicsWidget):
 
     gradient_changed_sgn = pyqtSignal(object)
 
-    def __init__(self, orientation=Qt.Orientation.Vertical):
+    def __init__(self, orientation=Qt.Orientation.Vertical, *, parent: QGraphicsItem = None):
         """Initialization.
 
         :param orientation: Orientation of the widget.
         """
-        super().__init__()
+        super().__init__(parent=parent)
 
         self._colormap = None
         self._gradient = QGraphicsRectItem(parent=self)

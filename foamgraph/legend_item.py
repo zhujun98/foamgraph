@@ -180,7 +180,7 @@ class LegendItem(pg.GraphicsAnchorWidget):
 
     def onItemLabelChanged(self, label: str) -> None:
         item = self.sender()
-        self._items[item][1].setText(label)
+        self._items[item][1].setPlainText(label)
 
     def onItemVisibleChanged(self) -> None:
         item = self.sender()

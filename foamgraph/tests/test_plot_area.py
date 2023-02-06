@@ -7,7 +7,7 @@ from foamgraph import mkQApp
 from foamgraph import pyqtgraph_be as pg
 from foamgraph.axis_item import AxisItem
 from foamgraph.image_items import ImageItem
-from foamgraph.label_widget import LabelWidget
+from foamgraph.label_item import LabelItem
 from foamgraph.legend_item import LegendItem
 from foamgraph.plot_area import PlotArea
 from foamgraph.plot_items import (
@@ -73,7 +73,7 @@ class TestPlotArea(unittest.TestCase):
 
     def testTitle(self):
         area = self._area
-        self.assertIsInstance(area._title, LabelWidget)
+        self.assertIsInstance(area._title, LabelItem)
 
         self.assertEqual(0, area._title.maximumHeight())
         self.assertFalse(area._title.isVisible())

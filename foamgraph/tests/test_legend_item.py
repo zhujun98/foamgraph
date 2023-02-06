@@ -92,13 +92,13 @@ class TestLegendItem:
         widget.addLegend(orientation=orientation)
         legend = widget._plot_area._legend
 
-        assert legend._items[widget.plot1][1].text == "1"
+        assert legend._items[widget.plot1][1].toPlainText() == "1"
         widget.plot1.setLabel("new 1")
-        assert legend._items[widget.plot1][1].text == "new 1"
+        assert legend._items[widget.plot1][1].toPlainText() == "new 1"
 
-        assert legend._items[widget.plot4][1].text == ""
+        assert legend._items[widget.plot4][1].toPlainText() == ""
         widget.plot4.setLabel("new 4")
-        assert legend._items[widget.plot4][1].text == "new 4"
+        assert legend._items[widget.plot4][1].toPlainText() == "new 4"
 
     def test_dragging(self, widget):
         widget.addLegend()

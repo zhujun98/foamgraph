@@ -9,7 +9,7 @@ import numpy as np
 
 from .backend.QtGui import QPainter
 from .backend.QtCore import pyqtSignal, Qt
-from .backend.QtWidgets import QGraphicsGridLayout
+from .backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
 
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
@@ -26,7 +26,7 @@ class ImageColorbarWidget(pg.GraphicsWidget):
 
     lut_changed_sgn = pyqtSignal(object)
 
-    def __init__(self, image_item, *, parent=None):
+    def __init__(self, image_item, *, parent: QGraphicsItem = None):
         super().__init__(parent=parent)
         self._lut = None
 
