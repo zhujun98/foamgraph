@@ -14,8 +14,8 @@ from .config import config
 
 class QualitativeColor:
 
-    foreground = config["FOREGROUND_COLOR"]  # black
-    background = config["BACKGROUND_COLOR"]  # white-like
+    foreground = config["FOREGROUND_COLOR"][:3]  # black
+    background = config["BACKGROUND_COLOR"][:3]  # white-like
 
     # Base colors from matplotlib
     # ---------------------------
