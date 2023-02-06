@@ -130,10 +130,26 @@ class DoubleYPlot(PlotWidgetF):
         self._plot2.setData(data['x'], data['y2'])
 
 
+class LinePlotWithAnnotation(PlotWidgetF):
+    def __init__(self, *, parent=None):
+        super().__init__(parent=parent)
+
+        self.setTitle('Line plot with peak annotation')
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
+
+        self._plot = self.plotCurve(label="Data", pen=FColor.mkPen('k'))
+        self.addLegend()
+
+    def updateF(self, data):
+        """Override."""
+        data = data['multi-peak']
+        self._plot.setData(data['x'], data['y'])
+
+
 class PlotGalleryScene(AbstractScene):
     _title = "Plot gallery"
 
-    _TOTAL_W, _TOTAL_H = 1440, 720
+    _TOTAL_W, _TOTAL_H = 1440, 1080
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
@@ -145,7 +161,8 @@ class PlotGalleryScene(AbstractScene):
             BarPlot(parent=self),
             ErrorbarPlot(parent=self),
             MultiLinePlot(parent=self),
-            DoubleYPlot(parent=self)
+            DoubleYPlot(parent=self),
+            LinePlotWithAnnotation(parent=self)
         ]
 
         self.initUI()
@@ -165,6 +182,7 @@ class PlotGalleryScene(AbstractScene):
         for i in range(rows):
             for j in range(cols):
                 layout.addWidget(self._plots[cols * i + j], i, j)
+        layout.addWidget(self._plots[-1], 2, 0)
 
         self._cw = QFrame()
         self._cw.setLayout(layout)

@@ -455,7 +455,7 @@ class PlotArea(pg.GraphicsWidget):
 
         for i in range(n_pts):
             a_items[i].setPos(x[i], y[i])
-            a_items[i].setText(f"{values[i]:.4f}")
+            a_items[i].setPlainText(f"{values[i]:.4f}")
 
     def setTitle(self, *args) -> None:
         """Set the title of the plot."""
