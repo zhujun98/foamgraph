@@ -1,30 +1,39 @@
-from foamgraph.pyqtgraph_be.Qt import QtGui, QtCore
 import numpy as np
 from foamgraph.pyqtgraph_be.Point import Point
 import sys
 import weakref
-from foamgraph.pyqtgraph_be import functions as fn
-from foamgraph.pyqtgraph_be import getConfigOption
-from foamgraph.pyqtgraph_be.graphicsItems.GraphicsWidgets import GraphicsWidget
-from foamgraph.pyqtgraph_be.GraphicsScene import MouseClickEvent, MouseDragEvent
+
+from foamgraph.backend.QtCore import QPointF, QRectF, Qt
+from foamgraph.backend.QtGui import (
+    QGraphicsTextItem, QGraphicsSceneResizeEvent, QPen, QPicture, QPainter
+)
+
+from . import pyqtgraph_be as pg
+from .pyqtgraph_be.GraphicsScene import MouseClickEvent, MouseDragEvent
 from foamgraph.aesthetics import FColor
 
 
-class AxisItem(GraphicsWidget):
+class AxisItem(pg.GraphicsWidget):
     """A single plot axis with ticks, values, and label."""
 
-    def __init__(self, orientation, linkView=None, parent=None, maxTickLength=-5, showValues=True, text='', units='', unitPrefix='', **args):
-        """
-        ==============  ===============================================================
-        **Arguments:**
-        orientation     one of 'left', 'right', 'top', or 'bottom'
+    def __init__(self, edge: Qt.Edge,
+                 linkView=None,
+                 parent=None,
+                 maxTickLength=-5,
+                 showValues=True,
+                 text='',
+                 units='',
+                 unitPrefix='',
+                 **args):
+        """Initialization.
+
+        :param edge: location of the axis.
+
         maxTickLength   (px) maximum length of ticks to draw. Negative values draw
                         into the plot, positive values draw outward.
         linkView        (ViewBox) causes the range of values displayed in the axis
                         to be linked to the visible range of a ViewBox.
         showValues      (bool) Whether to display values adjacent to ticks
-        pen             (QPen) Pen used when drawing ticks.
-        textPen         (QPen) Pen used when drawing tick labels.
         text            The text (excluding units) to display on the label for this
                         axis.
         units           The units for this axis. Units should generally be given
@@ -37,13 +46,16 @@ class AxisItem(GraphicsWidget):
         """
 
         super().__init__(parent=parent)
-        self.label = QtGui.QGraphicsTextItem(self)
-        self.picture = None
-        self.orientation = orientation
-        if orientation not in ['left', 'right', 'top', 'bottom']:
-            raise Exception("Orientation argument must be one of 'left', 'right', 'top', or 'bottom'.")
-        if orientation in ['left', 'right']:
-            self.label.rotate(-90)
+
+        self._label = QGraphicsTextItem(self)
+        self._picture = None
+
+        self._edge = edge
+        if edge in [Qt.Edge.TopEdge, Qt.Edge.BottomEdge]:
+            self._orientation = Qt.Orientation.Horizontal
+        else:
+            self._orientation = Qt.Orientation.Vertical
+            self._label.rotate(-90)
 
         self.style = {
             'tickTextOffset': [5, 2],  ## (horizontal, vertical) spacing between text and axis
@@ -88,16 +100,17 @@ class AxisItem(GraphicsWidget):
 
         self.setRange(0, 1)
 
-        self.setPen()
+        self._tick_pen = None
+        self.setTickPen(FColor.mkPen('foreground'))
 
-        self.setTextPen()
+        self._tick_label_pen = None
+        self.setTickLabelPen(FColor.mkPen('foreground'))
 
         self._linkedView = None
         if linkView is not None:
             self.linkToView(linkView)
 
         self.grid = False
-        #self.setCacheMode(self.DeviceCoordinateCache)
 
     def setStyle(self, **kwds):
         """
@@ -149,7 +162,7 @@ class AxisItem(GraphicsWidget):
                     raise ValueError("Argument '%s' must be int" % kwd)
 
             if kwd == 'tickTextOffset':
-                if self.orientation in ('left', 'right'):
+                if self._orientation == Qt.Orientation.Vertical:
                     self.style['tickTextOffset'][0] = value
                 else:
                     self.style['tickTextOffset'][1] = value
@@ -162,13 +175,13 @@ class AxisItem(GraphicsWidget):
             else:
                 self.style[kwd] = value
 
-        self.picture = None
+        self._picture = None
         self._adjustSize()
         self.update()
 
     def close(self):
-        self.scene().removeItem(self.label)
-        self.label = None
+        self.scene().removeItem(self._label)
+        self._label = None
         self.scene().removeItem(self)
 
     def setGrid(self, grid):
@@ -178,7 +191,7 @@ class AxisItem(GraphicsWidget):
         the extent of the linked ViewBox, if any.
         """
         self.grid = grid
-        self.picture = None
+        self._picture = None
         self.prepareGeometryChange()
         self.update()
 
@@ -189,7 +202,7 @@ class AxisItem(GraphicsWidget):
         of a :func:`PlotItem <pyqtgraph.PlotItem.setLogMode>`)
         """
         self.logMode = log
-        self.picture = None
+        self._picture = None
         self.update()
 
     def setTickFont(self, font):
@@ -198,39 +211,38 @@ class AxisItem(GraphicsWidget):
         Use None for the default font.
         """
         self.style['tickFont'] = font
-        self.picture = None
+        self._picture = None
         self.prepareGeometryChange()
-        ## Need to re-allocate space depending on font size?
 
         self.update()
 
-    def resizeEvent(self, ev=None):
-        #s = self.size()
-
-        ## Set the position of the label
+    def resizeEvent(self, ev: QGraphicsSceneResizeEvent) -> None:
+        """Override."""
         nudge = 5
-        br = self.label.boundingRect()
-        p = QtCore.QPointF(0, 0)
-        if self.orientation == 'left':
+        br = self._label.boundingRect()
+        p = QPointF(0, 0)
+        if self._edge == Qt.Edge.LeftEdge:
             p.setY(int(self.size().height()/2 + br.width()/2))
             p.setX(-nudge)
-        elif self.orientation == 'right':
+        elif self._edge == Qt.Edge.RightEdge:
             p.setY(int(self.size().height()/2 + br.width()/2))
             p.setX(int(self.size().width()-br.height()+nudge))
-        elif self.orientation == 'top':
+        elif self._edge == Qt.Edge.TopEdge:
             p.setY(-nudge)
             p.setX(int(self.size().width()/2. - br.width()/2.))
-        elif self.orientation == 'bottom':
+        elif self._edge == Qt.Edge.BottomEdge:
             p.setX(int(self.size().width()/2. - br.width()/2.))
             p.setY(int(self.size().height()-br.height()+nudge))
-        self.label.setPos(p)
-        self.picture = None
+        else:
+            raise RuntimeError
+
+        self._label.setPos(p)
+        self._picture = None
 
     def showLabel(self, show=True):
         """Show/hide the label text for this axis."""
-        #self.drawLabel = show
-        self.label.setVisible(show)
-        if self.orientation in ['left', 'right']:
+        self._label.setVisible(show)
+        if self._orientation == Qt.Orientation.Vertical:
             self._updateWidth()
         else:
             self._updateHeight()
@@ -276,10 +288,10 @@ class AxisItem(GraphicsWidget):
             self.labelUnitPrefix = unitPrefix
         if len(args) > 0:
             self.labelStyle = args
-        self.label.setHtml(self.labelString())
+        self._label.setHtml(self.labelString())
         self._adjustSize()
-        self.picture = None
-        self.resizeEvent()
+        self._picture = None
+        # self.resizeEvent()
 
     def labelString(self):
         if self.labelUnits == '':
@@ -300,23 +312,21 @@ class AxisItem(GraphicsWidget):
         ## Informs that the maximum tick size orthogonal to the axis has
         ## changed; we use this to decide whether the item needs to be resized
         ## to accomodate.
-        if self.orientation in ['left', 'right']:
+        if self._orientation == Qt.Orientation.Vertical:
             mx = max(self.textWidth, x)
             if mx > self.textWidth or mx < self.textWidth-10:
                 self.textWidth = mx
                 if self.style['autoExpandTextSpace'] is True:
                     self._updateWidth()
-                    #return True  ## size has changed
         else:
             mx = max(self.textHeight, x)
             if mx > self.textHeight or mx < self.textHeight-10:
                 self.textHeight = mx
                 if self.style['autoExpandTextSpace'] is True:
                     self._updateHeight()
-                    #return True  ## size has changed
 
     def _adjustSize(self):
-        if self.orientation in ['left', 'right']:
+        if self._orientation == Qt.Orientation.Vertical:
             self._updateWidth()
         else:
             self._updateHeight()
@@ -343,14 +353,14 @@ class AxisItem(GraphicsWidget):
                     h = self.style['tickTextHeight']
                 h += self.style['tickTextOffset'][1] if self.style['showValues'] else 0
                 h += max(0, self.style['tickLength'])
-                if self.label.isVisible():
-                    h += self.label.boundingRect().height() * 0.8
+                if self._label.isVisible():
+                    h += self._label.boundingRect().height() * 0.8
             else:
                 h = self.fixedHeight
 
         self.setMaximumHeight(h)
         self.setMinimumHeight(h)
-        self.picture = None
+        self._picture = None
 
     def setWidth(self, w=None):
         """Set the width of this axis reserved for ticks and tick labels.
@@ -374,72 +384,26 @@ class AxisItem(GraphicsWidget):
                     w = self.style['tickTextWidth']
                 w += self.style['tickTextOffset'][0] if self.style['showValues'] else 0
                 w += max(0, self.style['tickLength'])
-                if self.label.isVisible():
-                    w += self.label.boundingRect().height() * 0.8  ## bounding rect is usually an overestimate
+                if self._label.isVisible():
+                    w += self._label.boundingRect().height() * 0.8  ## bounding rect is usually an overestimate
             else:
                 w = self.fixedWidth
 
         self.setMaximumWidth(w)
         self.setMinimumWidth(w)
-        self.picture = None
+        self._picture = None
 
-    def pen(self):
-        if self._pen is None:
-            return fn.mkPen(getConfigOption('foreground'))
-        return fn.mkPen(self._pen)
-
-    def setPen(self, *args, **kwargs):
-        """
-        Set the pen used for drawing text, axes, ticks, and grid lines.
-        If no arguments are given, the default foreground color will be used
-        (see :func:`setConfigOption <pyqtgraph.setConfigOption>`).
-        """
-        self.picture = None
-        if args or kwargs:
-            self._pen = fn.mkPen(*args, **kwargs)
-        else:
-            self._pen = fn.mkPen(getConfigOption('foreground'))
-        self.labelStyle['color'] = '#' + fn.colorStr(self._pen.color())[:6]
-        self.setLabel()
+    def setTickPen(self, pen: QPen) -> None:
+        """Set the pen used to draw the ticks."""
+        # self._picture = None
+        self._tick_pen = pen
         self.update()
 
-    def textPen(self):
-        if self._textPen is None:
-            return fn.mkPen(getConfigOption('foreground'))
-        return fn.mkPen(self._textPen)
-
-    def setTextPen(self, *args, **kwargs):
-        """
-        Set the pen used for drawing text.
-        If no arguments are given, the default foreground color will be used.
-        """
-        self.picture = None
-        if args or kwargs:
-            self._textPen = fn.mkPen(*args, **kwargs)
-        else:
-            self._textPen = fn.mkPen(getConfigOption('foreground'))
-        self.labelStyle['color'] = '#' + fn.colorStr(self._textPen.color())[:6]
-        self.setLabel()
+    def setTickLabelPen(self, pen: QPen) -> None:
+        """Set the pen used to draw the tick labels."""
+        # self._picture = None
+        self._tick_label_pen = pen
         self.update()
-
-    def setScale(self, scale=None):
-        """
-        Set the value scaling for this axis.
-
-        Setting this value causes the axis to draw ticks and tick labels as if
-        the view coordinate system were scaled. By default, the axis scaling is
-        1.0.
-        """
-        # Deprecated usage, kept for backward compatibility
-        if scale is None:
-            scale = 1.0
-            self.enableAutoSIPrefix(True)
-
-        if scale != self.scale:
-            self.scale = scale
-            self.setLabel()
-            self.picture = None
-            self.update()
 
     def enableAutoSIPrefix(self, enable=True):
         """
@@ -460,12 +424,12 @@ class AxisItem(GraphicsWidget):
         self.updateAutoSIPrefix()
 
     def updateAutoSIPrefix(self):
-        if self.label.isVisible():
+        if self._label.isVisible():
             if self.logMode:
                 _range = 10**np.array(self.range)
             else:
                 _range = self.range
-            (scale, prefix) = fn.siScale(max(abs(_range[0]*self.scale), abs(_range[1]*self.scale)))
+            (scale, prefix) = pg.functions.siScale(max(abs(_range[0]*self.scale), abs(_range[1]*self.scale)))
             if self.labelUnits == '' and prefix in ['k', 'm']:  ## If we are not showing units, wait until 1e6 before scaling.
                 scale = 1.0
                 prefix = ''
@@ -474,9 +438,8 @@ class AxisItem(GraphicsWidget):
         else:
             self.autoSIPrefixScale = 1.0
 
-        self.picture = None
+        self._picture = None
         self.update()
-
 
     def setRange(self, mn, mx):
         """Set the range of values displayed by the axis.
@@ -486,22 +449,21 @@ class AxisItem(GraphicsWidget):
         self.range = [mn, mx]
         if self.autoSIPrefix:
             self.updateAutoSIPrefix()
-        self.picture = None
+        self._picture = None
         self.update()
 
     def linkedView(self):
         """Return the ViewBox this axis is linked to"""
         if self._linkedView is None:
             return None
-        else:
-            return self._linkedView()
+        return self._linkedView()
 
     def linkToView(self, view):
         """Link this axis to a ViewBox, causing its displayed range to match the visible range of the view."""
         self.unlinkFromView()
 
         self._linkedView = weakref.ref(view)
-        if self.orientation in ['right', 'left']:
+        if self._orientation == Qt.Orientation.Vertical:
             view.sigYRangeChanged.connect(self.linkedViewChanged)
         else:
             view.sigXRangeChanged.connect(self.linkedViewChanged)
@@ -512,7 +474,7 @@ class AxisItem(GraphicsWidget):
         """Unlink this axis from a ViewBox."""
         oldView = self.linkedView()
         self._linkedView = None
-        if self.orientation in ['right', 'left']:
+        if self._orientation == Qt.Orientation.Vertical:
             if oldView is not None:
                 oldView.sigYRangeChanged.disconnect(self.linkedViewChanged)
         else:
@@ -523,7 +485,7 @@ class AxisItem(GraphicsWidget):
             oldView.sigResized.disconnect(self.linkedViewChanged)
 
     def linkedViewChanged(self, view, newRange=None):
-        if self.orientation in ['right', 'left']:
+        if self._orientation == Qt.Orientation.Vertical:
             if newRange is None:
                 newRange = view.viewRange()[1]
             if view.yInverted():
@@ -545,23 +507,24 @@ class AxisItem(GraphicsWidget):
             ## extend rect if ticks go in negative direction
             ## also extend to account for text that flows past the edges
             tl = self.style['tickLength']
-            if self.orientation == 'left':
+            if self._edge == Qt.Edge.LeftEdge:
                 rect = rect.adjusted(0, -15, -min(0,tl), 15)
-            elif self.orientation == 'right':
+            elif self._edge == Qt.Edge.RightEdge:
                 rect = rect.adjusted(min(0,tl), -15, 0, 15)
-            elif self.orientation == 'top':
+            elif self._edge == Qt.Edge.TopEdge:
                 rect = rect.adjusted(-15, 0, 15, -min(0,tl))
-            elif self.orientation == 'bottom':
+            elif self._edge == Qt.Edge.BottomEdge:
                 rect = rect.adjusted(-15, min(0,tl), 15, 0)
             return rect
         else:
             return self.mapRectFromParent(self.geometry()) | linkedView.mapRectToItem(self, linkedView.boundingRect())
 
-    def paint(self, p, opt, widget):
-        if self.picture is None:
+    def paint(self, p, *args) -> None:
+        """Override."""
+        if self._picture is None:
             try:
-                picture = QtGui.QPicture()
-                painter = QtGui.QPainter(picture)
+                picture = QPicture()
+                painter = QPainter(picture)
                 if self.style["tickFont"]:
                     painter.setFont(self.style["tickFont"])
                 specs = self.generateDrawSpecs(painter)
@@ -569,9 +532,9 @@ class AxisItem(GraphicsWidget):
                     self.drawPicture(painter, *specs)
             finally:
                 painter.end()
-            self.picture = picture
+            self._picture = picture
 
-        self.picture.play(p)
+        self._picture.play(p)
 
     def setTicks(self, ticks):
         """Explicitly determine which ticks to display.
@@ -587,7 +550,7 @@ class AxisItem(GraphicsWidget):
         If *ticks* is None, then the default tick system will be used instead.
         """
         self._tickLevels = ticks
-        self.picture = None
+        self._picture = None
         self.update()
 
     def setTickSpacing(self, major=None, minor=None, levels=None):
@@ -617,7 +580,7 @@ class AxisItem(GraphicsWidget):
             else:
                 levels = [(major, 0), (minor, 0)]
         self._tickSpacing = levels
-        self.picture = None
+        self._picture = None
         self.update()
 
     def tickSpacing(self, minVal, maxVal, size):
@@ -687,7 +650,6 @@ class AxisItem(GraphicsWidget):
         """
         minVal, maxVal = sorted((minVal, maxVal))
 
-
         minVal *= self.scale
         maxVal *= self.scale
 
@@ -728,7 +690,6 @@ class AxisItem(GraphicsWidget):
         if len(ticks) < 3:
             v1 = int(np.floor(minVal))
             v2 = int(np.ceil(maxVal))
-            #major = list(range(v1+1, v2))
 
             minor = []
             for v in range(v1, v2):
@@ -813,25 +774,25 @@ class AxisItem(GraphicsWidget):
         else:
             tickBounds = linkedView.mapRectToItem(self, linkedView.boundingRect())
 
-        if self.orientation == 'left':
+        if self._edge == Qt.Edge.LeftEdge:
             span = (bounds.topRight(), bounds.bottomRight())
             tickStart = tickBounds.right()
             tickStop = bounds.right()
             tickDir = -1
             axis = 0
-        elif self.orientation == 'right':
+        elif self._edge == Qt.Edge.RightEdge:
             span = (bounds.topLeft(), bounds.bottomLeft())
             tickStart = tickBounds.left()
             tickStop = bounds.left()
             tickDir = 1
             axis = 0
-        elif self.orientation == 'top':
+        elif self._edge == Qt.Edge.TopEdge:
             span = (bounds.bottomLeft(), bounds.bottomRight())
             tickStart = tickBounds.bottom()
             tickStop = bounds.bottom()
             tickDir = -1
             axis = 1
-        elif self.orientation == 'bottom':
+        elif self._edge == Qt.Edge.BottomEdge:
             span = (bounds.topLeft(), bounds.topRight())
             tickStart = tickBounds.top()
             tickStop = bounds.top()
@@ -910,7 +871,7 @@ class AxisItem(GraphicsWidget):
                 p2[axis] = tickStop
                 if self.grid is False:
                     p2[axis] += tickLength*tickDir
-                tickPen = self.pen()
+                tickPen = self._tick_pen
                 color = tickPen.color()
                 color.setAlpha(int(lineAlpha))
                 tickPen.setColor(color)
@@ -932,8 +893,7 @@ class AxisItem(GraphicsWidget):
             else:
                 stop = min(span[1].x(), maxTickPosition)
                 span[1].setX(stop)
-        axisSpec = (self.pen(), span[0], span[1])
-
+        axisSpec = (self._tick_pen, span[0], span[1])
 
         textOffset = self.style['tickTextOffset'][axis]  ## spacing between axis and text
 
@@ -967,7 +927,7 @@ class AxisItem(GraphicsWidget):
                 if s is None:
                     rects.append(None)
                 else:
-                    br = p.boundingRect(QtCore.QRectF(0, 0, 100, 100), QtCore.Qt.AlignmentFlag.AlignCenter, s)
+                    br = p.boundingRect(QRectF(0, 0, 100, 100), Qt.AlignmentFlag.AlignCenter, s)
                     ## boundingRect is usually just a bit too large
                     ## (but this probably depends on per-font metrics?)
                     br.setHeight(br.height() * 0.8)
@@ -1000,41 +960,36 @@ class AxisItem(GraphicsWidget):
                 if finished:
                     break
 
-            #spacing, values = tickLevels[best]
-            #strings = self.tickStrings(values, self.scale, spacing)
             # Determine exactly where tick text should be drawn
             for j in range(len(strings)):
                 vstr = strings[j]
                 if vstr is None: ## this tick was ignored because it is out of bounds
                     continue
                 x = tickPositions[i][j]
-                #textRect = p.boundingRect(QtCore.QRectF(0, 0, 100, 100), QtCore.Qt.AlignCenter, vstr)
                 textRect = rects[j]
                 height = textRect.height()
                 width = textRect.width()
-                #self.textHeight = height
                 offset = max(0,self.style['tickLength']) + textOffset
-                if self.orientation == 'left':
-                    textFlags = QtCore.Qt.TextFlag.TextDontClip|QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignVCenter
-                    rect = QtCore.QRectF(tickStop-offset-width, x-(height/2), width, height)
-                elif self.orientation == 'right':
-                    textFlags = QtCore.Qt.TextFlag.TextDontClip|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignVCenter
-                    rect = QtCore.QRectF(tickStop+offset, x-(height/2), width, height)
-                elif self.orientation == 'top':
-                    textFlags = QtCore.Qt.TextFlag.TextDontClip|QtCore.Qt.AlignmentFlag.AlignCenter|QtCore.Qt.AlignmentFlag.AlignBottom
-                    rect = QtCore.QRectF(x-width/2., tickStop-offset-height, width, height)
-                elif self.orientation == 'bottom':
-                    textFlags = QtCore.Qt.TextFlag.TextDontClip|QtCore.Qt.AlignmentFlag.AlignCenter|QtCore.Qt.AlignmentFlag.AlignTop
-                    rect = QtCore.QRectF(x-width/2., tickStop+offset, width, height)
 
-                #p.setPen(self.pen())
-                #p.drawText(rect, textFlags, vstr)
+                if self._edge == Qt.Edge.LeftEdge:
+                    textFlags = Qt.TextFlag.TextDontClip|Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                    rect = QRectF(tickStop-offset-width, x-(height/2), width, height)
+                elif self._edge == Qt.Edge.RightEdge:
+                    textFlags = Qt.TextFlag.TextDontClip | Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+                    rect = QRectF(tickStop+offset, x-(height/2), width, height)
+                elif self._edge == Qt.Edge.TopEdge:
+                    textFlags = Qt.TextFlag.TextDontClip | Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignBottom
+                    rect = QRectF(x-width/2., tickStop-offset-height, width, height)
+                elif self._edge == Qt.Edge.BottomEdge:
+                    textFlags = Qt.TextFlag.TextDontClip | Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop
+                    rect = QRectF(x-width/2., tickStop+offset, width, height)
+
                 textSpecs.append((rect, textFlags, vstr))
 
         ## update max text size if needed.
         self._updateMaxTextSize(textSize2)
 
-        return (axisSpec, tickSpecs, textSpecs)
+        return axisSpec, tickSpecs, textSpecs
 
     def drawPicture(self, p, axisSpec, tickSpecs, textSpecs):
         p.setRenderHint(p.RenderHint.Antialiasing, False)
@@ -1054,20 +1009,20 @@ class AxisItem(GraphicsWidget):
         # Draw all text
         if self.style['tickFont'] is not None:
             p.setFont(self.style['tickFont'])
-        p.setPen(self.textPen())
+        p.setPen(self._tick_label_pen)
         for rect, flags, text in textSpecs:
             p.drawText(rect, int(flags), text)
 
     def show(self):
-        GraphicsWidget.show(self)
-        if self.orientation in ['left', 'right']:
+        super().show()
+        if self._orientation == Qt.Orientation.Vertical:
             self._updateWidth()
         else:
             self._updateHeight()
 
     def hide(self):
-        GraphicsWidget.hide(self)
-        if self.orientation in ['left', 'right']:
+        super().hide()
+        if self._orientation == Qt.Orientation.Vertical:
             self._updateWidth()
         else:
             self._updateHeight()
@@ -1076,7 +1031,7 @@ class AxisItem(GraphicsWidget):
         lv = self.linkedView()
         if lv is None:
             return
-        if self.orientation in ['left', 'right']:
+        if self._orientation == Qt.Orientation.Vertical:
             lv.wheelEvent(ev, axis=1)
         else:
             lv.wheelEvent(ev, axis=0)
@@ -1086,7 +1041,7 @@ class AxisItem(GraphicsWidget):
         lv = self.linkedView()
         if lv is None:
             return
-        if self.orientation in ['left', 'right']:
+        if self._orientation == Qt.Orientation.Vertical:
             return lv.mouseDragEvent(ev, axis=1)
         else:
             return lv.mouseDragEvent(ev, axis=0)

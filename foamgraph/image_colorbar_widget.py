@@ -53,8 +53,10 @@ class ImageColorbarWidget(pg.GraphicsWidget):
         vb.enableAutoRange(pg.ViewBox.XYAxes)
         self._vb = vb
 
-        self._axis = AxisItem(
-            'left', linkView=self._vb, maxTickLength=-10, parent=self)
+        self._axis = AxisItem(Qt.Edge.LeftEdge,
+                              linkView=self._vb,
+                              maxTickLength=-10,
+                              parent=self)
 
         self.initUI()
         self.initConnections()

@@ -186,19 +186,19 @@ class PlotArea(pg.GraphicsWidget):
             self._initTransformMenu()
 
     def _initAxisItems(self):
-        for orient, pos in (('top', (2, 1)),
-                            ('bottom', (4, 1)),
-                            ('left', (3, 0)),
-                            ('right', (3, 2))):
-            axis = AxisItem(orientation=orient, parent=self)
+        for name, edge, pos in (('top', Qt.Edge.TopEdge, (2, 1)),
+                                ('bottom', Qt.Edge.BottomEdge, (4, 1)),
+                                ('left', Qt.Edge.LeftEdge, (3, 0)),
+                                ('right', Qt.Edge.RightEdge, (3, 2))):
+            axis = AxisItem(edge, parent=self)
 
             axis.linkToView(self._vb)
-            self._axes[orient] = {'item': axis, 'pos': pos}
+            self._axes[name] = {'item': axis, 'pos': pos}
             self._layout.addItem(axis, *pos)
             axis.setZValue(-1000)
             axis.setFlag(axis.GraphicsItemFlag.ItemNegativeZStacksBehindParent)
 
-            self.showAxis(orient, orient in ['left', 'bottom'])
+            self.showAxis(name, name in ['left', 'bottom'])
 
     def getViewBox(self):
         return self._vb
