@@ -138,12 +138,15 @@ class LinePlotWithAnnotation(PlotWidgetF):
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot = self.plotCurve(label="Data", pen=FColor.mkPen('k'))
+        self._annotation = self.addAnnotation()
         self.addLegend()
 
     def updateF(self, data):
         """Override."""
         data = data['multi-peak']
-        self._plot.setData(data['x'], data['y'])
+        x, y, peaks = data['x'], data['y'], data['peaks']
+        self._plot.setData(x, y)
+        self._annotation.setData(x[peaks], y[peaks], x[peaks])
 
 
 class PlotGalleryScene(AbstractScene):

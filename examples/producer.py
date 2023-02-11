@@ -90,14 +90,17 @@ class DoubleYPlotData:
 class MultiPeakData:
     def __init__(self):
         from scipy.datasets import electrocardiogram
+        from scipy.signal import find_peaks
 
         self._x = np.arange(2000, 4000)
         self._y = electrocardiogram()[2000:4000]
+        self._peaks, _ = find_peaks(self._y, distance=150)
 
     def next(self):
         return {
             "x": self._x,
-            "y": self._y + np.random.random(1)
+            "y": self._y + np.random.random(1),
+            "peaks": self._peaks
         }
 
 

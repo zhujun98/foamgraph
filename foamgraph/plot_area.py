@@ -17,7 +17,6 @@ from .backend.QtWidgets import (
 )
 
 from . import pyqtgraph_be as pg
-from .aesthetics import FColor
 from .axis_item import AxisItem
 from .label_item import LabelItem
 from .legend_item import LegendItem
@@ -39,8 +38,6 @@ class PlotArea(pg.GraphicsWidget):
     _METER_ROW = 0
     _TITLE_ROW = 1
 
-    _MAX_ANNOTATION_ITEMS = 10
-
     def __init__(self, *,
                  enable_meter: bool = True,
                  enable_grid: bool = True,
@@ -60,8 +57,6 @@ class PlotArea(pg.GraphicsWidget):
         # insertion order of PlotItems.
         self._plot_items = OrderedDict()  # PlotItem: None
         self._plot_items_y2 = OrderedDict()  # PlotItem: None
-        self._annotation_items = []
-        self._n_vis_annotation_items = 0
 
         self._vb = pg.ViewBox(parent=self)
         self._vb_y2 = None
@@ -294,11 +289,6 @@ class PlotArea(pg.GraphicsWidget):
         if item not in self._items:
             return
 
-        if item in self._annotation_items:
-            # it is tricky to update n_vis_annotation_items
-            raise RuntimeError("Annotation item is not allowed to be removed "
-                               "using 'removeItem' method!")
-
         self._items.remove(item)
 
         if item in self._plot_items_y2:
@@ -328,8 +318,6 @@ class PlotArea(pg.GraphicsWidget):
 
         self._plot_items.clear()
         self._plot_items_y2.clear()
-        self._annotation_items.clear()
-        self._n_vis_annotation_items = 0
         self._items.clear()
 
     def getContextMenus(self, event):
@@ -425,44 +413,6 @@ class PlotArea(pg.GraphicsWidget):
         else:
             x, y = pos
             self._meter.setText(f"x = {x}, y = {y}")
-
-    def setAnnotationList(self, x, y, values=None):
-        """Set a list of annotation items.
-
-        :param list-like x: x coordinate of the annotated point.
-        :param list-like y: y coordinate of the annotated point.
-        :param list-like values: a list of annotation text.
-        """
-
-        # Don't waste time to check the list lengths.
-
-        a_items = self._annotation_items
-
-        if values is None:
-            values = x
-        values = values[:self._MAX_ANNOTATION_ITEMS]
-        n_pts = len(values)
-
-        n_items = len(a_items)
-        if n_items < n_pts:
-            for i in range(n_pts - n_items):
-                item = QGraphicsTextItem()
-                item.setDefaultTextColor(FColor.mkColor('b'))
-                self.addItem(item)
-                a_items.append(item)
-
-        n_vis = self._n_vis_annotation_items
-        if n_vis < n_pts:
-            for i in range(n_vis, n_pts):
-                a_items[i].show()
-        elif n_vis > n_pts:
-            for i in range(n_pts, n_vis):
-                a_items[i].hide()
-        self._n_vis_annotation_items = n_pts
-
-        for i in range(n_pts):
-            a_items[i].setPos(x[i], y[i])
-            a_items[i].setPlainText(f"{values[i]:.4f}")
 
     def setTitle(self, *args) -> None:
         """Set the title of the plot."""

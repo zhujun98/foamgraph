@@ -50,7 +50,7 @@ class TestPlotWidget:
         widget = self._widget1
 
         for method in ["removeAllItems", "setAspectLocked", "setLabel", "setTitle",
-                       "setAnnotationList", "addLegend", "invertX", "invertY", "autoRange"]:
+                       "addLegend", "invertX", "invertY", "autoRange"]:
             with patch.object(widget._plot_area, method) as mocked:
                 getattr(widget, method)()
                 mocked.assert_called_once()

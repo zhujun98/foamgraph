@@ -17,6 +17,7 @@ from .backend.QtWidgets import QSizePolicy
 
 from . import pyqtgraph_be as pg
 
+from .annotation_item import AnnotationItem
 from .plot_area import PlotArea
 from .line_items import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
 from .plot_items import (
@@ -128,6 +129,11 @@ class PlotWidgetF(pg.GraphicsView):
         """Add and return a image item."""
         # TODO: this will be done when another branch is merged
         raise NotImplementedError
+
+    def addAnnotation(self, **kwargs):
+        item = AnnotationItem(**kwargs)
+        self._plot_area.addItem(item)
+        return item
 
     def setAspectLocked(self, *args, **kwargs):
         self._plot_area.setAspectLocked(*args, **kwargs)

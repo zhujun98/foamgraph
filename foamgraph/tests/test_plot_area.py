@@ -108,15 +108,13 @@ class TestPlotArea(unittest.TestCase):
         area.addItem(curve_plot_item)
         scatter_plot_item = ScatterPlotItem(label="scatter")
         area.addItem(scatter_plot_item)
-        area.setAnnotationList([0], [0], [1])
 
         self.assertEqual(3, len(area._plot_items))
         self.assertEqual(1, len(area._plot_items_y2))
-        self.assertEqual(7, len(area._items))
-        self.assertEqual(6, len(area._vb._items))
+        self.assertEqual(6, len(area._items))
+        self.assertEqual(5, len(area._vb._items))
         self.assertEqual(1, len(area._vb_y2._items))
         self.assertEqual(4, len(area._legend._items))
-        self.assertEqual(1, len(area._annotation_items))
 
         with patch.object(curve_plot_item, "setData") as mocked1:
             with patch.object(bar_graph_item, "setData") as mocked2:
@@ -128,8 +126,8 @@ class TestPlotArea(unittest.TestCase):
         area.removeItem(BarGraphItem())
         self.assertEqual(3, len(area._plot_items))
         self.assertEqual(1, len(area._plot_items_y2))
-        self.assertEqual(7, len(area._items))
-        self.assertEqual(6, len(area._vb._items))
+        self.assertEqual(6, len(area._items))
+        self.assertEqual(5, len(area._vb._items))
         self.assertEqual(1, len(area._vb_y2._items))
         self.assertEqual(4, len(area._legend._items))
 
@@ -137,8 +135,8 @@ class TestPlotArea(unittest.TestCase):
         area.removeItem(bar_graph_item)
         self.assertEqual(3, len(area._plot_items))
         self.assertEqual(0, len(area._plot_items_y2))
-        self.assertEqual(6, len(area._items))
-        self.assertEqual(6, len(area._vb._items))
+        self.assertEqual(5, len(area._items))
+        self.assertEqual(5, len(area._vb._items))
         self.assertEqual(0, len(area._vb_y2._items))
         self.assertEqual(3, len(area._legend._items))
 
@@ -146,8 +144,8 @@ class TestPlotArea(unittest.TestCase):
         area.removeItem(image_item)
         self.assertEqual(3, len(area._plot_items))
         self.assertEqual(0, len(area._plot_items_y2))
-        self.assertEqual(5, len(area._items))
-        self.assertEqual(5, len(area._vb._items))
+        self.assertEqual(4, len(area._items))
+        self.assertEqual(4, len(area._vb._items))
         self.assertEqual(0, len(area._vb_y2._items))
         self.assertEqual(3, len(area._legend._items))
 
@@ -155,9 +153,6 @@ class TestPlotArea(unittest.TestCase):
         # into the legend
         area.removeItem(errorbar_item)
         self.assertEqual(2, len(area._legend._items))
-
-        with self.assertRaisesRegex(RuntimeError, "not allowed to be removed"):
-            area.removeItem(area._annotation_items[0])
 
         area.removeAllItems()
         self.assertEqual(0, len(area._plot_items))
