@@ -8,8 +8,9 @@ Author: Jun Zhu
 from collections import OrderedDict
 import warnings
 from itertools import chain
+from typing import Optional
 
-from .backend.QtCore import pyqtSignal, pyqtSlot, Qt
+from .backend.QtCore import pyqtSignal, pyqtSlot, QPointF, Qt
 from .backend.QtWidgets import (
     QCheckBox, QGraphicsGridLayout, QGraphicsItem, QGraphicsTextItem, QHBoxLayout,
     QLabel, QMenu, QSizePolicy, QSlider, QWidget, QWidgetAction
@@ -354,13 +355,19 @@ class PlotArea(pg.GraphicsWidget):
         else:
             s.hide()
 
-    def addLegend(self, offset=(30, 30), **kwargs):
+    def addLegend(self, pos: Optional[QPointF] = None,
+                  **kwargs):
         """Add a LegendItem if it does not exist."""
         if self._legend is None:
-            self._legend = LegendItem(offset, parent=self._vb, **kwargs)
+            self._legend = LegendItem(parent=self._vb, **kwargs)
 
             for item in chain(self._plot_items, self._plot_items_y2):
                 self._legend.addItem(item)
+
+            if pos is None:
+                # TODO: use a value which is proportional to the plot size
+                pos = QPointF(20., 20.)
+            self._legend.setPos(pos)
 
         return self._legend
 

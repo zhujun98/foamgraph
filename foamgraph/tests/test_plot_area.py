@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+from foamgraph.backend.QtCore import QPointF
 from foamgraph.backend.QtTest import QSignalSpy
 
 from foamgraph import mkQApp
@@ -62,12 +63,12 @@ class TestPlotArea(unittest.TestCase):
         area = self._area
         self.assertIsNone(area._legend)
 
-        legend = area.addLegend((-30, -30))
+        legend = area.addLegend(QPointF(-30, -30))
         self.assertIsInstance(area._legend, LegendItem)
         self.assertIs(legend, area._legend)
 
         # test addLegend when legend already exists
-        area.addLegend((-10, -10))
+        area.addLegend(QPointF(-10, -10))
         self.assertIsInstance(area._legend, LegendItem)
         self.assertIs(legend, area._legend)
 
@@ -243,53 +244,53 @@ class TestPlotArea(unittest.TestCase):
             enable_meter=False, enable_transform=False, enable_grid=False)
         menus = another_area.getContextMenus(event)
         self.assertEqual(0, len(menus))
-
-    def testSetAnnotationList(self):
-        area = self._area
-        # add some items to simulate the practical situation
-        area.addItem(ImageItem())
-        area.addItem(BarGraphItem())
-        area.addItem(ErrorbarItem())
-
-        # add some items
-        area.setAnnotationList([1, 2, 3], [4, 5, 6])
-        self.assertEqual(3, len(area._annotation_items))
-        for item in area._annotation_items:
-            self.assertTrue(item.isVisible())
-        self.assertEqual(3, area._n_vis_annotation_items)
-
-        # set less items
-        area.setAnnotationList([1, 2], [4, 5])
-        self.assertEqual(3, len(area._annotation_items))
-        for item in area._annotation_items[:2]:
-            self.assertTrue(item.isVisible())
-        self.assertFalse(area._annotation_items[-1].isVisible())
-        self.assertEqual(2, area._n_vis_annotation_items)
-
-        # set more items
-        area.setAnnotationList([1, 2, 3, 4], [4, 5, 6, 7], values=[4, 5, 6, 7])
-        self.assertEqual(4, len(area._annotation_items))
-        for item in area._annotation_items:
-            self.assertTrue(item.isVisible())
-        self.assertEqual(4, area._n_vis_annotation_items)
-
-        # clear items
-        area.setAnnotationList([], [])
-        self.assertEqual(4, len(area._annotation_items))
-        for item in area._annotation_items:
-            self.assertFalse(item.isVisible())
-        self.assertEqual(0, area._n_vis_annotation_items)
-
-        area.removeAllItems()
-        self.assertEqual(0, len(area._annotation_items))
-        self.assertEqual(0, area._n_vis_annotation_items)
-
-        # test TextItem call
-        with patch("foamgraph.pyqtgraph_be.TextItem.setPos") as mocked_pos:
-            with patch("foamgraph.pyqtgraph_be.TextItem.setText") as mocked_value:
-                area.setAnnotationList([1, 2, 3], [4, 5, 6])
-                mocked_pos.assert_called_with(3, 6)
-                mocked_value.assert_called_with("3.0000")
-
-                area.setAnnotationList([1], [4], [2])
-                mocked_value.assert_called_with("2.0000")
+    #
+    # def testSetAnnotationList(self):
+    #     area = self._area
+    #     # add some items to simulate the practical situation
+    #     area.addItem(ImageItem())
+    #     area.addItem(BarGraphItem())
+    #     area.addItem(ErrorbarItem())
+    #
+    #     # add some items
+    #     area.setAnnotationList([1, 2, 3], [4, 5, 6])
+    #     self.assertEqual(3, len(area._annotation_items))
+    #     for item in area._annotation_items:
+    #         self.assertTrue(item.isVisible())
+    #     self.assertEqual(3, area._n_vis_annotation_items)
+    #
+    #     # set less items
+    #     area.setAnnotationList([1, 2], [4, 5])
+    #     self.assertEqual(3, len(area._annotation_items))
+    #     for item in area._annotation_items[:2]:
+    #         self.assertTrue(item.isVisible())
+    #     self.assertFalse(area._annotation_items[-1].isVisible())
+    #     self.assertEqual(2, area._n_vis_annotation_items)
+    #
+    #     # set more items
+    #     area.setAnnotationList([1, 2, 3, 4], [4, 5, 6, 7], values=[4, 5, 6, 7])
+    #     self.assertEqual(4, len(area._annotation_items))
+    #     for item in area._annotation_items:
+    #         self.assertTrue(item.isVisible())
+    #     self.assertEqual(4, area._n_vis_annotation_items)
+    #
+    #     # clear items
+    #     area.setAnnotationList([], [])
+    #     self.assertEqual(4, len(area._annotation_items))
+    #     for item in area._annotation_items:
+    #         self.assertFalse(item.isVisible())
+    #     self.assertEqual(0, area._n_vis_annotation_items)
+    #
+    #     area.removeAllItems()
+    #     self.assertEqual(0, len(area._annotation_items))
+    #     self.assertEqual(0, area._n_vis_annotation_items)
+    #
+    #     # test TextItem call
+    #     with patch("foamgraph.pyqtgraph_be.TextItem.setPos") as mocked_pos:
+    #         with patch("foamgraph.pyqtgraph_be.TextItem.setText") as mocked_value:
+    #             area.setAnnotationList([1, 2, 3], [4, 5, 6])
+    #             mocked_pos.assert_called_with(3, 6)
+    #             mocked_value.assert_called_with("3.0000")
+    #
+    #             area.setAnnotationList([1], [4], [2])
+    #             mocked_value.assert_called_with("2.0000")

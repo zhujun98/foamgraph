@@ -26,10 +26,9 @@ def widget():
 
 class TestLegendItem:
 
-    @pytest.mark.parametrize("orientation", ["vertical", "horizontal"])
+    @pytest.mark.parametrize("orientation",
+                             [Qt.Orientation.Vertical, Qt.Orientation.Horizontal])
     def test_initialization(self, widget, orientation):
-        with pytest.raises(ValueError):
-            widget.addLegend(orientation="unknown")
         widget.addLegend(orientation=orientation)
 
         legend = widget._plot_area._legend
@@ -40,7 +39,8 @@ class TestLegendItem:
         for plot in widget.all_plots:
             assert legend._items[plot][1]._item.defaultTextColor() == color
 
-    @pytest.mark.parametrize("orientation", ["vertical", "horizontal"])
+    @pytest.mark.parametrize("orientation",
+                             [Qt.Orientation.Vertical, Qt.Orientation.Horizontal])
     def test_plot_item_visible_change(self, widget, orientation):
         widget.addLegend(orientation=orientation)
         legend = widget._plot_area._legend
@@ -57,7 +57,8 @@ class TestLegendItem:
         assert not sample.isVisible()
         assert not label.isVisible()
 
-    @pytest.mark.parametrize("orientation", ["vertical", "horizontal"])
+    @pytest.mark.parametrize("orientation",
+                             [Qt.Orientation.Vertical, Qt.Orientation.Horizontal])
     def test_plot_item_removal(self, widget, orientation):
         widget.addLegend(orientation=orientation)
         legend = widget._plot_area._legend
@@ -87,7 +88,8 @@ class TestLegendItem:
         else:
             assert legend._layout.count() == 0
 
-    @pytest.mark.parametrize("orientation", ["vertical", "horizontal"])
+    @pytest.mark.parametrize("orientation",
+                             [Qt.Orientation.Vertical, Qt.Orientation.Horizontal])
     def test_plot_item_set_label(self, widget, orientation):
         widget.addLegend(orientation=orientation)
         legend = widget._plot_area._legend

@@ -15,13 +15,12 @@ from .backend.QtWidgets import (
 
 from . import pyqtgraph_be as pg
 from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
-from .pyqtgraph_be import Point
 from .aesthetics import FColor
 from .label_item import LabelItem
 from .plot_items import PlotItem
 
 
-class LegendItem(pg.GraphicsAnchorWidget):
+class LegendItem(pg.GraphicsWidget):
     """Displays a legend used for describing the contents of a plot."""
 
     class SampleWidget(pg.GraphicsWidget):
@@ -35,42 +34,28 @@ class LegendItem(pg.GraphicsAnchorWidget):
             """Override."""
             self._item.drawSample(p)
 
-    def __init__(self, offset: tuple, *,
-                 orientation: str = "vertical",
-                 draggable: bool = True, **kwargs):
+    def __init__(self, orientation: Qt.Orientation = Qt.Orientation.Vertical,
+                 **kwargs):
         """Initialization.
 
         :param orientation: orientation of the legend layout. Must be either
             "horizontal" or "vertical".
-        :param draggable: whether the legend widget is draggable.
-        :param offset: specifies the offset position relative to the legend's parent.
-            Positive values offset from the left or top; negative values
-            offset from the right or bottom. If offset is None, the
-            legend must be anchored manually by calling anchor() or
-            positioned by calling setPos().
         """
         super().__init__(**kwargs)
         self.setFlag(self.GraphicsItemFlag.ItemIgnoresTransformations)
 
         self._orientation = orientation
-        orientation = orientation.lower()
-        if orientation == "horizontal":
-            self._orientation = Qt.Orientation.Horizontal
-            self._layout = QGraphicsLinearLayout(self._orientation)
-            self._layout.setSpacing(25)
-        elif orientation == "vertical":
-            self._orientation = Qt.Orientation.Vertical
+        if orientation == Qt.Orientation.Vertical:
             self._layout = QGraphicsGridLayout()
             self._layout.setVerticalSpacing(0)
             self._layout.setHorizontalSpacing(25)
-        else:
-            raise ValueError(f"Orientation must be either 'horizontal' "
-                             f"or 'vertical'. Actual: {orientation}")
+        else:  # orientation == Qt.Orientation.Horizontal:
+            self._layout = QGraphicsLinearLayout(orientation)
+            self._layout.setSpacing(25)
         self._layout.setContentsMargins(5, 5, 0, 0)
         self.setLayout(self._layout)
 
         self._items = OrderedDict()
-        self._offset = Point(offset)
 
         self._pen = None
         self.setPen(FColor.mkPen('foreground'))
@@ -79,7 +64,9 @@ class LegendItem(pg.GraphicsAnchorWidget):
         self._brush = None
         self.setBrush(FColor.mkBrush(None))
 
-        self._draggable = draggable
+        self._draggable = True
+        self._moving = False
+        self._cursor_offset = QPointF(0, 0)
 
     def setPen(self, pen: QPen) -> None:
         """Set the pen used to draw a border around the legend."""
@@ -98,13 +85,8 @@ class LegendItem(pg.GraphicsAnchorWidget):
         self._brush = brush
         self.update()
 
-    def setParentItem(self, parent: QGraphicsItem) -> None:
-        """Override."""
-        super().setParentItem(parent)
-        anchorx = 1 if self._offset[0] <= 0 else 0
-        anchory = 1 if self._offset[1] <= 0 else 0
-        anchor = (anchorx, anchory)
-        self._anchor(itemPos=anchor, parentPos=anchor, offset=self._offset)
+    def setDraggable(self, draggable: bool) -> None:
+        self._draggable = draggable
 
     def addItem(self, item: PlotItem) -> None:
         """Add a new item to the legend.
@@ -117,13 +99,13 @@ class LegendItem(pg.GraphicsAnchorWidget):
         self._items[item] = (sample, label)
         item.label_changed_sgn.connect(self.onItemLabelChanged)
         item.visibleChanged.connect(self.onItemVisibleChanged)
-        if self._orientation == Qt.Orientation.Horizontal:
-            self._layout.addItem(sample)
-            self._layout.addItem(label)
-        else:
+        if self._orientation == Qt.Orientation.Vertical:
             row = self._layout.rowCount()
             self._layout.addItem(sample, row, 0)
             self._layout.addItem(label, row, 1)
+        else:
+            self._layout.addItem(sample)
+            self._layout.addItem(label)
 
         self._updateSize()
 
@@ -153,17 +135,7 @@ class LegendItem(pg.GraphicsAnchorWidget):
         # TODO: is there a better way?
         height = 0
         width = 0
-        if self._orientation == Qt.Orientation.Horizontal:
-            for row in range(self._layout.count()):
-                row_height = 0
-                col_width = 0
-                item = self._layout.itemAt(row)
-                if item.isVisible():
-                    col_width += item.geometry().width() + 3
-                    row_height = max(row_height, item.geometry().height())
-                height = max(height, row_height)
-                width += col_width
-        else:
+        if self._orientation == Qt.Orientation.Vertical:
             for row in range(self._layout.rowCount()):
                 row_height = 0
                 col_width = 0
@@ -176,6 +148,16 @@ class LegendItem(pg.GraphicsAnchorWidget):
                         row_height = max(row_height, item.geometry().height())
                 width = max(width, col_width)
                 height += row_height
+        else:
+            for row in range(self._layout.count()):
+                row_height = 0
+                col_width = 0
+                item = self._layout.itemAt(row)
+                if item.isVisible():
+                    col_width += item.geometry().width() + 3
+                    row_height = max(row_height, item.geometry().height())
+                height = max(height, row_height)
+                width += col_width
         self.setGeometry(0, 0, width, height)
 
     def onItemLabelChanged(self, label: str) -> None:
@@ -200,9 +182,17 @@ class LegendItem(pg.GraphicsAnchorWidget):
         ev.acceptDrags(Qt.MouseButton.LeftButton)
 
     def mouseDragEvent(self, ev: MouseDragEvent) -> None:
-        if not self._draggable:
+        if not self._draggable or ev.button() != Qt.MouseButton.LeftButton:
             return
+        ev.accept()
 
-        if ev.button() == Qt.MouseButton.LeftButton:
-            ev.accept()
-            self.autoAnchor(self.pos() + ev.pos() - ev.lastPos())
+        if ev.entering():
+            self._moving = True
+            self._cursor_offset = self.pos() - self.mapToParent(ev.buttonDownPos())
+        elif ev.exiting():
+            self._moving = False
+            self._cursor_offset = QPointF(0, 0)
+
+        if self._moving:
+            pos = self._cursor_offset + self.mapToParent(ev.pos())
+            self.setPos(pos)
