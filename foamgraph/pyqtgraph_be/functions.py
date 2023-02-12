@@ -367,33 +367,6 @@ def intColor(index, hues=9, values=1, maxValue=255, minValue=150, maxHue=360, mi
     c.setHsv(h, sat, v)
     c.setAlpha(alpha)
     return c
-    
-
-def makeArrowPath(headLen=20, headWidth=None, tipAngle=20, tailLen=20, tailWidth=3, baseAngle=0):
-    """
-    Construct a path outlining an arrow with the given dimensions.
-    The arrow points in the -x direction with tip positioned at 0,0.
-    If *headWidth* is supplied, it overrides *tipAngle* (in degrees).
-    If *tailLen* is None, no tail will be drawn.
-    """
-    if headWidth is None:
-        headWidth = headLen * np.tan(tipAngle * 0.5 * np.pi/180.)
-    path = QtGui.QPainterPath()
-    path.moveTo(0,0)
-    path.lineTo(headLen, -headWidth)
-    if tailLen is None:
-        innerY = headLen - headWidth * np.tan(baseAngle*np.pi/180.)
-        path.lineTo(innerY, 0)
-    else:
-        tailWidth *= 0.5
-        innerY = headLen - (headWidth-tailWidth) * np.tan(baseAngle*np.pi/180.)
-        path.lineTo(innerY, -tailWidth)
-        path.lineTo(headLen + tailLen, -tailWidth)
-        path.lineTo(headLen + tailLen, tailWidth)
-        path.lineTo(innerY, tailWidth)
-    path.lineTo(headLen, headWidth)
-    path.lineTo(0,0)
-    return path
 
 
 def transformToArray(tr):
