@@ -1,9 +1,7 @@
-from ...backend.QtGui import QPainter, QTransform
-from ...backend.QtWidgets import QGraphicsPathItem
+from foamgraph.backend.QtGui import QPainter, QTransform
+from foamgraph.backend.QtWidgets import QGraphicsPathItem
 
-from .. import functions as fn
-
-__all__ = ['ArrowItem']
+from foamgraph.pyqtgraph_be import functions as fn
 
 
 class ArrowItem(QGraphicsPathItem):
@@ -120,6 +118,3 @@ class ArrowItem(QGraphicsPathItem):
         if pen.isCosmetic():
             pad += max(1, pen.width()) * 0.7072
         return pad
-        
-        
-    
