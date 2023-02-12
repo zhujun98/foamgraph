@@ -18,13 +18,13 @@ from .backend.QtCore import (
     pyqtSignal, QByteArray, QDataStream, QPointF, QRectF, Qt
 )
 
-from . import pyqtgraph_be as pg
 from .pyqtgraph_be import functions as fn
 
 from .aesthetics import FColor
+from .graphics_item import GraphicsObject
 
 
-class PlotItem(pg.GraphicsObject):
+class PlotItem(GraphicsObject):
 
     label_changed_sgn = pyqtSignal(str)
 

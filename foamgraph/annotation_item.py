@@ -9,11 +9,11 @@ from .backend.QtWidgets import (
     QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout, QGraphicsTextItem
 )
 
-from . import pyqtgraph_be as pg
 from .aesthetics import FColor
+from .graphics_item import GraphicsWidget
 
 
-class AnnotationItem(pg.GraphicsWidget):
+class AnnotationItem(GraphicsWidget):
     """Add annotation to a plot."""
 
     MAX_ITEMS = 10

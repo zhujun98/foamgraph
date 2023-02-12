@@ -8,11 +8,12 @@ Author: Jun Zhu
 from .backend.QtCore import QPointF, QRectF, QSizeF, Qt
 from .backend.QtGui import QColor, QGraphicsSceneResizeEvent
 from .backend.QtWidgets import QGraphicsTextItem
-from . import pyqtgraph_be as pg
+
 from .aesthetics import FColor
+from .graphics_item import GraphicsWidget
 
 
-class LabelItem(pg.GraphicsWidget):
+class LabelItem(GraphicsWidget):
     """GraphicsWidget as axis labels, graph titles, etc."""
     def __init__(self, text: str, parent=None):
         super().__init__(parent=parent)

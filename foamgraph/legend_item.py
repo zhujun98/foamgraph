@@ -13,17 +13,17 @@ from .backend.QtWidgets import (
     QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout, QGraphicsTextItem
 )
 
-from . import pyqtgraph_be as pg
-from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
 from .aesthetics import FColor
+from .graphics_scene import HoverEvent, MouseDragEvent
+from .graphics_item import GraphicsWidget
 from .label_item import LabelItem
-from .plot_items import PlotItem
+from .plot_item import PlotItem
 
 
-class LegendItem(pg.GraphicsWidget):
+class LegendItem(GraphicsWidget):
     """Displays a legend used for describing the contents of a plot."""
 
-    class SampleWidget(pg.GraphicsWidget):
+    class SampleWidget(GraphicsWidget):
         """Used as a graphics label in a LegendItem."""
 
         def __init__(self, item: PlotItem, **kwargs):

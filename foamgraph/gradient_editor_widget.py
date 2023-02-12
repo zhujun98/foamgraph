@@ -16,12 +16,11 @@ from .backend.QtGui import (
 from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 from .backend.QtWidgets import QGraphicsItem, QSizePolicy
 
-from . import pyqtgraph_be as pg
-
 from .aesthetics import ColorMap
+from .graphics_item import GraphicsWidget
 
 
-class GradientEditorWidget(pg.GraphicsWidget):
+class GradientEditorWidget(GraphicsWidget):
 
     gradient_changed_sgn = pyqtSignal(object)
 

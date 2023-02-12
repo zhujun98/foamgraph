@@ -7,14 +7,14 @@ Author: Jun Zhu
 """
 from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 from .backend.QtGui import QBrush, QPen
+
 from .aesthetics import FColor
+from .graphics_item import GraphicsObject
+from .graphics_scene import HoverEvent, MouseDragEvent
+from .line_item import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
 
-from . import pyqtgraph_be as pg
-from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
-from .line_items import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
 
-
-class LinearRegionItem(pg.GraphicsObject):
+class LinearRegionItem(GraphicsObject):
     """A horizontal or vertical region inbetween two lines.
 
     The region can be dragged and is bounded by lines which can be dragged

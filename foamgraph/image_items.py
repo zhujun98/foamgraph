@@ -13,16 +13,16 @@ import numpy as np
 from .backend.QtGui import QPainter, QPicture, QTransform
 from .backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 
-from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
 from .pyqtgraph_be import functions as fn
-from .pyqtgraph_be.GraphicsScene import HoverEvent
 
 from .aesthetics import FColor
-from .algorithms import quick_min_max
+from .algorithm import quick_min_max
+from .graphics_item import GraphicsObject
+from .graphics_scene import HoverEvent
 
 
-class ImageItem(pg.GraphicsObject):
+class ImageItem(GraphicsObject):
     """GraphicsObject displaying a 2D image.
 
     Implemented based on pyqtgraph.ImageItem.
@@ -365,7 +365,7 @@ class ImageItem(pg.GraphicsObject):
             ev.ignore()
 
 
-class GeometryItem(pg.GraphicsObject):
+class GeometryItem(GraphicsObject):
     def __init__(self, pen=None, brush=None, parent=None):
         super().__init__(parent=parent)
 

@@ -4,18 +4,15 @@ from copy import deepcopy
 
 import numpy as np
 
-from ...Qt import isQObjectAlive
-from ....backend.QtWidgets import QApplication, QGraphicsLineItem, QGraphicsPathItem, QGraphicsRectItem
-from ....backend.QtCore import pyqtSignal, QRectF, Qt, QTimer
-from ....backend.QtGui import QSizePolicy, QTransform
-from ...Point import Point
-from ... import functions as fn
-from ...GraphicsScene import MouseClickEvent, MouseDragEvent
-from ..GraphicsObject import GraphicsObject
-from ..GraphicsWidgets import GraphicsWidget
-from ... import getConfigOption
-
-__all__ = ['ViewBox']
+from foamgraph.pyqtgraph_be.Qt import isQObjectAlive
+from foamgraph.backend.QtWidgets import QGraphicsRectItem
+from foamgraph.backend.QtCore import pyqtSignal, QRectF, Qt
+from foamgraph.backend.QtGui import QSizePolicy, QTransform
+from foamgraph.pyqtgraph_be.Point import Point
+from foamgraph.pyqtgraph_be import functions as fn
+from foamgraph.graphics_scene import MouseClickEvent, MouseDragEvent
+from foamgraph.graphics_item import GraphicsObject, GraphicsWidget
+from foamgraph.pyqtgraph_be import getConfigOption
 
 
 class WeakList(object):
@@ -1558,4 +1555,4 @@ class ViewBox(GraphicsWidget):
                 pass
 
 
-from .ViewBoxMenu import ViewBoxMenu
+from .view_box_menu import ViewBoxMenu

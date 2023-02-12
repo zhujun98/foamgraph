@@ -10,13 +10,14 @@ from typing import Union
 from .backend.QtGui import QPainterPath, QPen, QPolygonF, QTransform
 from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 
-from . import pyqtgraph_be as pg
-from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
 from .pyqtgraph_be import Point
+
 from .aesthetics import FColor
+from .graphics_item import GraphicsObject
+from .graphics_scene import HoverEvent, MouseDragEvent
 
 
-class InfiniteLineItem(pg.GraphicsObject):
+class InfiniteLineItem(GraphicsObject):
     """A line of infinite length."""
 
     position_change_finished_sgn = pyqtSignal(object)

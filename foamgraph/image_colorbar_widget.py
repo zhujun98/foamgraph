@@ -11,17 +11,18 @@ from .backend.QtGui import QPainter
 from .backend.QtCore import pyqtSignal, Qt
 from .backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
 
-from . import pyqtgraph_be as pg
 from .pyqtgraph_be import Point
 
 from .aesthetics import ColorMap, FColor
 from .axis_item import AxisItem
 from .gradient_editor_widget import GradientEditorWidget
+from .graphics_item import GraphicsWidget
 from .linear_region_item import LinearRegionItem
-from .plot_items import CurvePlotItem
+from .plot_item import CurvePlotItem
+from .view_box import ViewBox
 
 
-class ImageColorbarWidget(pg.GraphicsWidget):
+class ImageColorbarWidget(GraphicsWidget):
     """GraphicsWidget for adjusting the display of an image."""
 
     lut_changed_sgn = pyqtSignal(object)
@@ -44,13 +45,13 @@ class ImageColorbarWidget(pg.GraphicsWidget):
         self._hist = CurvePlotItem(pen=FColor.mkPen('k'))
         self._hist.rotate(90)
 
-        vb = pg.ViewBox(parent=self)
+        vb = ViewBox(parent=self)
         vb.setMaximumWidth(152)
         vb.setMinimumWidth(45)
         vb.setMouseEnabled(x=False, y=True)
         vb.addItem(self._hist)
         vb.addItem(self._lri)
-        vb.enableAutoRange(pg.ViewBox.XYAxes)
+        vb.enableAutoRange(ViewBox.XYAxes)
         self._vb = vb
 
         self._axis = AxisItem(Qt.Edge.LeftEdge,

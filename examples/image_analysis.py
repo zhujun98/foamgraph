@@ -13,7 +13,7 @@ from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 from foamgraph import (
     AbstractScene, ImageViewF, mkQApp, PlotWidgetF
 )
-from foamgraph.algorithms import extract_rect_roi
+from foamgraph.algorithm import extract_rect_roi
 from foamgraph.ctrl_widgets import RoiCtrlWidgetGroup
 
 from consumer import Consumer

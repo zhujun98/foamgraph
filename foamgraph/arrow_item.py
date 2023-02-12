@@ -1,7 +1,7 @@
-from foamgraph.backend.QtGui import QPainter, QTransform
-from foamgraph.backend.QtWidgets import QGraphicsPathItem
+from .backend.QtGui import QPainter, QTransform
+from .backend.QtWidgets import QGraphicsPathItem
 
-from foamgraph.pyqtgraph_be import functions as fn
+from .pyqtgraph_be import functions as fn
 
 
 class ArrowItem(QGraphicsPathItem):

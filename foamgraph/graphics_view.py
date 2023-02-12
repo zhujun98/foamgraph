@@ -3,22 +3,21 @@ GraphicsView.py -   Extension of QGraphicsView
 Copyright 2010  Luke Campagnola
 Distributed under MIT/X11 license. See license.txt for more information.
 """
-
-from ...backend.QtCore import pyqtSignal, QPoint, QRectF, Qt
-from ...backend.QtGui import QPalette, QPainter
-from ...backend.QtWidgets import (
-    QFrame, QGraphicsGridLayout, QGraphicsView, QGraphicsWidget, QWidget
-)
-
-from ..Point import Point
 import sys
 import warnings
-from ..GraphicsScene import GraphicsScene
-import numpy as np
-from .. import functions as fn
-from .. import getConfigOption
 
-__all__ = ['GraphicsView']
+import numpy as np
+
+from .backend.QtCore import pyqtSignal, QPoint, QRectF, Qt
+from .backend.QtGui import QPalette, QPainter
+from .backend.QtWidgets import (
+    QFrame, QGraphicsGridLayout, QGraphicsView, QGraphicsWidget, QWidget
+)
+from .pyqtgraph_be.Point import Point
+from .pyqtgraph_be import functions as fn
+from .pyqtgraph_be import getConfigOption
+
+from .graphics_scene import GraphicsScene
 
 
 class GraphicsView(QGraphicsView):
@@ -66,8 +65,8 @@ class GraphicsView(QGraphicsView):
         # called from here because we have no good way to react when the
         # QApplication is created by the user.
         # See pyqtgraph.__init__.py
-        from .. import _connectCleanup
-        _connectCleanup()
+        # from .. import _connectCleanup
+        # _connectCleanup()
         
         self.setViewport(QWidget())
         

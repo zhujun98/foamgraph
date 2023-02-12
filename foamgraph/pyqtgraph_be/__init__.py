@@ -106,14 +106,6 @@ path = os.path.split(__file__)[0]
 if __version__ is None and not hasattr(sys, 'frozen') and sys.version_info[0] == 2: ## If we are frozen, there's a good chance we don't have the original .py files anymore.
     renamePyc(path)
 
-from .graphicsItems.GraphicsWidgets import *
-from .graphicsItems.UIGraphicsItem import *
-from .graphicsItems.GraphicsObject import *
-from .graphicsItems.GraphicsItem import *
-from .graphicsItems.ViewBox import *
-
-from .widgets.GraphicsView import *
-
 from .WidgetGroup import *
 from .Point import Point
 from .SRTTransform import SRTTransform
@@ -140,9 +132,7 @@ def cleanup():
     
     if not getConfigOption('exitCleanup'):
         return
-    
-    ViewBox.quit()  # tell ViewBox that it doesn't need to deregister views anymore.
-    
+
     ## Workaround for Qt exit crash:
     ## ALL QGraphicsItems must have a scene before they are deleted.
     ## This is potentially very expensive, but preferred over crashing.

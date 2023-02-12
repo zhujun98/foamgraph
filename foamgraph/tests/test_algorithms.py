@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 
-from foamgraph.algorithms import (
+from foamgraph.algorithm import (
     extract_rect_roi, quick_min_max, intersection
 )
 

@@ -16,14 +16,15 @@ from .backend.QtWidgets import (
     QLabel, QMenu, QSizePolicy, QSlider, QWidget, QWidgetAction
 )
 
-from . import pyqtgraph_be as pg
 from .axis_item import AxisItem
+from .graphics_item import GraphicsWidget
 from .label_item import LabelItem
 from .legend_item import LegendItem
-from .plot_items import PlotItem
+from .plot_item import PlotItem
+from .view_box import ViewBox
 
 
-class PlotArea(pg.GraphicsWidget):
+class PlotArea(GraphicsWidget):
     """GraphicsWidget implementing a standard 2D plotting area with axes.
 
     It has the following functionalities:
@@ -58,7 +59,7 @@ class PlotArea(pg.GraphicsWidget):
         self._plot_items = OrderedDict()  # PlotItem: None
         self._plot_items_y2 = OrderedDict()  # PlotItem: None
 
-        self._vb = pg.ViewBox(parent=self)
+        self._vb = ViewBox(parent=self)
         self._vb_y2 = None
 
         self._legend = None
@@ -271,7 +272,7 @@ class PlotArea(pg.GraphicsWidget):
         if y2:
             vb = self._vb_y2
             if vb is None:
-                vb = pg.ViewBox()
+                vb = ViewBox()
                 self.scene().addItem(vb)
                 right_axis = self.getAxis('right')
                 right_axis.linkToView(vb)

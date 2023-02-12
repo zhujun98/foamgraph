@@ -12,6 +12,7 @@ from typing import Union
 
 import numpy as np
 
+from .backend import QT_LIB
 from .backend.QtGui import (
     QAction, QGraphicsItem, QImage, QMenu, QPainter, QPainterPath, QPen,
     QPicture, QTransform
@@ -19,14 +20,90 @@ from .backend.QtGui import (
 from .backend.QtCore import (
     pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, Qt, QTimer
 )
-from . import pyqtgraph_be as pg
-from .pyqtgraph_be.GraphicsScene import HoverEvent, MouseDragEvent
 from .pyqtgraph_be import Point
 
 from .aesthetics import FColor
+from .graphics_item import GraphicsObject
+from .graphics_scene import HoverEvent, MouseDragEvent
 
 
-class RoiHandle(pg.UIGraphicsItem):
+class UIGraphicsItem(GraphicsObject):
+    """Base class for graphics items with boundaries relative to a GraphicsView or ViewBox.
+
+    The purpose of this class is to allow the creation of GraphicsItems which live inside
+    a scalable view, but whose boundaries will always stay fixed relative to the view's boundaries.
+    For example: GridItem, InfiniteLine
+
+    The view can be specified on initialization or it can be automatically detected when the item is painted.
+
+    NOTE: Only the item's boundingRect is affected; the item is not transformed in any way. Use viewRangeChanged
+    to respond to changes in the view.
+    """
+
+    # TODO: make parent the first argument
+    def __init__(self, bounds=None, parent=None):
+        """
+        ============== =============================================================================
+        **Arguments:**
+        bounds         QRectF with coordinates relative to view box. The default is QRectF(0,0,1,1),
+                       which means the item will have the same bounds as the view.
+        ============== =============================================================================
+        """
+        super().__init__(parent=parent)
+        self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges)
+
+        if bounds is None:
+            self._bounds = QRectF(0, 0, 1, 1)
+        else:
+            self._bounds = bounds
+
+        self._boundingRect = None
+        self._updateView()
+
+    def itemChange(self, change, value):
+        ret = super().itemChange(change, value)
+
+        # workaround for pyqt bug:
+        # http://www.riverbankcomputing.com/pipermail/pyqt/2012-August/031818.html
+        if QT_LIB == 'PyQt5' and change == self.ItemParentChange and isinstance(ret, QGraphicsItem):
+            import sip
+            ret = sip.cast(ret, QGraphicsItem)
+
+        if change == self.GraphicsItemChange.ItemScenePositionHasChanged:
+            self.setNewBounds()
+        return ret
+
+    def boundingRect(self):
+        """Override."""
+        if self._boundingRect is None:
+            br = self.viewRect()
+            if br is None:
+                return QRectF()
+            self._boundingRect = br
+        return QRectF(self._boundingRect)
+
+    def dataBounds(self, axis, frac=1.0, orthoRange=None):
+        """Called by ViewBox for determining the auto-range bounds.
+        By default, UIGraphicsItems are excluded from autoRange."""
+        return None
+
+    def viewRangeChanged(self):
+        """Called when the view widget/viewbox is resized/rescaled"""
+        self.setNewBounds()
+        self.update()
+
+    def setNewBounds(self):
+        """Update the item's bounding rect to match the viewport"""
+        self._boundingRect = None  # invalidate bounding rect, regenerate later if needed.
+        self.prepareGeometryChange()
+
+    def setPos(self, pos: Point):
+        """Override."""
+        super().setPos(pos)
+        self.setNewBounds()
+
+
+class RoiHandle(UIGraphicsItem):
     """A single interactive point attached to an ROI."""
 
     def __init__(self, pos: Union[tuple, QPointF, Point], *, parent=None):
@@ -116,7 +193,7 @@ class RoiHandle(pg.UIGraphicsItem):
         self.setPos(self._pos * self.parentItem().size())
 
 
-class ROI(pg.GraphicsObject):
+class ROI(GraphicsObject):
     """Generic region-of-interest graphics object."""
 
     class DragMode(Enum):

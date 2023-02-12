@@ -1,12 +1,14 @@
 from enum import Enum
 import weakref
 
-from ...backend import QtCore
-from ...backend.QtCore import Qt
-from ...backend.QtGui import QAction
-from ...backend.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent, QMenu
-from .. import ptime
-from ..Point import Point
+from .backend import QtCore
+from .backend.QtCore import Qt
+from .backend.QtWidgets import (
+    QGraphicsScene, QGraphicsSceneMouseEvent, QMenu
+)
+
+from .pyqtgraph_be import ptime
+from .pyqtgraph_be.Point import Point
 
 
 if hasattr(QtCore, 'PYQT_VERSION'):

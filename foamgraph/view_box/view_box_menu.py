@@ -1,8 +1,8 @@
 import weakref
 
-from ....backend.QtWidgets import QMenu, QWidget, QWidgetAction
-from ....backend.QtGui import QAction, QActionGroup, QDoubleValidator
-from ...WidgetGroup import WidgetGroup
+from foamgraph.backend.QtWidgets import QMenu, QWidget, QWidgetAction
+from foamgraph.backend.QtGui import QAction, QActionGroup, QDoubleValidator
+from foamgraph.pyqtgraph_be.WidgetGroup import WidgetGroup
 
 from .axisCtrlTemplate import Ui_Form as AxisCtrlTemplate
 
@@ -260,4 +260,4 @@ class ViewBoxMenu(QMenu):
         return vals
 
 
-from .ViewBox import ViewBox
+from .view_box import ViewBox

@@ -13,7 +13,7 @@ from .pyqtgraph_be import setConfigOptions
 from .config import config
 from .scenes import AbstractScene
 from .aesthetics import FColor, createIconButton
-from .image_views import ImageViewF, TimedImageViewF
+from .image_view import ImageViewF, TimedImageViewF
 from .logger import GuiLoggingHandler
 from .plot_widgets import PlotWidgetF, TimedPlotWidgetF, HistWidgetF
 from .ctrl_widgets import (

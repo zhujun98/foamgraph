@@ -1,19 +1,21 @@
 import numpy as np
-from foamgraph.pyqtgraph_be.Point import Point
 import sys
 import weakref
 
-from foamgraph.backend.QtCore import QPointF, QRectF, Qt
-from foamgraph.backend.QtGui import (
+from .backend.QtCore import QPointF, QRectF, Qt
+from .backend.QtGui import (
     QGraphicsTextItem, QGraphicsSceneResizeEvent, QPen, QPicture, QPainter
 )
 
+from .pyqtgraph_be.Point import Point
+
 from . import pyqtgraph_be as pg
-from .pyqtgraph_be.GraphicsScene import MouseClickEvent, MouseDragEvent
-from foamgraph.aesthetics import FColor
+from .aesthetics import FColor
+from .graphics_item import GraphicsWidget
+from .graphics_scene import MouseClickEvent, MouseDragEvent
 
 
-class AxisItem(pg.GraphicsWidget):
+class AxisItem(GraphicsWidget):
     """A single plot axis with ticks, values, and label."""
 
     def __init__(self, edge: Qt.Edge,

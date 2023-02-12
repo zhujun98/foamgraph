@@ -13,17 +13,16 @@ import numpy as np
 from .backend.QtCore import pyqtSlot, Qt, QTimer
 from .backend.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
-from . import pyqtgraph_be as pg
-
 from .aesthetics import ColorMap
 from .config import config
+from .graphics_view import GraphicsView
 from .image_colorbar_widget import ImageColorbarWidget
-from .plot_widgets import PlotWidgetF
 from .image_items import ImageItem
+from .plot_widgets import PlotWidgetF
 from .roi import RectROI
 
 
-class HistogramLUTWidget(pg.GraphicsView):
+class HistogramLUTWidget(GraphicsView):
     def __init__(self, image_item, parent=None):
         super().__init__(parent)
 

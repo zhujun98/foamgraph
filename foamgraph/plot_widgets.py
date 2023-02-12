@@ -15,18 +15,17 @@ from .backend.QtCore import pyqtSlot, QTimer
 from .backend.QtGui import QCloseEvent
 from .backend.QtWidgets import QSizePolicy
 
-from . import pyqtgraph_be as pg
-
 from .annotation_item import AnnotationItem
+from .graphics_view import GraphicsView
+from .line_item import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
 from .plot_area import PlotArea
-from .line_items import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
-from .plot_items import (
+from .plot_item import (
     BarGraphItem, CurvePlotItem, ScatterPlotItem, ErrorbarItem
 )
 from .signal_proxy import SignalProxy
 
 
-class PlotWidgetF(pg.GraphicsView):
+class PlotWidgetF(GraphicsView):
     """PlotWidget base class.
 
     GraphicsView widget displaying PlotItems.

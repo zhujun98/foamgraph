@@ -1,14 +1,18 @@
 import itertools
-
-from ..Qt import QtGui, QtCore, isQObjectAlive
-from ..GraphicsScene import GraphicsScene
-from ..Point import Point
-from .. import functions as fn
-import weakref
 import operator
+import weakref
 
+from .backend import QT_LIB
+from .backend.QtCore import QLineF, QPoint, QPointF
+from .backend.QtWidgets import (
+    QGraphicsItem, QGraphicsObject, QGraphicsWidget
+)
 
-__all__ = ["GraphicsItem"]
+from .pyqtgraph_be import isQObjectAlive
+from .pyqtgraph_be import functions as fn
+from .pyqtgraph_be.Point import Point
+
+from .graphics_scene import GraphicsScene
 
 
 class LRUCache:
@@ -121,7 +125,7 @@ class GraphicsItem:
     def __init__(self):
         if not hasattr(self, '_qtBaseClass'):
             for b in self.__class__.__bases__:
-                if issubclass(b, QtGui.QGraphicsItem):
+                if issubclass(b, QGraphicsItem):
                     self.__class__._qtBaseClass = b
                     break
         if not hasattr(self, '_qtBaseClass'):
@@ -261,7 +265,7 @@ class GraphicsItem:
         dt.setMatrix(dt.m11(), dt.m12(), 0, dt.m21(), dt.m22(), 0, 0, 0, 1)
         
         if direction is None:
-            direction = QtCore.QPointF(1, 0)
+            direction = QPointF(1, 0)
         elif direction.manhattanLength() == 0:
             raise Exception("Cannot compute pixel length for 0-length vector.")
 
@@ -280,7 +284,7 @@ class GraphicsItem:
         directionr = direction
         
         # map direction vector onto device
-        dirLine = QtCore.QLineF(QtCore.QPointF(0,0), directionr)
+        dirLine = QLineF(QPointF(0,0), directionr)
         viewDir = dt.map(dirLine)
         if viewDir.length() == 0:
             return None, None   #  pixel size cannot be represented on this scale
@@ -330,8 +334,8 @@ class GraphicsItem:
         vt = self.deviceTransform()
         if vt is None:
             return None
-        if isinstance(obj, QtCore.QPoint):
-            obj = QtCore.QPointF(obj)
+        if isinstance(obj, QPoint):
+            obj = QPointF(obj)
         vt = fn.invertQTransform(vt)
         return vt.map(obj)
 
@@ -428,8 +432,8 @@ class GraphicsItem:
         tr = self.itemTransform(relativeItem)
         if isinstance(tr, tuple):  # difference between pyside and pyqt
             tr = tr[0]
-        vec = tr.map(QtCore.QLineF(0,0,1,0))
-        return vec.angleTo(QtCore.QLineF(vec.p1(), vec.p1()+QtCore.QPointF(1,0)))
+        vec = tr.map(QLineF(0,0,1,0))
+        return vec.angleTo(QLineF(vec.p1(), vec.p1() + QPointF(1,0)))
 
     def parentChanged(self):
         """Called when the item's parent has changed.
@@ -544,3 +548,48 @@ class GraphicsItem:
 
     def getContextMenus(self, event):
         return [self.getMenu()] if hasattr(self, "getMenu") else []
+
+
+class GraphicsObject(GraphicsItem, QGraphicsObject):
+    """Extension of QGraphicsObject with some useful methods.
+
+    """
+    _qtBaseClass = QGraphicsObject
+
+    def __init__(self, *args, **kwargs):
+        self.__inform_view_on_changes = True
+        QGraphicsObject.__init__(self, *args, **kwargs)
+        self.setFlag(self.GraphicsItemFlag.ItemSendsGeometryChanges)
+        GraphicsItem.__init__(self)
+
+    def itemChange(self, change, value):
+        ret = QGraphicsObject.itemChange(self, change, value)
+        if change in [self.GraphicsItemChange.ItemParentHasChanged,
+                      self.GraphicsItemChange.ItemSceneHasChanged]:
+            self.parentChanged()
+        try:
+            inform_view_on_change = self.__inform_view_on_changes
+        except AttributeError:
+            # It's possible that the attribute was already collected when the itemChange happened
+            # (if it was triggered during the gc of the object).
+            pass
+        else:
+            if inform_view_on_change and change in [self.GraphicsItemChange.ItemPositionHasChanged,
+                                                    self.GraphicsItemChange.ItemTransformHasChanged]:
+                self.informViewBoundsChanged()
+
+        # workaround for pyqt bug:
+        # http://www.riverbankcomputing.com/pipermail/pyqt/2012-August/031818.html
+        if QT_LIB == 'PyQt5' and change == self.ItemParentChange and isinstance(ret, QGraphicsItem):
+            import sip
+            ret = sip.cast(ret, QGraphicsItem)
+
+        return ret
+
+
+class GraphicsWidget(GraphicsItem, QGraphicsWidget):
+    _qtBaseClass = QGraphicsWidget
+
+    def __init__(self, parent: QGraphicsItem = None, **kwargs):
+        QGraphicsWidget.__init__(self, parent=parent, **kwargs)
+        GraphicsItem.__init__(self)
