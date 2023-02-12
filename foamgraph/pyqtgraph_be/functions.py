@@ -9,7 +9,6 @@ import decimal, re
 import ctypes
 from .Qt import QtGui, QT_LIB
 from . import getConfigOption, setConfigOptions
-from .metaarray import MetaArray
 
 
 SI_PREFIXES = 'yzafpnµm kMGTPEZY'
