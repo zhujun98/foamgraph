@@ -11,10 +11,11 @@ from ...backend.QtCore import pyqtSignal, QRectF, Qt
 from ...backend.QtGui import QSizePolicy, QTransform
 
 from ...pyqtgraph_be import getConfigOption
-from ...pyqtgraph_be.Point import Point
 from ...pyqtgraph_be import functions as fn
-from ...graphics_scene import MouseClickEvent, MouseDragEvent
+from ...pyqtgraph_be.Point import Point
 
+from ...aesthetics import FColor
+from ...graphics_scene import MouseClickEvent, MouseDragEvent
 from ..graphics_item import GraphicsObject, GraphicsWidget
 
 
@@ -197,15 +198,17 @@ class ViewBox(GraphicsWidget):
 
         # Make scale box that is shown when dragging on the view
         self.rbScaleBox = QGraphicsRectItem(0, 0, 1, 1)
-        self.rbScaleBox.setPen(fn.mkPen((255,255,100), width=1))
-        self.rbScaleBox.setBrush(fn.mkBrush(255,255,0,100))
+        # self.rbScaleBox.setPen(FColor.mkPen((255, 255, 100), width=1))
+        # self.rbScaleBox.setBrush(FColor.mkBrush(255, 255, 0, 100))
+        self.rbScaleBox.setPen(FColor.mkPen())
+        self.rbScaleBox.setBrush(FColor.mkBrush())
         self.rbScaleBox.setZValue(1e9)
         self.rbScaleBox.hide()
         self.addItem(self.rbScaleBox, ignoreBounds=True)
 
         # show target rect for debugging
         self.target = QGraphicsRectItem(0, 0, 1, 1)
-        self.target.setPen(fn.mkPen('r'))
+        self.target.setPen(FColor.mkPen('r'))
         self.target.setParentItem(self)
         self.target.hide()
 

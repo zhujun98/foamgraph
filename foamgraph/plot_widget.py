@@ -34,12 +34,11 @@ class PlotWidgetF(GraphicsView):
     """
 
     def __init__(self, parent=None, *,
-                 background='default',
                  enable_meter=True,
                  enable_grid=True,
                  enable_transform=True):
         """Initialization."""
-        super().__init__(parent, background=background)
+        super().__init__(parent)
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding,
                            QSizePolicy.Policy.Expanding)

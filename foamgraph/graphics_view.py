@@ -14,9 +14,8 @@ from .backend.QtWidgets import (
     QFrame, QGraphicsGridLayout, QGraphicsView, QGraphicsWidget, QWidget
 )
 from .pyqtgraph_be.Point import Point
-from .pyqtgraph_be import functions as fn
-from .pyqtgraph_be import getConfigOption
 
+from .aesthetics import FColor
 from .graphics_scene import GraphicsScene
 
 
@@ -43,17 +42,11 @@ class GraphicsView(QGraphicsView):
     sigScaleChanged = pyqtSignal(object)
     lastFileDir = None
     
-    def __init__(self, parent=None, background='default'):
+    def __init__(self, parent=None):
         """
         ==============  ============================================================
         **Arguments:**
         parent          Optional parent widget
-        background      Set the background color of the GraphicsView. Accepts any
-                        single argument accepted by 
-                        :func:`mkColor <pyqtgraph.mkColor>`. By 
-                        default, the background color is determined using the
-                        'backgroundColor' configuration option (see 
-                        :func:`setConfigOptions <pyqtgraph.setConfigOptions>`).
         ==============  ============================================================
         """
         
@@ -76,7 +69,7 @@ class GraphicsView(QGraphicsView):
         # self.setOptimizationFlag(self.DontSavePainterState, True)
         
         self.setBackgroundRole(QPalette.ColorRole.NoRole)
-        self.setBackground(background)
+        self.setBackgroundBrush(FColor.mkBrush('background'))
         
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setFrameShape(QFrame.Shape.NoFrame)
@@ -117,19 +110,7 @@ class GraphicsView(QGraphicsView):
             self.setRenderHints(self.renderHints() | QPainter.Antialiasing)
         else:
             self.setRenderHints(self.renderHints() & ~QPainter.Antialiasing)
-        
-    def setBackground(self, background):
-        """
-        Set the background color of the GraphicsView.
-        To use the defaults specified py pyqtgraph.setConfigOption, use background='default'.
-        To make the background transparent, use background=None.
-        """
-        self._background = background
-        if background == 'default':
-            background = getConfigOption('background')
-        brush = fn.mkBrush(background)
-        self.setBackgroundBrush(brush)
-    
+
     def paintEvent(self, ev):
         self.scene().prepareForPaint()
         return QGraphicsView.paintEvent(self, ev)

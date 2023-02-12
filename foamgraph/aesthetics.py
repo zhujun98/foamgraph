@@ -5,6 +5,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from typing import Optional
+
 from .backend.QtCore import Qt, QSize
 from .backend.QtGui import QBrush, QColor, QIcon, QPen
 from .backend.QtWidgets import QPushButton
@@ -69,7 +71,8 @@ class QualitativeColor:
         return QColor(*getattr(cls, c), alpha)
 
     @classmethod
-    def mkPen(cls, c, *, alpha=255, width=1, style=Qt.PenStyle.SolidLine):
+    def mkPen(cls, c: Optional[str] = None, *,
+              alpha=255, width=1, style=Qt.PenStyle.SolidLine):
         if c is None:
             return QPen(QColor(0, 0, 0, 0), width, Qt.PenStyle.NoPen)
         pen = QPen(QColor(*getattr(cls, c), alpha), width, style)
@@ -77,7 +80,7 @@ class QualitativeColor:
         return pen
 
     @classmethod
-    def mkBrush(cls, c, *, alpha=255):
+    def mkBrush(cls, c: Optional[str] = None, *, alpha=255):
         if c is None:
             return QBrush(QColor(0, 0, 0, 0), Qt.BrushStyle.NoBrush)
         return QBrush(QColor(*getattr(cls, c), alpha))

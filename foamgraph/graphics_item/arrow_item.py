@@ -3,6 +3,8 @@ from ..backend.QtWidgets import QGraphicsPathItem
 
 from ..pyqtgraph_be import functions as fn
 
+from ..aesthetics import FColor
+
 
 class ArrowItem(QGraphicsPathItem):
     """
@@ -77,8 +79,8 @@ class ArrowItem(QGraphicsPathItem):
 
         self.setPath(self.path)
         
-        self.setPen(fn.mkPen(self.opts['pen']))
-        self.setBrush(fn.mkBrush(self.opts['brush']))
+        self.setPen(FColor.mkPen())
+        self.setBrush(FColor.mkBrush())
         
         if self.opts['pxMode']:
             self.setFlags(self.flags() | self.ItemIgnoresTransformations)

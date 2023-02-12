@@ -371,10 +371,10 @@ class GeometryItem(GraphicsObject):
 
         if pen is None and brush is None:
             self._pen = FColor.mkPen('b')
-            self._brush = FColor.mkBrush(None)
+            self._brush = FColor.mkBrush()
         else:
-            self._pen = FColor.mkPen(None) if pen is None else pen
-            self._brush = FColor.mkBrush(None) if brush is None else brush
+            self._pen = FColor.mkPen() if pen is None else pen
+            self._brush = FColor.mkBrush() if brush is None else brush
 
         self._picture = None
 

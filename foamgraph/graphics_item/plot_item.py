@@ -217,11 +217,11 @@ class BarGraphItem(PlotItem):
         self._width = width
 
         if pen is None and brush is None:
-            self._pen = FColor.mkPen(None)
+            self._pen = FColor.mkPen()
             self._brush = FColor.mkBrush('b')
         else:
-            self._pen = FColor.mkPen(None) if pen is None else pen
-            self._brush = FColor.mkBrush(None) if brush is None else brush
+            self._pen = FColor.mkPen() if pen is None else pen
+            self._brush = FColor.mkBrush() if brush is None else brush
 
         self.setData(x, y)
 
@@ -454,11 +454,11 @@ class ScatterPlotItem(PlotItem):
         self._bounds = [None, None]
 
         if pen is None and brush is None:
-            self._pen = FColor.mkPen(None)
+            self._pen = FColor.mkPen()
             self._brush = FColor.mkBrush('b')
         else:
-            self._pen = FColor.mkPen(None) if pen is None else pen
-            self._brush = FColor.mkBrush(None) if brush is None else brush
+            self._pen = FColor.mkPen() if pen is None else pen
+            self._brush = FColor.mkBrush() if brush is None else brush
 
         self._size = size
 

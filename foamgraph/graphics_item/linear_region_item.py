@@ -64,7 +64,7 @@ class LinearRegionItem(GraphicsObject):
 
         self.setLinePen(FColor.mkPen("Gray"))
 
-        self._pen = FColor.mkPen(None)
+        self._pen = FColor.mkPen()
         self._brush = None
         self.setBrush(FColor.mkBrush("b", alpha=80))
         self._hover_brush = None
