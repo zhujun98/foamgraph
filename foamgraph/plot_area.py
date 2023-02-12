@@ -102,7 +102,7 @@ class PlotArea(GraphicsWidget):
 
         layout.addItem(self._meter, self._METER_ROW, 1)
         layout.addItem(self._title, self._TITLE_ROW, 1,
-                       alignment=Qt.AlignCenter)
+                       alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addItem(self._vb, 3, 1)
 
         for i in range(5):
