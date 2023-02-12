@@ -6,7 +6,8 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 from ..backend.QtWidgets import (
-    QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout, QGraphicsTextItem
+    QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout,
+    QGraphicsTextItem
 )
 
 from ..aesthetics import FColor

@@ -2,7 +2,7 @@ import itertools
 import operator
 import weakref
 
-from ..backend import QT_LIB
+from ..backend import QT_LIB, sip
 from ..backend.QtCore import QLineF, QPoint, QPointF
 from ..backend.QtWidgets import (
     QGraphicsItem, QGraphicsObject, QGraphicsWidget
@@ -581,7 +581,6 @@ class GraphicsObject(GraphicsItem, QGraphicsObject):
         # workaround for pyqt bug:
         # http://www.riverbankcomputing.com/pipermail/pyqt/2012-August/031818.html
         if QT_LIB == 'PyQt5' and change == self.ItemParentChange and isinstance(ret, QGraphicsItem):
-            import sip
             ret = sip.cast(ret, QGraphicsItem)
 
         return ret

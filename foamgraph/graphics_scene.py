@@ -1,27 +1,15 @@
 from enum import Enum
 import weakref
 
-from .backend import QtCore
-from .backend.QtCore import Qt
+from .backend import sip
+from .backend.QtCore import pyqtSignal, QRect, Qt
+from .backend.QtGui import QAction
 from .backend.QtWidgets import (
     QGraphicsScene, QGraphicsSceneMouseEvent, QMenu
 )
 
 from .pyqtgraph_be import ptime
 from .pyqtgraph_be.Point import Point
-
-
-if hasattr(QtCore, 'PYQT_VERSION'):
-    try:
-        import sip
-        HAVE_SIP = True
-    except ImportError:
-        HAVE_SIP = False
-else:
-    HAVE_SIP = False
-
-
-__all__ = ['GraphicsScene', "MouseDragEvent", "MouseClickEvent", "HoverEvent"]
 
 
 class MouseEventState(Enum):
@@ -460,18 +448,18 @@ class GraphicsScene(QGraphicsScene):
     """
     # Emitted a list of objects under the cursor when the mouse is
     # moved over the scene.
-    mouse_hover_sgn = QtCore.Signal(object)
+    mouse_hover_sgn = pyqtSignal(object)
     # Emitted when the mouse cursor moves over the scene. The position
     # is given in the scene coordinate system.
-    mouse_moved_sgn = QtCore.Signal(object)
+    mouse_moved_sgn = pyqtSignal(object)
     # Emitted when the mouse is clicked over the scene. Use ev.pos() to
     # get the click position relative to the item that was clicked on,
     # or ev.scenePos() to get the click position in scene coordinates.
     # See :class:`pyqtgraph.GraphicsScene.MouseClickEvent`.
-    mouse_clicked_sgn = QtCore.Signal(object)
+    mouse_clicked_sgn = pyqtSignal(object)
 
     # emitted immediately before the scene is about to be rendered
-    prepare_for_paint_sgn = QtCore.Signal()
+    prepare_for_paint_sgn = pyqtSignal()
 
     def __init__(self, clickRadius=2, moveDistance=5, parent=None):
         super().__init__(parent)
@@ -536,7 +524,7 @@ class GraphicsScene(QGraphicsScene):
             items = self.items(ev.scenePos())
             for i in items:
                 if i.isEnabled() and i.isVisible() and (i.flags() & i.GraphicsItemFlag.ItemIsFocusable):
-                    i.setFocus(QtCore.Qt.FocusReason.MouseFocusReason)
+                    i.setFocus(Qt.FocusReason.MouseFocusReason)
                     break
         
     def mouseMoveEvent(self, ev: QGraphicsSceneMouseEvent):
@@ -556,9 +544,9 @@ class GraphicsScene(QGraphicsScene):
                 now = ptime.time()
                 init = False
                 # keep track of which buttons are involved in dragging
-                for btn in [QtCore.Qt.MouseButton.LeftButton,
-                            QtCore.Qt.MouseButton.MiddleButton,
-                            QtCore.Qt.MouseButton.RightButton]:
+                for btn in [Qt.MouseButton.LeftButton,
+                            Qt.MouseButton.MiddleButton,
+                            Qt.MouseButton.RightButton]:
                     if not (ev.buttons() & btn):
                         continue
                     if btn not in self.dragButtons:  # see if we've dragged far enough yet
@@ -689,7 +677,7 @@ class GraphicsScene(QGraphicsScene):
                         if event.isAccepted():
                             self.dragItem = item
                             if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:
-                                item.setFocus(QtCore.Qt.FocusReason.MouseFocusReason)
+                                item.setFocus(Qt.FocusReason.MouseFocusReason)
                             break
         elif self.dragItem is not None:
             event.currentItem = self.dragItem
@@ -724,7 +712,7 @@ class GraphicsScene(QGraphicsScene):
 
                         if ev.isAccepted():
                             if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:
-                                item.setFocus(QtCore.Qt.FocusReason.MouseFocusReason)
+                                item.setFocus(Qt.FocusReason.MouseFocusReason)
                             break
         self.mouse_clicked_sgn.emit(ev)
         return ev.isAccepted()
@@ -753,7 +741,7 @@ class GraphicsScene(QGraphicsScene):
         view = self.views()[0]
         tr = view.viewportTransform()
         r = self._clickRadius
-        rect = view.mapToScene(QtCore.QRect(0, 0, 2*r, 2*r)).boundingRect()
+        rect = view.mapToScene(QRect(0, 0, 2*r, 2*r)).boundingRect()
         
         if hasattr(event, 'buttonDownScenePos'):
             point = event.buttonDownScenePos()
@@ -854,7 +842,7 @@ class GraphicsScene(QGraphicsScene):
         # versions of PyQt (< 4.9?), where methods returning 'QGraphicsItem *'
         # lose the type of the QGraphicsObject subclasses and instead return
         # generic QGraphicsItem wrappers.
-        if HAVE_SIP and isinstance(item, sip.wrapper):
+        if isinstance(item, sip.wrapper):
             obj = item.toGraphicsObject()
             if obj is not None:
                 item = obj
