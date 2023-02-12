@@ -10,16 +10,16 @@ from collections.abc import Callable
 
 import numpy as np
 
-from .backend.QtGui import QPainter, QPicture, QTransform
-from .backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
+from ..backend.QtGui import QPainter, QPicture, QTransform
+from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 
-from .pyqtgraph_be import Point
-from .pyqtgraph_be import functions as fn
+from ..pyqtgraph_be import Point
+from ..pyqtgraph_be import functions as fn
 
-from .aesthetics import FColor
-from .algorithm import quick_min_max
+from ..aesthetics import FColor
+from ..algorithm import quick_min_max
+from ..graphics_scene import HoverEvent
 from .graphics_item import GraphicsObject
-from .graphics_scene import HoverEvent
 
 
 class ImageItem(GraphicsObject):

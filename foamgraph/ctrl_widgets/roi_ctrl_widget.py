@@ -15,7 +15,7 @@ from ..backend.QtWidgets import (
 from .base_ctrl_widgets import AbstractCtrlWidget, AbstractGroupBoxCtrlWidget
 from .smart_widgets import SmartLineEdit
 from ..aesthetics import FColor
-from ..roi import RectROI
+from foamgraph.graphics_item.roi import RectROI
 
 
 class RoiCtrlWidget(AbstractCtrlWidget):

@@ -7,22 +7,22 @@ Author: Jun Zhu
 """
 import numpy as np
 
-from .backend.QtGui import QPainter
-from .backend.QtCore import pyqtSignal, Qt
-from .backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
+from foamgraph.backend.QtGui import QPainter
+from foamgraph.backend.QtCore import pyqtSignal, Qt
+from foamgraph.backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
 
-from .pyqtgraph_be import Point
+from foamgraph.pyqtgraph_be import Point
 
-from .aesthetics import ColorMap, FColor
+from ..aesthetics import ColorMap, FColor
 from .axis_item import AxisItem
-from .gradient_editor_widget import GradientEditorWidget
+from .gradient_editor_item import GradientEditorItem
 from .graphics_item import GraphicsWidget
 from .linear_region_item import LinearRegionItem
 from .plot_item import CurvePlotItem
 from .view_box import ViewBox
 
 
-class ImageColorbarWidget(GraphicsWidget):
+class ImageColorbarItem(GraphicsWidget):
     """GraphicsWidget for adjusting the display of an image."""
 
     lut_changed_sgn = pyqtSignal(object)
@@ -31,7 +31,7 @@ class ImageColorbarWidget(GraphicsWidget):
         super().__init__(parent=parent)
         self._lut = None
 
-        self._gradient = GradientEditorWidget()
+        self._gradient = GradientEditorItem()
         self._gradient.show()
 
         self._lri = LinearRegionItem(

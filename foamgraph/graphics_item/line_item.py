@@ -7,14 +7,14 @@ Author: Jun Zhu
 """
 from typing import Union
 
-from .backend.QtGui import QPainterPath, QPen, QPolygonF, QTransform
-from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
+from ..backend.QtGui import QPainterPath, QPen, QPolygonF, QTransform
+from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 
-from .pyqtgraph_be import Point
+from ..pyqtgraph_be import Point
 
-from .aesthetics import FColor
+from ..aesthetics import FColor
+from ..graphics_scene import HoverEvent, MouseDragEvent
 from .graphics_item import GraphicsObject
-from .graphics_scene import HoverEvent, MouseDragEvent
 
 
 class InfiniteLineItem(GraphicsObject):

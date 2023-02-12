@@ -1,7 +1,7 @@
-from .backend.QtGui import QPainter, QTransform
-from .backend.QtWidgets import QGraphicsPathItem
+from ..backend.QtGui import QPainter, QTransform
+from ..backend.QtWidgets import QGraphicsPathItem
 
-from .pyqtgraph_be import functions as fn
+from ..pyqtgraph_be import functions as fn
 
 
 class ArrowItem(QGraphicsPathItem):

@@ -2,17 +2,17 @@ import itertools
 import operator
 import weakref
 
-from .backend import QT_LIB
-from .backend.QtCore import QLineF, QPoint, QPointF
-from .backend.QtWidgets import (
+from ..backend import QT_LIB
+from ..backend.QtCore import QLineF, QPoint, QPointF
+from ..backend.QtWidgets import (
     QGraphicsItem, QGraphicsObject, QGraphicsWidget
 )
 
-from .pyqtgraph_be import isQObjectAlive
-from .pyqtgraph_be import functions as fn
-from .pyqtgraph_be.Point import Point
+from ..pyqtgraph_be import isQObjectAlive
+from ..pyqtgraph_be import functions as fn
+from ..pyqtgraph_be.Point import Point
 
-from .graphics_scene import GraphicsScene
+from ..graphics_scene import GraphicsScene
 
 
 class LRUCache:

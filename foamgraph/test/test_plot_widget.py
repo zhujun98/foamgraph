@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 
 from foamgraph import mkQApp, HistWidgetF, PlotWidgetF, TimedPlotWidgetF
-from foamgraph.plot_item import ErrorbarItem
+from foamgraph.graphics_item.plot_item import ErrorbarItem
 
 from . import _display
 

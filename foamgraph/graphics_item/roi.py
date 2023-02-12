@@ -12,19 +12,19 @@ from typing import Union
 
 import numpy as np
 
-from .backend import QT_LIB
-from .backend.QtGui import (
+from ..backend import QT_LIB
+from ..backend.QtGui import (
     QAction, QGraphicsItem, QImage, QMenu, QPainter, QPainterPath, QPen,
     QPicture, QTransform
 )
-from .backend.QtCore import (
+from ..backend.QtCore import (
     pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, Qt, QTimer
 )
-from .pyqtgraph_be import Point
+from ..pyqtgraph_be import Point
 
-from .aesthetics import FColor
+from ..aesthetics import FColor
+from ..graphics_scene import HoverEvent, MouseDragEvent
 from .graphics_item import GraphicsObject
-from .graphics_scene import HoverEvent, MouseDragEvent
 
 
 class UIGraphicsItem(GraphicsObject):

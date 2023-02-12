@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 
-from foamgraph.utilities import (
+from foamgraph.utility import (
     parse_boundary, parse_id, parse_slice, parse_slice_inv
 )
 

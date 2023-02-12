@@ -10,9 +10,9 @@ import warnings
 from itertools import chain
 from typing import Optional
 
-from .backend.QtCore import pyqtSignal, pyqtSlot, QPointF, Qt
-from .backend.QtWidgets import (
-    QCheckBox, QGraphicsGridLayout, QGraphicsItem, QGraphicsTextItem, QHBoxLayout,
+from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, Qt
+from ..backend.QtWidgets import (
+    QCheckBox, QGraphicsGridLayout, QGraphicsItem, QHBoxLayout,
     QLabel, QMenu, QSizePolicy, QSlider, QWidget, QWidgetAction
 )
 

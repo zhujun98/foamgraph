@@ -1,8 +1,9 @@
 import weakref
 
-from foamgraph.backend.QtWidgets import QMenu, QWidget, QWidgetAction
-from foamgraph.backend.QtGui import QAction, QActionGroup, QDoubleValidator
-from foamgraph.pyqtgraph_be.WidgetGroup import WidgetGroup
+from ...backend.QtWidgets import QMenu, QWidget, QWidgetAction
+from ...backend.QtGui import QAction, QActionGroup, QDoubleValidator
+
+from ...pyqtgraph_be.WidgetGroup import WidgetGroup
 
 from .axisCtrlTemplate import Ui_Form as AxisCtrlTemplate
 

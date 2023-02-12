@@ -13,7 +13,7 @@ from ..backend.QtWidgets import (
 )
 
 from .smart_widgets import SmartBoundaryLineEdit, SmartSliceLineEdit
-from ..utilities import parse_slice_inv
+from ..utility import parse_slice_inv
 
 
 class _CtrlWidgetMeta(type(QWidget), abc.ABCMeta):

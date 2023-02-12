@@ -1,6 +1,4 @@
-import pytest
-
-from foamgraph.label_item import LabelItem
+from foamgraph.graphics_item.label_item import LabelItem
 
 
 class TestLabelItem:

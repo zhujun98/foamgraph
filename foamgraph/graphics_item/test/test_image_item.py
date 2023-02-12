@@ -2,9 +2,9 @@ import unittest
 
 from foamgraph import mkQApp
 from foamgraph import PlotWidgetF
-from foamgraph.image_items import ImageItem, RingItem
+from foamgraph.graphics_item.image_item import ImageItem, RingItem
 
-from . import _display
+from foamgraph.test import _display
 
 app = mkQApp()
 

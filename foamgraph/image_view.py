@@ -10,16 +10,14 @@ from typing import final
 
 import numpy as np
 
-from .backend.QtCore import pyqtSlot, Qt, QTimer
+from .backend.QtCore import pyqtSlot, QTimer
 from .backend.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from .aesthetics import ColorMap
 from .config import config
 from .graphics_view import GraphicsView
-from .image_colorbar_widget import ImageColorbarWidget
-from .image_items import ImageItem
-from .plot_widgets import PlotWidgetF
-from .roi import RectROI
+from .graphics_item import ImageColorbarItem, ImageItem, RectROI
+from .plot_widget import PlotWidgetF
 
 
 class HistogramLUTWidget(GraphicsView):
@@ -29,7 +27,7 @@ class HistogramLUTWidget(GraphicsView):
         if not isinstance(image_item, ImageItem):
             raise TypeError
 
-        self._item = ImageColorbarWidget(image_item)
+        self._item = ImageColorbarItem(image_item)
         self.setCentralWidget(self._item)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.setMinimumWidth(95)
@@ -235,7 +233,7 @@ class ImageViewF(QWidget):
     def setLevels(self, *args, **kwargs):
         """Set the min/max (bright and dark) levels.
 
-        See ImageColorbarWidget.setLevels.
+        See ImageColorbarItem.setLevels.
         """
         self._hist_widget.setLevels(*args, **kwargs)
 

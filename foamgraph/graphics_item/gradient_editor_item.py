@@ -7,20 +7,20 @@ Author: Jun Zhu
 """
 import numpy as np
 
-from .backend.QtGui import (
+from ..backend.QtGui import (
     QAction, QBrush, QColor, QGraphicsRectItem, QGraphicsWidget,
     QHBoxLayout, QLabel, QLinearGradient, QMenu, QPainter, QPixmap,
     QGraphicsSceneMouseEvent, QGraphicsSceneResizeEvent, QWidget,
     QWidgetAction
 )
-from .backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
-from .backend.QtWidgets import QGraphicsItem, QSizePolicy
+from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
+from ..backend.QtWidgets import QGraphicsItem, QSizePolicy
 
-from .aesthetics import ColorMap
+from ..aesthetics import ColorMap
 from .graphics_item import GraphicsWidget
 
 
-class GradientEditorWidget(GraphicsWidget):
+class GradientEditorItem(GraphicsWidget):
 
     gradient_changed_sgn = pyqtSignal(object)
 

@@ -2,17 +2,17 @@ import numpy as np
 import sys
 import weakref
 
-from .backend.QtCore import QPointF, QRectF, Qt
-from .backend.QtGui import (
+from ..backend.QtCore import QPointF, QRectF, Qt
+from ..backend.QtGui import (
     QGraphicsTextItem, QGraphicsSceneResizeEvent, QPen, QPicture, QPainter
 )
 
-from .pyqtgraph_be.Point import Point
+from ..pyqtgraph_be.Point import Point
+from .. import pyqtgraph_be as pg
 
-from . import pyqtgraph_be as pg
-from .aesthetics import FColor
+from ..aesthetics import FColor
+from ..graphics_scene import MouseClickEvent, MouseDragEvent
 from .graphics_item import GraphicsWidget
-from .graphics_scene import MouseClickEvent, MouseDragEvent
 
 
 class AxisItem(GraphicsWidget):

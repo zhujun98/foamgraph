@@ -7,14 +7,14 @@ Author: Jun Zhu
 """
 from collections import OrderedDict
 
-from .backend.QtGui import QBrush, QColor, QPainterPath, QPen
-from .backend.QtCore import QPointF, QRectF, Qt
-from .backend.QtWidgets import (
-    QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout, QGraphicsTextItem
+from ..backend.QtGui import QBrush, QColor, QPen
+from ..backend.QtCore import QPointF, Qt
+from ..backend.QtWidgets import (
+    QGraphicsLinearLayout, QGraphicsGridLayout
 )
 
-from .aesthetics import FColor
-from .graphics_scene import HoverEvent, MouseDragEvent
+from ..aesthetics import FColor
+from ..graphics_scene import HoverEvent, MouseDragEvent
 from .graphics_item import GraphicsWidget
 from .label_item import LabelItem
 from .plot_item import PlotItem

@@ -15,13 +15,12 @@ from .backend.QtCore import pyqtSlot, QTimer
 from .backend.QtGui import QCloseEvent
 from .backend.QtWidgets import QSizePolicy
 
-from .annotation_item import AnnotationItem
-from .graphics_view import GraphicsView
-from .line_item import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
-from .plot_area import PlotArea
-from .plot_item import (
-    BarGraphItem, CurvePlotItem, ScatterPlotItem, ErrorbarItem
+from .graphics_item import (
+    AnnotationItem, BarGraphItem, CurvePlotItem, ErrorbarItem,
+    InfiniteHorizontalLineItem, InfiniteVerticalLineItem,
+    PlotArea, ScatterPlotItem
 )
+from .graphics_view import GraphicsView
 from .signal_proxy import SignalProxy
 
 

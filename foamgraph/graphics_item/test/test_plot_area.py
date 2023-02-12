@@ -5,16 +5,16 @@ from foamgraph.backend.QtCore import QPointF
 from foamgraph.backend.QtTest import QSignalSpy
 
 from foamgraph import mkQApp
-from foamgraph.axis_item import AxisItem
+from foamgraph.graphics_item.axis_item import AxisItem
 from foamgraph.graphics_view import GraphicsView
-from foamgraph.image_items import ImageItem
-from foamgraph.label_item import LabelItem
-from foamgraph.legend_item import LegendItem
-from foamgraph.plot_area import PlotArea
-from foamgraph.plot_item import (
+from foamgraph.graphics_item.image_item import ImageItem
+from foamgraph.graphics_item.label_item import LabelItem
+from foamgraph.graphics_item.legend_item import LegendItem
+from foamgraph.graphics_item.plot_area import PlotArea
+from foamgraph.graphics_item.plot_item import (
     CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
 )
-from foamgraph.roi import RectROI
+from foamgraph.graphics_item.roi import RectROI
 
 
 app = mkQApp()

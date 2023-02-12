@@ -4,15 +4,18 @@ from copy import deepcopy
 
 import numpy as np
 
-from foamgraph.pyqtgraph_be.Qt import isQObjectAlive
-from foamgraph.backend.QtWidgets import QGraphicsRectItem
-from foamgraph.backend.QtCore import pyqtSignal, QRectF, Qt
-from foamgraph.backend.QtGui import QSizePolicy, QTransform
-from foamgraph.pyqtgraph_be.Point import Point
-from foamgraph.pyqtgraph_be import functions as fn
-from foamgraph.graphics_scene import MouseClickEvent, MouseDragEvent
-from foamgraph.graphics_item import GraphicsObject, GraphicsWidget
-from foamgraph.pyqtgraph_be import getConfigOption
+from ...pyqtgraph_be.Qt import isQObjectAlive
+
+from ...backend.QtWidgets import QGraphicsRectItem
+from ...backend.QtCore import pyqtSignal, QRectF, Qt
+from ...backend.QtGui import QSizePolicy, QTransform
+
+from ...pyqtgraph_be import getConfigOption
+from ...pyqtgraph_be.Point import Point
+from ...pyqtgraph_be import functions as fn
+from ...graphics_scene import MouseClickEvent, MouseDragEvent
+
+from ..graphics_item import GraphicsObject, GraphicsWidget
 
 
 class WeakList(object):

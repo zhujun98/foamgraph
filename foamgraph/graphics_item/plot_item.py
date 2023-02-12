@@ -11,16 +11,16 @@ from typing import Optional
 
 import numpy as np
 
-from .backend.QtGui import (
+from ..backend.QtGui import (
     QImage, QPainter, QPainterPath, QPicture, QPixmap, QPolygonF, QTransform
 )
-from .backend.QtCore import (
+from ..backend.QtCore import (
     pyqtSignal, QByteArray, QDataStream, QPointF, QRectF, Qt
 )
 
-from .pyqtgraph_be import functions as fn
+from ..pyqtgraph_be import functions as fn
 
-from .aesthetics import FColor
+from ..aesthetics import FColor
 from .graphics_item import GraphicsObject
 
 

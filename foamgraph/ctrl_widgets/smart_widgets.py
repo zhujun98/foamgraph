@@ -10,7 +10,7 @@ from ..backend.QtGui import QRegularExpressionValidator, QValidator
 from ..backend.QtWidgets import QLineEdit
 
 from foamgraph.aesthetics import FColor
-from foamgraph.utilities import parse_boundary, parse_id, parse_slice
+from foamgraph.utility import parse_boundary, parse_id, parse_slice
 
 
 class SmartLineEdit(QLineEdit):

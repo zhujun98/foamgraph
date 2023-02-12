@@ -1,15 +1,15 @@
 import pytest
 
 from foamgraph.backend.QtCore import Qt
-from foamgraph.gradient_editor_widget import GradientEditorWidget
+from foamgraph.graphics_item.gradient_editor_item import GradientEditorItem
 
 
-class TestGradientEditorWidget:
+class TestGradientEditorItem:
 
     def test_construction_error(self):
         with pytest.raises(ValueError):
-            GradientEditorWidget('A')
+            GradientEditorItem('A')
 
     @pytest.mark.parametrize("orientation", [Qt.Orientation.Horizontal, Qt.Orientation.Vertical])
     def test_construction(self, orientation):
-        widget = GradientEditorWidget(orientation)
+        widget = GradientEditorItem(orientation)

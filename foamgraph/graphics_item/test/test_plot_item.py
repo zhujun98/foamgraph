@@ -4,11 +4,11 @@ import numpy as np
 
 from foamgraph.backend.QtCore import QByteArray, QDataStream, QIODevice, QPointF, QRectF
 from foamgraph import mkQApp, PlotWidgetF
-from foamgraph.plot_item import (
+from foamgraph.graphics_item.plot_item import (
     CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
 )
 
-from . import _display
+from foamgraph.test import _display
 
 app = mkQApp()
 
