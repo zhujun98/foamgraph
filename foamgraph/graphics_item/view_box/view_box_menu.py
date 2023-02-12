@@ -3,8 +3,6 @@ import weakref
 from ...backend.QtWidgets import QMenu, QWidget, QWidgetAction
 from ...backend.QtGui import QAction, QActionGroup, QDoubleValidator
 
-from ...pyqtgraph_be.WidgetGroup import WidgetGroup
-
 from .axisCtrlTemplate import Ui_Form as AxisCtrlTemplate
 
 
@@ -37,7 +35,6 @@ class ViewBoxMenu(QMenu):
             self.addMenu(m)
             self.axes.append(m)
             self.ctrl.append(ui)
-            wg = WidgetGroup(w)
             self.widgetGroups.append(w)
             
             connects = [

@@ -106,7 +106,6 @@ path = os.path.split(__file__)[0]
 if __version__ is None and not hasattr(sys, 'frozen') and sys.version_info[0] == 2: ## If we are frozen, there's a good chance we don't have the original .py files anymore.
     renamePyc(path)
 
-from .WidgetGroup import *
 from .Point import Point
 from .SRTTransform import SRTTransform
 from .functions import *
