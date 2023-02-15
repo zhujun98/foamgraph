@@ -12,7 +12,7 @@ from foamgraph.graphics_item.label_item import LabelItem
 from foamgraph.graphics_item.legend_item import LegendItem
 from foamgraph.graphics_item.plot_area import PlotArea
 from foamgraph.graphics_item.plot_item import (
-    CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
+    CurvePlotItem, BarPlotItem, ScatterPlotItem, ErrorbarPlotItem
 )
 from foamgraph.graphics_item.roi import RectROI
 
@@ -97,9 +97,9 @@ class TestPlotArea(unittest.TestCase):
         image_item = ImageItem()
         area.addItem(image_item)
         area.addItem(RectROI(0))
-        bar_graph_item = BarGraphItem(label="bar")
+        bar_graph_item = BarPlotItem(label="bar")
         area.addItem(bar_graph_item, y2=True)
-        errorbar_item = ErrorbarItem()
+        errorbar_item = ErrorbarPlotItem()
         area.addItem(errorbar_item)
 
         area.addLegend()  # add legend when there are already added PlotItems
@@ -123,7 +123,7 @@ class TestPlotArea(unittest.TestCase):
                 mocked2.assert_called_once()
 
         # remove an item which does not exist
-        area.removeItem(BarGraphItem())
+        area.removeItem(BarPlotItem())
         self.assertEqual(3, len(area._plot_items))
         self.assertEqual(1, len(area._plot_items_y2))
         self.assertEqual(6, len(area._items))
@@ -244,8 +244,8 @@ class TestPlotArea(unittest.TestCase):
     #     area = self._area
     #     # add some items to simulate the practical situation
     #     area.addItem(ImageItem())
-    #     area.addItem(BarGraphItem())
-    #     area.addItem(ErrorbarItem())
+    #     area.addItem(BarPlotItem())
+    #     area.addItem(ErrorbarPlotItem())
     #
     #     # add some items
     #     area.setAnnotationList([1, 2, 3], [4, 5, 6])

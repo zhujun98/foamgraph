@@ -5,7 +5,7 @@ import numpy as np
 from foamgraph.backend.QtCore import QByteArray, QDataStream, QIODevice, QPointF, QRectF
 from foamgraph import mkQApp, PlotWidgetF
 from foamgraph.graphics_item.plot_item import (
-    CurvePlotItem, BarGraphItem, ScatterPlotItem, ErrorbarItem
+    CurvePlotItem, BarPlotItem, ScatterPlotItem, ErrorbarPlotItem
 )
 
 from foamgraph.test import _display
@@ -111,7 +111,7 @@ class TestPlotItems:
         y = x * 1.5
 
         # x and y are lists
-        item = BarGraphItem(x.tolist(), y.tolist(), label='bar')
+        item = BarPlotItem(x.tolist(), y.tolist(), label='bar')
         self._widget.addItem(item)
         self._widget.addLegend()
         assert isinstance(item._x, np.ndarray)
@@ -144,7 +144,7 @@ class TestPlotItems:
         y = np.arange(10).astype(dtype)
 
         # x and y are lists
-        item = ErrorbarItem(x.tolist(), y.tolist(), label='errorbar')
+        item = ErrorbarPlotItem(x.tolist(), y.tolist(), label='errorbar')
         self._widget.addItem(item)
         self._widget.addLegend()
         assert isinstance(item._x, np.ndarray)

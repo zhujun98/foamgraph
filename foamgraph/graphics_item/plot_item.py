@@ -202,8 +202,8 @@ class CurvePlotItem(PlotItem):
         p.drawLine(0, 11, 20, 11)
 
 
-class BarGraphItem(PlotItem):
-    """BarGraphItem"""
+class BarPlotItem(PlotItem):
+    """BarPlotItem"""
     def __init__(self, x=None, y=None, *, width=1.0, pen=None, brush=None,
                  label=None, parent=None):
         """Initialization."""
@@ -272,8 +272,8 @@ class BarGraphItem(PlotItem):
         p.drawRect(QRectF(2, 2, 18, 18))
 
 
-class ErrorbarItem(PlotItem):
-    """ErrorbarItem."""
+class ErrorbarPlotItem(PlotItem):
+    """ErrorbarPlotItem."""
 
     def __init__(self, x=None, y=None, *, y_min=None, y_max=None, beam=None,
                  line=False, pen=None,

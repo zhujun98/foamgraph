@@ -16,7 +16,7 @@ from .backend.QtGui import QCloseEvent
 from .backend.QtWidgets import QSizePolicy
 
 from .graphics_item import (
-    AnnotationItem, BarGraphItem, CurvePlotItem, ErrorbarItem,
+    AnnotationItem, BarPlotItem, CurvePlotItem, ErrorbarPlotItem,
     InfiniteHorizontalLineItem, InfiniteVerticalLineItem,
     PlotArea, ScatterPlotItem
 )
@@ -99,30 +99,31 @@ class PlotWidgetF(GraphicsView):
         """Remove all the items in the PlotArea object."""
         self._plot_area.removeAllItems()
 
-    def plotCurve(self, *args, y2=False, **kwargs):
-        """Add and return a new curve plot."""
+    def addCurvePlot(self, *args, y2=False, **kwargs):
+        """Add and return a :class:`CurvePlotItem`."""
         item = CurvePlotItem(*args, **kwargs)
         self._plot_area.addItem(item, y2=y2)
         return item
 
-    def plotScatter(self, *args, y2=False, **kwargs):
-        """Add and return a new scatter plot."""
+    def addScatterPlot(self, *args, y2=False, **kwargs):
+        """Add and return a :class:`ScatterPlotItem`."""
         item = ScatterPlotItem(*args, **kwargs)
         self._plot_area.addItem(item, y2=y2)
         return item
 
-    def plotBar(self, *args, y2=False, **kwargs):
-        """Add and return a new bar plot."""
-        item = BarGraphItem(*args, **kwargs)
+    def addBarPlot(self, *args, y2=False, **kwargs):
+        """Add and return a :class:`BarPlotItem`."""
+        item = BarPlotItem(*args, **kwargs)
         self._plot_area.addItem(item, y2=y2)
         return item
 
-    def plotErrorbar(self, *args, y2=False, **kwargs):
-        item = ErrorbarItem(*args, **kwargs)
+    def addErrorbarPlot(self, *args, y2=False, **kwargs):
+        """Add and return an :class:`ErrorbarPlotItem`."""
+        item = ErrorbarPlotItem(*args, **kwargs)
         self._plot_area.addItem(item, y2=y2)
         return item
 
-    def plotImage(self, *args, **kargs):
+    def addImage(self, *args, **kargs):
         """Add and return a image item."""
         # TODO: this will be done when another branch is merged
         raise NotImplementedError
@@ -247,7 +248,7 @@ class HistWidgetF(PlotWidgetF):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
-        self._plot = self.plotBar()
+        self._plot = self.addBarPlot()
 
         self._title_template = Template(
             f"mean: $mean, median: $median, std: $std")

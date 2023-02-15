@@ -14,10 +14,10 @@ def widget():
     class FooPlotWidget(PlotWidgetF):
         def __init__(self):
             super().__init__()
-            self.plot1 = self.plotBar(label="1")
-            self.plot2 = self.plotCurve(label="2")
-            self.plot3 = self.plotScatter(label="3")
-            self.plot4 = self.plotErrorbar()
+            self.plot1 = self.addBarPlot(label="1")
+            self.plot2 = self.addCurvePlot(label="2")
+            self.plot3 = self.addScatterPlot(label="3")
+            self.plot4 = self.addErrorbarPlot()
 
             self.all_plots = [self.plot1, self.plot2, self.plot3, self.plot4]
 

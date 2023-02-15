@@ -37,7 +37,7 @@ class RoiProjectionMonitor(PlotWidgetF):
 
         self._roi_geom = None
 
-        self._plot = self.plotCurve()
+        self._plot = self.addCurvePlot()
 
     def onRoiGeometryChange(self, value: tuple):
         idx, activated, _, x, y, w, h = value

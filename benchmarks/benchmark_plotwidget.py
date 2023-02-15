@@ -39,10 +39,10 @@ class BenchmarkPlotItemSpeed:
             elif plot_type == "scatter":
                 self._graph = pg.ScatterPlotItem()
             elif plot_type == "bar":
-                class BarGraphItem(pg.BarGraphItem):
+                class BarPlotItem(pg.BarPlotItem):
                     def setData(self, x, y):
                         self.setOpts(x=x, height=y)
-                self._graph = BarGraphItem(
+                self._graph = BarPlotItem(
                     x=self._x, height=self._data[0], width=1.0)
             elif plot_type == "errorbar":
                 class ErrorBarItem(pg.ErrorBarItem):
@@ -63,13 +63,13 @@ class BenchmarkPlotItemSpeed:
             self._widget.addLegend()
 
             if plot_type == "line":
-                self._graph = self._widget.plotCurve(label=plot_type)
+                self._graph = self._widget.addCurvePlot(label=plot_type)
             elif plot_type == "scatter":
-                self._graph = self._widget.plotScatter(label=plot_type)
+                self._graph = self._widget.addScatterPlot(label=plot_type)
             elif plot_type == "bar":
-                self._graph = self._widget.plotBar(label=plot_type, width=1.0)
+                self._graph = self._widget.addBarPlot(label=plot_type, width=1.0)
             elif plot_type == "errorbar":
-                self._graph = self._widget.plotErrorbar(
+                self._graph = self._widget.addErrorbarPlot(
                     label=plot_type, beam=1.0)
             else:
                 raise ValueError(f"Unsupported plot type: {plot_type}")

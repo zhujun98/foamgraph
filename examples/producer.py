@@ -128,7 +128,8 @@ class ImageData:
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(prog="foamlight-example-euxfel")
-    parser.add_argument("--delay", type=float, default=0.001)
+    parser.add_argument("--delay", type=float, default=0.001,
+                        help="delay in seconds before publishing the next data")
 
     args = parser.parse_args()
 
