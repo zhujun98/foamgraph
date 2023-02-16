@@ -87,7 +87,7 @@ class ImageColorbarItem(GraphicsWidget):
 
         self._gradient.gradient_changed_sgn.connect(self.gradientChanged)
 
-        self._vb.sigRangeChanged.connect(self.update)
+        self._vb.range_changed_sgn.connect(self.update)
 
     def paint(self, p, *args) -> None:
         """Override."""

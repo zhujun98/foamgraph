@@ -279,7 +279,7 @@ class PlotArea(GraphicsWidget):
                 right_axis.show()
                 vb.setXLink(self._vb)
                 self._vb_y2 = vb
-                self._vb.sigResized.connect(self._updateY2View)
+                self._vb.resized_sgn.connect(self._updateY2View)
         else:
             vb = self._vb
 

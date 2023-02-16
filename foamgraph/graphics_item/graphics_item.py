@@ -468,9 +468,9 @@ class GraphicsItem:
 
         # disconnect from previous view
         if oldView is not None:
-            for signal, slot in [('sigRangeChanged', self.viewRangeChanged),
+            for signal, slot in [('range_changed_sgn', self.viewRangeChanged),
                                  ('sigDeviceRangeChanged', self.viewRangeChanged), 
-                                 ('sigTransformChanged', self.viewTransformChanged), 
+                                 ('transform_changed_sgn', self.viewTransformChanged),
                                  ('sigDeviceTransformChanged', self.viewTransformChanged)]:
                 try:
                     getattr(oldView, signal).disconnect(slot)
@@ -488,8 +488,8 @@ class GraphicsItem:
                 view.sigDeviceTransformChanged.connect(self.viewTransformChanged)
             else:
                 # connect signals from ViewBox
-                view.sigRangeChanged.connect(self.viewRangeChanged)
-                view.sigTransformChanged.connect(self.viewTransformChanged)
+                view.range_changed_sgn.connect(self.viewRangeChanged)
+                view.transform_changed_sgn.connect(self.viewTransformChanged)
             self._connectedView = weakref.ref(view)
             self.viewRangeChanged()
             self.viewTransformChanged()

@@ -102,14 +102,6 @@ class GraphicsView(QGraphicsView):
         self.mouseEnabled = False
         self.scaleCenter = False  # should scaling center around view center (True) or mouse click (False)
         self.clickAccepted = False
-        
-    def setAntialiasing(self, aa):
-        """Enable or disable default antialiasing.
-        Note that this will only affect items that do not specify their own antialiasing options."""
-        if aa:
-            self.setRenderHints(self.renderHints() | QPainter.Antialiasing)
-        else:
-            self.setRenderHints(self.renderHints() & ~QPainter.Antialiasing)
 
     def paintEvent(self, ev):
         self.scene().prepareForPaint()
