@@ -34,9 +34,9 @@ class LabelItem(GraphicsWidget):
     def toPlainText(self) -> str:
         return self._item.toPlainText()
 
-    def boundingRect(self) ->QRectF:
-        """Override."""
-        return self._item.boundingRect()
+    # def boundingRect(self) ->QRectF:
+    #     """Override."""
+    #     return self._item.boundingRect()
 
     def sizeHint(self, which: Qt.SizeHint, constraint: QSizeF) -> QSizeF:
         """Override."""

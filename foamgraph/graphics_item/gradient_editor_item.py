@@ -33,9 +33,11 @@ class GradientEditorItem(GraphicsWidget):
 
         self._colormap = None
         self._gradient = QGraphicsRectItem(parent=self)
-        self._gradient_width = 15
 
+        # FIXME: do not use magic numbers
+        self._gradient_width = 15
         self._width = 20
+
         self._orientation = orientation
         if self._orientation == Qt.Orientation.Vertical:
             self.setMaximumWidth(self._width)
@@ -150,6 +152,7 @@ class GradientEditorItem(GraphicsWidget):
         self.gradient_changed_sgn.emit(self)
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent) -> None:
+        """Override."""
         if self._orientation in ['bottom', 'top']:
             return self._gradient.setRect(
                 0, 0, self.geometry().width(), self._gradient_width)

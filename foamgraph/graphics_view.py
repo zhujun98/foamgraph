@@ -9,7 +9,7 @@ import warnings
 import numpy as np
 
 from .backend.QtCore import pyqtSignal, QPoint, QRectF, Qt
-from .backend.QtGui import QPalette, QPainter
+from .backend.QtGui import QMouseEvent, QPalette, QPainter
 from .backend.QtWidgets import (
     QFrame, QGraphicsGridLayout, QGraphicsView, QGraphicsWidget, QWidget
 )
@@ -284,7 +284,8 @@ class GraphicsView(QGraphicsView):
     def setAspectLocked(self, s):
         self.aspectLocked = s
         
-    def mousePressEvent(self, ev):
+    def mousePressEvent(self, ev: QMouseEvent) -> None:
+        """Override."""
         QGraphicsView.mousePressEvent(self, ev)
 
         if not self.mouseEnabled:
@@ -296,7 +297,8 @@ class GraphicsView(QGraphicsView):
             self.scene().clearSelection()
         return   # Everything below disabled for now..
         
-    def mouseReleaseEvent(self, ev):
+    def mouseReleaseEvent(self, ev: QMouseEvent) -> None:
+        """Override."""
         QGraphicsView.mouseReleaseEvent(self, ev)
         if not self.mouseEnabled:
             return 
@@ -304,7 +306,8 @@ class GraphicsView(QGraphicsView):
         self.lastButtonReleased = ev.button()
         return
 
-    def mouseMoveEvent(self, ev):
+    def mouseMoveEvent(self, ev: QMouseEvent) -> None:
+        """Override."""
         if self.lastMousePos is None:
             self.lastMousePos = Point(ev.pos())
         delta = Point(ev.pos() - QPoint(*self.lastMousePos))

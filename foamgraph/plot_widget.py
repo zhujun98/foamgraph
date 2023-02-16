@@ -130,7 +130,7 @@ class PlotWidgetF(GraphicsView):
 
     def addAnnotation(self, **kwargs):
         item = AnnotationItem(**kwargs)
-        self._plot_area.addItem(item)
+        self._plot_area.addItem(item, ignore_bounds=True)
         return item
 
     def setAspectLocked(self, *args, **kwargs):

@@ -32,7 +32,7 @@ class InfiniteLineItem(GraphicsObject):
             and 90 for a vertical one.
         :param draggable: Whether the line is draggable.
         """
-        self._boundingRect = None
+        self._bounding_rect = None
 
         super().__init__(parent=parent)
 
@@ -80,14 +80,14 @@ class InfiniteLineItem(GraphicsObject):
 
     def setPos(self, pos: Union[tuple, list, Point, QPointF]) -> None:
         self._pos = Point(pos)
-        self._boundingRect = None
+        self._bounding_rect = None
         super().setPos(self._pos)
         self.position_changed_sgn.emit(self)
 
     def _computeBoundingRect(self):
         vr = self.viewRect()  # bounds of containing ViewBox mapped to local coords.
         if vr is None:
-            self._boundingRect = QRectF()
+            self._bounding_rect = QRectF()
             return
         
         # add a 4-pixel radius around the line for mouse interaction.
@@ -110,8 +110,8 @@ class InfiniteLineItem(GraphicsObject):
         
         vs = self.getViewBox().size()
         
-        if self._boundingRect != br or self._lastViewSize != vs:
-            self._boundingRect = br
+        if self._bounding_rect != br or self._lastViewSize != vs:
+            self._bounding_rect = br
             self._lastViewSize = vs
             self.prepareGeometryChange()
         
@@ -120,9 +120,9 @@ class InfiniteLineItem(GraphicsObject):
 
     def boundingRect(self) -> QRectF:
         """Override."""
-        if self._boundingRect is None:
+        if self._bounding_rect is None:
             self._computeBoundingRect()
-        return self._boundingRect
+        return self._bounding_rect
 
     def paint(self, p, *args) -> None:
         """Override."""

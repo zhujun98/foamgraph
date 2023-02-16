@@ -57,7 +57,7 @@ class UIGraphicsItem(GraphicsObject):
         else:
             self._bounds = bounds
 
-        self._boundingRect = None
+        self._bounding_rect = None
         self._updateView()
 
     def itemChange(self, change, value):
@@ -72,14 +72,14 @@ class UIGraphicsItem(GraphicsObject):
             self.setNewBounds()
         return ret
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
         """Override."""
-        if self._boundingRect is None:
+        if self._bounding_rect is None:
             br = self.viewRect()
             if br is None:
                 return QRectF()
-            self._boundingRect = br
-        return QRectF(self._boundingRect)
+            self._bounding_rect = br
+        return QRectF(self._bounding_rect)
 
     def dataBounds(self, axis, frac=1.0, orthoRange=None):
         """Called by ViewBox for determining the auto-range bounds.
@@ -93,7 +93,7 @@ class UIGraphicsItem(GraphicsObject):
 
     def setNewBounds(self):
         """Update the item's bounding rect to match the viewport"""
-        self._boundingRect = None  # invalidate bounding rect, regenerate later if needed.
+        self._bounding_rect = None  # invalidate bounding rect, regenerate later if needed.
         self.prepareGeometryChange()
 
     def setPos(self, pos: Point):

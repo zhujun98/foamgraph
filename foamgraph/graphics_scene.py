@@ -507,7 +507,7 @@ class GraphicsScene(QGraphicsScene):
         """
         self._moveDistance = d
 
-    def mousePressEvent(self, ev: QGraphicsSceneMouseEvent):
+    def mousePressEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
         super().mousePressEvent(ev)
 
@@ -527,7 +527,7 @@ class GraphicsScene(QGraphicsScene):
                     i.setFocus(Qt.FocusReason.MouseFocusReason)
                     break
         
-    def mouseMoveEvent(self, ev: QGraphicsSceneMouseEvent):
+    def mouseMoveEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
         self.mouse_moved_sgn.emit(ev.scenePos())
 
@@ -567,7 +567,7 @@ class GraphicsScene(QGraphicsScene):
                             else MouseEventState.ON):
                         ev.accept()
 
-    def mouseReleaseEvent(self, ev: QGraphicsSceneMouseEvent):
+    def mouseReleaseEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
         if self.mouseGrabberItem() is None:
             if ev.button() in self.dragButtons:

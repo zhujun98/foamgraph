@@ -80,7 +80,8 @@ class ChildGroup(GraphicsObject):
     def shape(self):
         return self.mapFromParent(self.parentItem().shape())
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
+        """Override."""
         return self.mapRectFromParent(self.parentItem().boundingRect())
 
     def paint(self, p, *args):

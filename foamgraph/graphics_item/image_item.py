@@ -10,7 +10,9 @@ from collections.abc import Callable
 
 import numpy as np
 
-from ..backend.QtGui import QPainter, QPicture, QTransform
+from ..backend.QtGui import (
+    QGraphicsSceneMouseEvent, QPainter, QPicture, QTransform
+)
 from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 
 from ..pyqtgraph_be import Point
@@ -63,12 +65,6 @@ class ImageItem(GraphicsObject):
         if self._image is None:
             return None
         return self._image.shape[0]
-
-    def boundingRect(self):
-        """Override."""
-        if self._image is None:
-            return QRectF(0., 0., 0., 0.)
-        return QRectF(0., 0., float(self.width()), float(self.height()))
 
     def setLevels(self, levels):
         """Set image colormap scaling levels.
@@ -308,6 +304,12 @@ class ImageItem(GraphicsObject):
             return 1, 1
         return br.width() / self.width(), br.height() / self.height()
 
+    def boundingRect(self) -> QRectF:
+        """Override."""
+        if self._image is None:
+            return QRectF(0., 0., 0., 0.)
+        return QRectF(0., 0., float(self.width()), float(self.height()))
+
     def viewTransformChanged(self):
         """Override."""
         o = self.mapToDevice(QPointF(0, 0))
@@ -325,7 +327,6 @@ class ImageItem(GraphicsObject):
             self.update()
 
     def hoverEvent(self, ev: HoverEvent) -> None:
-        """Override."""
         if ev.isExit():
             x = -1  # out of image
             y = -1  # out of image
@@ -338,7 +339,7 @@ class ImageItem(GraphicsObject):
 
         self.mouse_moved_sgn.emit(x, y, value)
 
-    def mousePressEvent(self, ev):
+    def mousePressEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
         if self.drawing and ev.button() == Qt.MouseButton.LeftButton:
             ev.accept()
@@ -347,7 +348,7 @@ class ImageItem(GraphicsObject):
         else:
             ev.ignore()
 
-    def mouseMoveEvent(self, ev):
+    def mouseMoveEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
         if self.drawing:
             ev.accept()
@@ -356,7 +357,7 @@ class ImageItem(GraphicsObject):
         else:
             ev.ignore()
 
-    def mouseReleaseEvent(self, ev):
+    def mouseReleaseEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
         if self.drawing and ev.button() == Qt.MouseButton.LeftButton:
             ev.accept()
@@ -395,7 +396,7 @@ class GeometryItem(GraphicsObject):
     def clearGeometry(self):
         raise NotImplementedError
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
         """Override."""
         if self._picture is None:
             self._drawPicture()

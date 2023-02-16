@@ -5,7 +5,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from ..backend.QtCore import pyqtSignal, Qt
+from ..backend.QtCore import pyqtSignal, QRectF, Qt
 from ..backend.QtGui import QBrush, QPen
 
 from ..aesthetics import FColor
@@ -103,7 +103,8 @@ class LinearRegionItem(GraphicsObject):
         self.lineMoved(1)
         self.lineMoveFinished()
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
+        """Override."""
         br = self.viewRect()  # bounds of containing ViewBox mapped to local coords.
         
         rng = self.region()
