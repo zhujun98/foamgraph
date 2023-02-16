@@ -12,8 +12,6 @@ from ..pyqtgraph_be import isQObjectAlive
 from ..pyqtgraph_be import functions as fn
 from ..pyqtgraph_be.Point import Point
 
-from ..graphics_scene import GraphicsScene
-
 
 class LRUCache:
     """
@@ -159,10 +157,7 @@ class GraphicsItem:
             return None
             
         return v
-    
-    def forgetViewWidget(self):
-        self._viewWidget = None
-    
+
     def getViewBox(self):
         """
         Return the first ViewBox or GraphicsView which bounds this item's visible space.
@@ -189,9 +184,6 @@ class GraphicsItem:
                     break
         return self._viewBox()  # If we made it this far, _viewBox is definitely not None
 
-    def forgetViewBox(self):
-        self._viewBox = None
-        
     def deviceTransform(self, viewportTransform=None):
         """
         Return the transform that converts local item coordinates to device coordinates (usually pixels).
@@ -451,8 +443,8 @@ class GraphicsItem:
 
         # It is possible this item has moved to a different ViewBox or widget;
         # clear out previously determined references to these.
-        self.forgetViewBox()
-        self.forgetViewWidget()
+        self._viewBox = None
+        self._viewWidget = None
         
         # check for this item's current viewbox or view widget
         view = self.getViewBox()
@@ -495,13 +487,6 @@ class GraphicsItem:
         # inform children that their view might have changed
         self._replaceView(oldView)
         
-        self.viewChanged(view, oldView)
-        
-    def viewChanged(self, view, oldView):
-        """Called when this item's view has changed
-        (ie, the item has been added to or removed from a ViewBox)"""
-        pass
-        
     def _replaceView(self, oldView, item=None):
         if item is None:
             item = self
@@ -516,14 +501,14 @@ class GraphicsItem:
         """
         Called whenever the view coordinates of the ViewBox containing this item have changed.
         """
-        pass
+        ...
 
     def viewTransformChanged(self):
         """
         Called whenever the transformation matrix of the view has changed.
         (eg, the view range has changed or the view was resized)
         """
-        pass
+        ...
         
     def informViewBoundsChanged(self):
         """
@@ -533,19 +518,6 @@ class GraphicsItem:
         view = self.getViewBox()
         if view is not None and hasattr(view, 'implements') and view.implements('ViewBox'):
             view.itemBoundsChanged(self)  # inform view so it can update its range if it wants
-
-    def allChildItems(self, root=None):
-        """Return list of the entire item tree descending from this item."""
-        if root is None:
-            root = self
-        tree = []
-        for ch in root.childItems():
-            tree.append(ch)
-            tree.extend(self.allChildItems(ch))
-        return tree
-
-    def getContextMenus(self, event):
-        return [self.getMenu()] if hasattr(self, "getMenu") else []
 
 
 class GraphicsObject(GraphicsItem, QGraphicsObject):
