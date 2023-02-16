@@ -406,12 +406,10 @@ class GraphicsItem:
         return self.mapToView(self.mapFromParent(self.pos()))
     
     def parentItem(self):
-        # PyQt bug -- some items are returned incorrectly.
-        return GraphicsScene.translateGraphicsItem(self._qtBaseClass.parentItem(self))
+        return self._qtBaseClass.parentItem(self)
 
     def childItems(self):
-        # PyQt bug -- some child items are returned incorrectly.
-        return list(map(GraphicsScene.translateGraphicsItem, self._qtBaseClass.childItems(self)))
+        return self._qtBaseClass.childItems(self)
 
     def sceneTransform(self):
         # Qt bug: do no allow access to sceneTransform() until
