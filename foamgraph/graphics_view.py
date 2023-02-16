@@ -9,7 +9,9 @@ import warnings
 import numpy as np
 
 from .backend.QtCore import pyqtSignal, QPoint, QRectF, Qt
-from .backend.QtGui import QMouseEvent, QPalette, QPainter
+from .backend.QtGui import (
+    QKeyEvent, QMouseEvent, QPalette, QPainter, QPaintEvent
+)
 from .backend.QtWidgets import (
     QFrame, QGraphicsGridLayout, QGraphicsView, QGraphicsWidget, QWidget
 )
@@ -86,7 +88,6 @@ class GraphicsView(QGraphicsView):
         self.range = QRectF(0, 0, 1, 1)
         self.autoPixelRange = True
         self.currentItem = None
-        self.clearMouse()
         self.updateMatrix()
         # GraphicsScene must have parent or expect crashes!
         self.sceneObj = GraphicsScene(parent=self)
@@ -102,10 +103,6 @@ class GraphicsView(QGraphicsView):
         self.mouseEnabled = False
         self.scaleCenter = False  # should scaling center around view center (True) or mouse click (False)
         self.clickAccepted = False
-
-    def paintEvent(self, ev):
-        self.scene().prepareForPaint()
-        return QGraphicsView.paintEvent(self, ev)
     
     def render(self, *args, **kwds):
         self.scene().prepareForPaint()
@@ -120,10 +117,6 @@ class GraphicsView(QGraphicsView):
         self.setViewport(None)
         super(GraphicsView, self).close()
 
-    def keyPressEvent(self, ev):
-        self.scene().keyPressEvent(ev)  # bypass view, hand event directly to scene
-                                        # (view likes to eat arrow key events)
-
     def setCentralWidget(self, item):
         """Sets a QGraphicsWidget to automatically fill the entire view (the item will be automatically
         resize whenever the GraphicsView is resized)."""
@@ -134,19 +127,9 @@ class GraphicsView(QGraphicsView):
             self.sceneObj.addItem(item)
             self.resizeEvent(None)
         
-    def addItem(self, *args):
-        return self.scene().addItem(*args)
-        
-    def removeItem(self, *args):
-        return self.scene().removeItem(*args)
-        
     def enableMouse(self, b=True):
         self.mouseEnabled = b
         self.autoPixelRange = (not b)
-        
-    def clearMouse(self):
-        self.mouseTrail = []
-        self.lastButtonReleased = None
     
     def resizeEvent(self, ev):
         if self.closed:
@@ -179,10 +162,6 @@ class GraphicsView(QGraphicsView):
         r = QRectF(self.rect())
         return self.viewportTransform().inverted()[0].mapRect(r)
 
-    def visibleRange(self):
-        # for backward compatibility
-        return self.viewRect()
-
     def translate(self, dx, dy):
         self.range.adjust(dx, dy, dx, dy)
         self.updateMatrix()
@@ -207,13 +186,13 @@ class GraphicsView(QGraphicsView):
         self.updateMatrix()
         self.sigScaleChanged.emit(self)
 
-    def setRange(self, newRect=None, padding=0.05, lockAspect=None, propagate=True, disableAutoPixel=True):
+    def setRange(self, newRect=None, padding=0.05, propagate=True, disableAutoPixel=True):
         if disableAutoPixel:
             self.autoPixelRange=False
         if newRect is None:
-            newRect = self.visibleRange()
+            newRect = self.viewRect()
             padding = 0
-        
+
         padding = Point(padding)
         newRect = QRectF(newRect)
         pw = newRect.width() * padding[0]
@@ -230,38 +209,17 @@ class GraphicsView(QGraphicsView):
         if scaleChanged:
             self.sigScaleChanged.emit(self)
 
-    def scaleToImage(self, image):
-        """Scales such that pixels in image are the same size as screen pixels. This may result in a significant performance increase."""
-        pxSize = image.pixelSize()
-        image.setPxMode(True)
-        try:
-            self.sigScaleChanged.disconnect(image.setScaledMode)
-        except (TypeError, RuntimeError):
-            pass
-        tl = image.sceneBoundingRect().topLeft()
-        w = self.size().width() * pxSize[0]
-        h = self.size().height() * pxSize[1]
-        range = QRectF(tl.x(), tl.y(), w, h)
-        GraphicsView.setRange(self, range, padding=0)
-        self.sigScaleChanged.connect(image.setScaledMode)
+    def paintEvent(self, ev: QPaintEvent) -> None:
+        """Override."""
+        self.scene().prepareForPaint()
+        QGraphicsView.paintEvent(self, ev)
 
-    def lockXRange(self, v1):
-        if not v1 in self.lockedViewports:
-            self.lockedViewports.append(v1)
-        
-    def setXRange(self, r, padding=0.05):
-        r1 = QRectF(self.range)
-        r1.setLeft(r.left())
-        r1.setRight(r.right())
-        GraphicsView.setRange(self, r1, padding=[padding, 0], propagate=False)
-        
-    def setYRange(self, r, padding=0.05):
-        r1 = QRectF(self.range)
-        r1.setTop(r.top())
-        r1.setBottom(r.bottom())
-        GraphicsView.setRange(self, r1, padding=[0, padding], propagate=False)
-        
-    def wheelEvent(self, ev):
+    def keyPressEvent(self, ev: QKeyEvent) -> None:
+        """Override."""
+        self.scene().keyPressEvent(ev)
+
+    def wheelEvent(self, ev) -> None:
+        """Override."""
         QGraphicsView.wheelEvent(self, ev)
         if not self.mouseEnabled:
             return
@@ -272,10 +230,7 @@ class GraphicsView(QGraphicsView):
 
         sc = 1.001 ** delta
         self.scale(sc, sc)
-        
-    def setAspectLocked(self, s):
-        self.aspectLocked = s
-        
+
     def mousePressEvent(self, ev: QMouseEvent) -> None:
         """Override."""
         QGraphicsView.mousePressEvent(self, ev)
@@ -295,7 +250,6 @@ class GraphicsView(QGraphicsView):
         if not self.mouseEnabled:
             return 
         self.sigMouseReleased.emit(ev)
-        self.lastButtonReleased = ev.button()
         return
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
@@ -337,18 +291,3 @@ class GraphicsView(QGraphicsView):
         
     def dragEnterEvent(self, ev):
         ev.ignore()  # not sure why, but for some reason this class likes to consume drag events
-
-    def _del(self):
-        try:
-            if self.parentWidget() is None and self.isVisible():
-                msg = "Visible window deleted. To prevent this, store a reference to the window object."
-                try:
-                    warnings.warn(msg, RuntimeWarning, stacklevel=2)
-                except TypeError:
-                    # warnings module not available during interpreter shutdown
-                    pass
-        except RuntimeError:
-            pass
-
-if sys.version_info[0] == 3 and sys.version_info[1] >= 4:
-    GraphicsView.__del__ = GraphicsView._del
