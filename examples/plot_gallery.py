@@ -24,7 +24,7 @@ class LinePlot(PlotWidgetF):
         self.setTitle('Line plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.plotCurve()
+        self._plot = self.addCurvePlot()
 
     def updateF(self, data):
         """Override."""
@@ -39,7 +39,7 @@ class ScatterPlot(PlotWidgetF):
         self.setTitle('Scatter plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.plotScatter(
+        self._plot = self.addScatterPlot(
             brush=FColor.mkBrush('Purple', alpha=150))
 
     def updateF(self, data):
@@ -55,7 +55,7 @@ class BarPlot(PlotWidgetF):
         self.setTitle('Bar plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.plotBar(pen=FColor.mkPen('ForestGreen'),
+        self._plot = self.addBarPlot(pen=FColor.mkPen('ForestGreen'),
                                   brush=FColor.mkBrush('DodgerBlue'))
 
     def updateF(self, data):
@@ -71,9 +71,9 @@ class ErrorbarPlot(TimedPlotWidgetF):
         self.setTitle('Timed error-bar plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot1 = self.plotErrorbar(
+        self._plot1 = self.addErrorbarPlot(
             beam=1, pen=FColor.mkPen('Orange'))
-        self._plot2 = self.plotCurve(
+        self._plot2 = self.addCurvePlot(
             pen=FColor.mkPen('Orange', width=2))
 
     def refresh(self):
@@ -90,11 +90,11 @@ class MultiLinePlot(PlotWidgetF):
         self.setTitle('Multi-line plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot1 = self.plotCurve(
+        self._plot1 = self.addCurvePlot(
             label='Line A', pen=FColor.mkPen('k', width=2))
-        self._plot2 = self.plotCurve(
+        self._plot2 = self.addCurvePlot(
             label='Line B', pen=FColor.mkPen('b', width=2))
-        self._plot3 = self.plotCurve(
+        self._plot3 = self.addCurvePlot(
             label='Line C', pen=FColor.mkPen('r', width=2))
 
         self.addLegend()
@@ -114,11 +114,11 @@ class DoubleYPlot(PlotWidgetF):
         self.setTitle('Double-y plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arg. u.)")
 
-        self._plot = self.plotCurve(
+        self._plot = self.addCurvePlot(
             label="Data", pen=FColor.mkPen('Brown'))
-        self._plot1 = self.plotScatter(
+        self._plot1 = self.addScatterPlot(
             symbol='x', pen=FColor.mkPen('Brown'))
-        self._plot2 = self.plotBar(
+        self._plot2 = self.addBarPlot(
             label="Count", y2=True, brush=FColor.mkBrush('Silver', alpha=150))
         self.addLegend()
 
@@ -130,10 +130,29 @@ class DoubleYPlot(PlotWidgetF):
         self._plot2.setData(data['x'], data['y2'])
 
 
+class LinePlotWithAnnotation(PlotWidgetF):
+    def __init__(self, *, parent=None):
+        super().__init__(parent=parent)
+
+        self.setTitle('Line plot with peak annotation')
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
+
+        self._plot = self.addCurvePlot(label="Data", pen=FColor.mkPen('k'))
+        self._annotation = self.addAnnotation()
+        self.addLegend()
+
+    def updateF(self, data):
+        """Override."""
+        data = data['multi-peak']
+        x, y, peaks = data['x'], data['y'], data['peaks']
+        self._plot.setData(x, y)
+        self._annotation.setData(x[peaks], y[peaks], x[peaks])
+
+
 class PlotGalleryScene(AbstractScene):
     _title = "Plot gallery"
 
-    _TOTAL_W, _TOTAL_H = 1440, 720
+    _TOTAL_W, _TOTAL_H = 1440, 1080
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
@@ -145,7 +164,8 @@ class PlotGalleryScene(AbstractScene):
             BarPlot(parent=self),
             ErrorbarPlot(parent=self),
             MultiLinePlot(parent=self),
-            DoubleYPlot(parent=self)
+            DoubleYPlot(parent=self),
+            LinePlotWithAnnotation(parent=self)
         ]
 
         self.initUI()
@@ -165,6 +185,7 @@ class PlotGalleryScene(AbstractScene):
         for i in range(rows):
             for j in range(cols):
                 layout.addWidget(self._plots[cols * i + j], i, j)
+        layout.addWidget(self._plots[-1], 2, 0)
 
         self._cw = QFrame()
         self._cw.setLayout(layout)

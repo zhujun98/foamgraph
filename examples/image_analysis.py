@@ -13,7 +13,7 @@ from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 from foamgraph import (
     AbstractScene, ImageViewF, mkQApp, PlotWidgetF
 )
-from foamgraph.algorithms import extract_rect_roi
+from foamgraph.algorithm import extract_rect_roi
 from foamgraph.ctrl_widgets import RoiCtrlWidgetGroup
 
 from consumer import Consumer
@@ -37,7 +37,7 @@ class RoiProjectionMonitor(PlotWidgetF):
 
         self._roi_geom = None
 
-        self._plot = self.plotCurve()
+        self._plot = self.addCurvePlot()
 
     def onRoiGeometryChange(self, value: tuple):
         idx, activated, _, x, y, w, h = value

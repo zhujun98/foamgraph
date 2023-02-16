@@ -87,6 +87,23 @@ class DoubleYPlotData:
                 "y2": self._count + np.random.randint(20, size=n)}
 
 
+class MultiPeakData:
+    def __init__(self):
+        from scipy.datasets import electrocardiogram
+        from scipy.signal import find_peaks
+
+        self._x = np.arange(2000, 4000)
+        self._y = electrocardiogram()[2000:4000]
+        self._peaks, _ = find_peaks(self._y, distance=150)
+
+    def next(self):
+        return {
+            "x": self._x,
+            "y": self._y + np.random.random(1),
+            "peaks": self._peaks
+        }
+
+
 class ImageData:
     def __init__(self):
         self._h, self._w = 1024, 1024
@@ -111,7 +128,8 @@ class ImageData:
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(prog="foamlight-example-euxfel")
-    parser.add_argument("--delay", type=float, default=0.001)
+    parser.add_argument("--delay", type=float, default=0.001,
+                        help="delay in seconds before publishing the next data")
 
     args = parser.parse_args()
 
@@ -123,6 +141,7 @@ if __name__ == "__main__":
     errorbar_plot_data = ErrorBarPlotData(50)
     multi_line_plot_data = MultiLinePlotData(1000)
     double_y_plot_data = DoubleYPlotData(100)
+    multi_peak_data = MultiPeakData()
     image_data = ImageData()
     counter = 0
     while True:
@@ -139,6 +158,7 @@ if __name__ == "__main__":
             "errorbar": errorbar_plot_data.next(),
             "multi-line": multi_line_plot_data.next(),
             "double-y": double_y_plot_data.next(),
+            "multi-peak": multi_peak_data.next(),
             "image": image_data.next()
         }
 

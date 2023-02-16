@@ -3,14 +3,14 @@ import sys
 QT_LIB = None
 
 try:
-    from PyQt6 import QtCore, QtGui, QtWidgets, QtTest
+    from PyQt6 import QtCore, QtGui, QtWidgets, QtTest, sip
     QT_LIB = "PyQt6"
 except ModuleNotFoundError:
     ...
 
 if QT_LIB is None:
     try:
-        from PyQt5 import QtCore, QtGui, QtWidgets, QtTest
+        from PyQt5 import QtCore, QtGui, QtWidgets, QtTest, sip
         QT_LIB = "PyQt5"
     except ModuleNotFoundError:
         ...

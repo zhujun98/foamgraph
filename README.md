@@ -49,8 +49,8 @@ class DoubleYPlot(PlotWidgetF):
         self.setTitle('Double-y plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arg. u.)")
 
-        self._plot = self.plotCurve(label="Data", pen=FColor.mkPen('w'))
-        self._plot2 = self.plotBar(
+        self._plot = self.addCurvePlot(label="Data", pen=FColor.mkPen('w'))
+        self._plot2 = self.addBarPlot(
             label="Count", y2=True, brush=FColor.mkBrush('i', alpha=150))
         self.addLegend()
 
