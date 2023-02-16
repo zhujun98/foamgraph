@@ -535,7 +535,7 @@ class GraphicsItem:
         view = self.getViewBox()
         if view is not None and hasattr(view, 'implements') and view.implements('ViewBox'):
             view.itemBoundsChanged(self)  # inform view so it can update its range if it wants
-    
+
     def allChildItems(self, root=None):
         """Return list of the entire item tree descending from this item."""
         if root is None:

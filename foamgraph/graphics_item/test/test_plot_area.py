@@ -7,11 +7,11 @@ from foamgraph.backend.QtTest import QSignalSpy
 from foamgraph import mkQApp
 from foamgraph.graphics_item.axis_item import AxisItem
 from foamgraph.graphics_view import GraphicsView
-from foamgraph.graphics_item.image_item import ImageItem
+from foamgraph.graphics_item import ImageItem
 from foamgraph.graphics_item.label_item import LabelItem
 from foamgraph.graphics_item.legend_item import LegendItem
-from foamgraph.graphics_item.plot_area import PlotArea
-from foamgraph.graphics_item.plot_item import (
+from foamgraph.graphics_item import PlotArea
+from foamgraph.graphics_item import (
     CurvePlotItem, BarPlotItem, ScatterPlotItem, ErrorbarPlotItem
 )
 from foamgraph.graphics_item.roi import RectROI
