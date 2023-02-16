@@ -6,7 +6,7 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 from ..backend.QtCore import QPointF, QRectF, QSizeF, Qt
-from ..backend.QtGui import QColor, QGraphicsSceneResizeEvent
+from ..backend.QtGui import QColor, QFont, QGraphicsSceneResizeEvent
 from ..backend.QtWidgets import QGraphicsTextItem
 
 from ..aesthetics import FColor
@@ -22,16 +22,26 @@ class LabelItem(GraphicsWidget):
 
         self.setPlainText(text)
 
+        self._font = None
+        # self.setFont(self._font)
+
         self._color = FColor.mkColor('foreground')
         self.setColor(self._color)
 
+    def setFont(self, font: QFont) -> None:
+        """Set the font of the label."""
+        self._item.setFont(self._font)
+
     def setColor(self, color: QColor) -> None:
+        """Set the color of the label."""
         self._item.setDefaultTextColor(color)
 
-    def setPlainText(self, text: str):
+    def setPlainText(self, text: str) -> None:
+        """Set the text of the label."""
         self._item.setPlainText(text)
 
     def toPlainText(self) -> str:
+        """Return the label's text."""
         return self._item.toPlainText()
 
     # def boundingRect(self) ->QRectF:

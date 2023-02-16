@@ -1,3 +1,4 @@
+import pytest
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -11,52 +12,65 @@ from . import _display
 app = mkQApp()
 
 
+@pytest.fixture
+def plot_widget1():
+    # test addLegend before adding plot items
+    widget = PlotWidgetF()
+    widget.setXLabel("x label")
+    widget.setYLabel("y label")
+
+    widget.addAnnotation()
+
+    if _display():
+        widget.show()
+    return widget
+
+
+@pytest.fixture
+def add_plot_items1(plot_widget1):
+    widget = plot_widget1
+    widget.addLegend()  # add legend before plot items
+    return [widget.addCurvePlot(label="curve1"),
+            widget.addScatterPlot(label="scatter1"),
+            widget.addBarPlot(label="bar2", y2=True),
+            widget.addErrorbarPlot(label="errorbar2", y2=True)]
+
+
+@pytest.fixture
+def plot_widget2():
+    widget = PlotWidgetF()
+    widget.setXYLabels("x label", "y label", y2="y2 label")
+    if _display():
+        widget.show()
+    return widget
+
+
+@pytest.fixture
+def add_plot_items2(plot_widget2):
+    widget = plot_widget2  # add legend after plot items
+    items = [widget.addBarPlot(label="bar1"),
+             widget.addErrorbarPlot(label="errorbar1"),
+             widget.addCurvePlot(label="curve2", y2=True),
+             widget.addScatterPlot(label="scatter2", y2=True)]
+    widget.addLegend()
+    return items
+
+
 class TestPlotWidget:
-    @classmethod
-    def setup_class(cls):
-        # test addLegend before adding plot items
-        widget = PlotWidgetF()
-        widget.setXLabel("x label")
-        widget.setYLabel("y label")
-        widget.addLegend()
-        cls._curve1 = widget.addCurvePlot(label="curve1")
-        cls._scatter1 = widget.addScatterPlot(label="scatter1")
-        cls._bar2 = widget.addBarPlot(label="bar2", y2=True)
-        cls._statistics2 = widget.addErrorbarPlot(label="errorbar2", y2=True)
-        cls._widget1 = widget
-        if _display():
-            widget.show()
 
-        # test addLegend after adding plot items
-        widget = PlotWidgetF()
-        widget.setXYLabels("x label", "y label", y2="y2 label")
-        cls._bar1 = widget.addBarPlot(label="bar1")
-        cls._statistics1 = widget.addErrorbarPlot(label="errorbar1")
-        cls._curve2 = widget.addCurvePlot(label="curve2", y2=True)
-        cls._scatter2 = widget.addScatterPlot(label="scatter2", y2=True)
-        widget.addLegend()
-        cls._widget2 = widget
-        if _display():
-            widget.show()
+    def test_plots(self, plot_widget1, plot_widget2, add_plot_items1, add_plot_items2):
+        assert len(plot_widget1._plot_area._items) == 7
+        assert len(plot_widget2._plot_area._items) == 6
 
-        cls._plot_items1 = [cls._curve1, cls._scatter1, cls._bar2, cls._statistics2]
-        cls._plot_items2 = [cls._bar1, cls._statistics1, cls._curve2, cls._scatter2]
-
-    def test_plots(self):
-        assert len(self._widget1._plot_area._items) == 6
-        assert len(self._widget2._plot_area._items) == 6
-
-    def test_forwarded_methods(self):
-        widget = self._widget1
-
+    def test_forwarded_methods(self, plot_widget1):
         for method in ["removeAllItems", "setAspectLocked", "setLabel", "setTitle",
                        "addLegend", "invertX", "invertY", "autoRange"]:
-            with patch.object(widget._plot_area, method) as mocked:
-                getattr(widget, method)()
+            with patch.object(plot_widget1._plot_area, method) as mocked:
+                getattr(plot_widget1, method)()
                 mocked.assert_called_once()
 
-    def test_axis_and_legend(self):
-        widget = self._widget1
+    def test_axis_and_legend(self, plot_widget1):
+        widget = plot_widget1
 
         widget.showAxis()
         assert widget._plot_area.getAxis("left").isVisible()
@@ -72,10 +86,10 @@ class TestPlotWidget:
         widget.showLegend()
         assert widget._plot_area._legend.isVisible()
 
-    def test_plot1(self):
-        # widget1
-
-        for i, plot in enumerate(self._plot_items1):
+    def test_plot1(self, plot_widget1, add_plot_items1):
+        widget = plot_widget1
+        plot_items = add_plot_items1
+        for i, plot in enumerate(plot_items):
             x = np.arange(20)
             y = np.random.rand(20)
             y[-i-1:-1] = np.nan
@@ -85,18 +99,19 @@ class TestPlotWidget:
                 plot.setData(x, y)
             _display()
 
-        self._widget1._plot_area._onLogXChanged(True)
+        widget._plot_area._onLogXChanged(True)
         _display()
-        self._widget1._plot_area._onLogYChanged(True)
+        widget._plot_area._onLogYChanged(True)
         _display()
 
-        for plot in self._plot_items1:
+        for plot in plot_items:
             plot.setData([], [])
             _display()
 
-        # widget2
-
-        for i, plot in enumerate(self._plot_items2):
+    def test_plot2(self, plot_widget2, add_plot_items2):
+        widget = plot_widget2
+        plot_items = add_plot_items2
+        for i, plot in enumerate(plot_items):
             x = np.arange(20)
             y = np.random.rand(20)
             y[-i-1:-1] = np.nan
@@ -106,17 +121,18 @@ class TestPlotWidget:
                 plot.setData(x, y)
             _display()
 
-        self._widget2._plot_area._onLogXChanged(True)
+        widget._plot_area._onLogXChanged(True)
         _display()
-        self._widget2._plot_area._onLogYChanged(True)
+        widget._plot_area._onLogYChanged(True)
         _display()
 
-        for plot in self._plot_items2:
+        for plot in plot_items:
             plot.setData([], [])
             _display()
 
-    def test_cross_cursor(self):
-        widget = self._widget1
+    def test_cross_cursor(self, plot_widget1):
+        widget = plot_widget1
+
         assert not widget._v_line.isVisible()
         assert not widget._h_line.isVisible()
         widget._plot_area._show_cross_cb.setChecked(True)
