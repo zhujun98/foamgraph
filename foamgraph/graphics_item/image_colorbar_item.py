@@ -48,7 +48,6 @@ class ImageColorbarItem(GraphicsWidget):
         vb = ViewBox(parent=self)
         vb.setMaximumWidth(152)
         vb.setMinimumWidth(45)
-        vb.setMouseEnabled(x=False, y=True)
         vb.addItem(self._hist)
         vb.addItem(self._lri)
         vb.enableAutoRange(ViewBox.XYAxes)

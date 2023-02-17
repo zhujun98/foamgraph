@@ -91,7 +91,6 @@ class ImageViewF(QWidget):
             self._plot_widget.addItem(roi)
 
         self.invertY(True)  # y-axis points from top to bottom
-        self.setAspectLocked(True)
 
         self._hist_widget = HistogramLUTWidget(self._image_item)
 
@@ -243,9 +242,6 @@ class ImageViewF(QWidget):
         :param cm: a ColorMap object.
         """
         self._hist_widget.setColorMap(cm)
-
-    def setAspectLocked(self, *args, **kwargs):
-        self._plot_widget.setAspectLocked(*args, **kwargs)
 
     def setLabel(self, *args, **kwargs):
         self._plot_widget.setLabel(*args, **kwargs)

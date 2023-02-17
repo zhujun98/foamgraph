@@ -63,7 +63,7 @@ class TestPlotWidget:
         assert len(plot_widget2._plot_area._items) == 6
 
     def test_forwarded_methods(self, plot_widget1):
-        for method in ["removeAllItems", "setAspectLocked", "setLabel", "setTitle",
+        for method in ["removeAllItems", "setLabel", "setTitle",
                        "addLegend", "invertX", "invertY", "autoRange"]:
             with patch.object(plot_widget1._plot_area, method) as mocked:
                 getattr(plot_widget1, method)()

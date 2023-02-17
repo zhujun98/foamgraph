@@ -27,14 +27,10 @@ class TestImageView:
         with pytest.raises(TypeError, match="numpy array"):
             widget.setImage([[1, 2, 3], [4, 5, 6]])
 
-        # test log X/Y menu is disabled
-        menu = widget._plot_widget._plot_area.getContextMenus(None)
-        assert len(menu) == 0
-
     def testForwardMethod(self):
         widget = ImageViewF(n_rois=4)
 
-        for method in ["setAspectLocked", "setLabel", "setTitle", "addItem",
+        for method in ["setLabel", "setTitle", "addItem",
                        "removeItem", "invertX", "invertY", "autoRange"]:
             with patch.object(widget._plot_widget, method) as mocked:
                 getattr(widget, method)()

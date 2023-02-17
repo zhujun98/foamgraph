@@ -12,10 +12,11 @@ from typing import Optional
 
 from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, Qt
 from ..backend.QtWidgets import (
-    QCheckBox, QGraphicsGridLayout, QGraphicsItem, QHBoxLayout,
-    QLabel, QMenu, QSizePolicy, QSlider, QWidget, QWidgetAction
+    QAction, QActionGroup, QCheckBox, QGraphicsGridLayout, QGraphicsItem,
+    QGridLayout, QHBoxLayout, QLabel, QMenu, QSizePolicy, QSlider, QWidget, QWidgetAction
 )
 
+from ..graphics_scene import MouseClickEvent
 from .axis_item import AxisItem
 from .graphics_item import GraphicsWidget
 from .label_item import LabelItem
@@ -33,6 +34,20 @@ class PlotArea(GraphicsWidget):
     - Manage a list of GraphicsItems displayed inside the ViewBox;
     - Implement a context menu with display options.
     """
+
+    class AxisMenuWidget(QWidget):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            self.invert_x_cb = QCheckBox("Invert X Axis")
+            self.invert_y_cb = QCheckBox("Invert Y Axis")
+            self.auto_x_cb = QCheckBox("Auto X Range")
+            self.auto_y_cb = QCheckBox("Auto Y Range")
+            layout = QGridLayout(self)
+            layout.addWidget(self.auto_x_cb)
+            layout.addWidget(self.auto_y_cb)
+            layout.addWidget(self.invert_x_cb)
+            layout.addWidget(self.invert_y_cb)
 
     cross_toggled_sgn = pyqtSignal(bool)
 
@@ -81,7 +96,7 @@ class PlotArea(GraphicsWidget):
         self._log_x_cb = QCheckBox("Log X")
         self._log_y_cb = QCheckBox("Log Y")
 
-        self._menus = []
+        self._menu = QMenu()
         self._enable_meter = enable_meter
         self._enable_grid = enable_grid
         self._enable_transform = enable_transform
@@ -139,17 +154,13 @@ class PlotArea(GraphicsWidget):
         self._log_y_cb.toggled.connect(self._onLogYChanged)
 
     def _initMeterManu(self):
-        menu = QMenu("Meter")
-        self._menus.append(menu)
-
+        menu = self._menu.addMenu("Meter")
         cross_act = QWidgetAction(menu)
         cross_act.setDefaultWidget(self._show_cross_cb)
         menu.addAction(cross_act)
 
     def _initGridMenu(self):
-        menu = QMenu("Grid")
-        self._menus.append(menu)
-
+        menu = self._menu.addMenu("Grid")
         show_x_act = QWidgetAction(menu)
         show_x_act.setDefaultWidget(self._show_x_grid_cb)
         menu.addAction(show_x_act)
@@ -166,9 +177,7 @@ class PlotArea(GraphicsWidget):
         menu.addAction(opacity_act)
 
     def _initTransformMenu(self):
-        menu = QMenu("Transform")
-        self._menus.append(menu)
-
+        menu = self._menu.addMenu("Transform")
         log_x_act = QWidgetAction(menu)
         log_x_act.setDefaultWidget(self._log_x_cb)
         menu.addAction(log_x_act)
@@ -176,7 +185,40 @@ class PlotArea(GraphicsWidget):
         log_y_act.setDefaultWidget(self._log_y_cb)
         menu.addAction(log_y_act)
 
+    def _initMouseModeMenu(self):
+        menu = self._menu.addMenu("Mouse Mode")
+        group = QActionGroup(menu)
+
+        action = menu.addAction("Pan")
+        action.setActionGroup(group)
+        action.setCheckable(True)
+        action.triggered.connect(lambda: self._vb.setMouseMode(self._vb.PanMode))
+        action.setChecked(True)
+
+        action = menu.addAction("Zoom")
+        action.setActionGroup(group)
+        action.setCheckable(True)
+        action.triggered.connect(lambda: self._vb.setMouseMode(self._vb.RectMode))
+
+    def _initAxesMenu(self):
+        action = self._menu.addAction("View All")
+        action.triggered.connect(self._vb.autoRange)
+
+        menu = self._menu.addMenu(f"Axes")
+        action = QWidgetAction(menu)
+        widget = self.AxisMenuWidget()
+
+        action.setDefaultWidget(widget)
+        widget.invert_x_cb.toggled.connect(self._vb.invertX)
+        widget.invert_y_cb.toggled.connect(self._vb.invertY)
+        menu.addAction(action)
+
     def _initContextMenu(self):
+        self._initAxesMenu()
+        self._initMouseModeMenu()
+
+        self._menu.addSeparator()
+
         if self._enable_meter:
             self._initMeterManu()
 
@@ -200,9 +242,6 @@ class PlotArea(GraphicsWidget):
             axis.setFlag(axis.GraphicsItemFlag.ItemNegativeZStacksBehindParent)
 
             self.showAxis(name, name in ['left', 'bottom'])
-
-    def getViewBox(self):
-        return self._vb
 
     def clearAllPlotItems(self):
         """Clear data on all the plot items."""
@@ -321,10 +360,6 @@ class PlotArea(GraphicsWidget):
         self._plot_items_y2.clear()
         self._items.clear()
 
-    def getContextMenus(self, event):
-        """Override."""
-        return self._menus
-
     def getAxis(self, axis: str):
         """Return the specified AxisItem.
 
@@ -429,9 +464,6 @@ class PlotArea(GraphicsWidget):
             self._title.setPlainText(title)
             self._title.setVisible(True)
 
-    def setAspectLocked(self, *args, **kwargs) -> None:
-        self._vb.setAspectLocked(*args, **kwargs)
-
     def invertX(self, *args, **kwargs) -> None:
         self._vb.invertX(*args, **kwargs)
 
@@ -443,3 +475,8 @@ class PlotArea(GraphicsWidget):
 
     def mapSceneToView(self, *args, **kwargs):
         return self._vb.mapSceneToView(*args, **kwargs)
+
+    def mouseClickEvent(self, ev: MouseClickEvent):
+        if ev.button() == Qt.MouseButton.RightButton:
+            ev.accept()
+            self._menu.popup(ev.screenPos().toPoint())

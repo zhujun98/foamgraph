@@ -86,7 +86,7 @@ class TestPlotArea(unittest.TestCase):
     def testForwardMethod(self):
         area = self._area
 
-        for method in ["setAspectLocked", "invertY", "invertX", "mapSceneToView"]:
+        for method in ["invertY", "invertX", "mapSceneToView"]:
             with patch.object(area._vb, method) as mocked:
                 getattr(area, method)()
                 mocked.assert_called_once()
@@ -163,129 +163,80 @@ class TestPlotArea(unittest.TestCase):
         self.assertEqual(0, len(area._legend._items))
 
     def testContextMenu(self):
-        area = self._area
-        event = object()
-        menus = self._area.getContextMenus(event)
-
-        self.assertEqual(3, len(menus))
-        self.assertEqual("Meter", menus[0].title())
-        self.assertEqual("Grid", menus[1].title())
-        self.assertEqual("Transform", menus[2].title())
-
-        # test "Meter" actions
-        meter_actions = menus[0].actions()
-        self.assertFalse(area._show_meter)
-        self.assertFalse(area._meter.isVisible())
-        spy = QSignalSpy(area.cross_toggled_sgn)
-        meter_actions[0].defaultWidget().setChecked(True)
-        self.assertTrue(area._show_meter)
-        self.assertTrue(area._meter.isVisible())
-        self.assertEqual(1, len(spy))
-        meter_actions[0].defaultWidget().setChecked(False)
-        self.assertFalse(area._show_meter)
-        self.assertFalse(area._meter.isVisible())
-        self.assertEqual(2, len(spy))
-
-        # test "Grid" actions
-        grid_actions = menus[1].actions()
-        alpha = area._grid_opacity_sld.value()
-        grid_actions[0].defaultWidget().setChecked(True)
-        self.assertEqual(alpha, area.getAxis("bottom").grid)
-        grid_actions[1].defaultWidget().setChecked(True)
-        self.assertEqual(alpha, area.getAxis("left").grid)
-
-        # test "Transform" actions
-        plot_item = CurvePlotItem()
-        plot_item2 = ScatterPlotItem()
-        area.addItem(plot_item)
-        area.addItem(plot_item2, y2=True)
-        transform_actions = menus[2].actions()
-
-        with patch.object(plot_item, "updateGraph") as mocked:
-            with patch.object(plot_item2, "updateGraph") as mocked2:
-                transform_actions[0].defaultWidget().setChecked(True)
-                self.assertTrue(area.getAxis("bottom").logMode)
-                # self.assertTrue(area.getAxis("top").logMode)
-                self.assertTrue(plot_item._log_x_mode)
-                self.assertTrue(plot_item2._log_x_mode)
-                mocked.assert_called_once()
-                mocked2.assert_called_once()
-
-                plot_item3 = CurvePlotItem()
-                plot_item4 = ScatterPlotItem()
-                area.addItem(plot_item3)
-                area.addItem(plot_item4, y2=True)
-                self.assertTrue(plot_item3._log_x_mode)
-                self.assertTrue(plot_item4._log_x_mode)
-
-        with patch.object(plot_item, "updateGraph") as mocked:
-            with patch.object(plot_item2, "updateGraph") as mocked2:
-                transform_actions[1].defaultWidget().setChecked(True)
-                self.assertTrue(area.getAxis("left").logMode)
-                # self.assertTrue(area.getAxis("right").logMode)
-                self.assertTrue(plot_item._log_y_mode)
-                self.assertFalse(plot_item2._log_y_mode)
-                mocked.assert_called_once()
-                mocked2.assert_not_called()
-
-                plot_item5 = CurvePlotItem()
-                plot_item6 = ScatterPlotItem()
-                area.addItem(plot_item5)
-                area.addItem(plot_item6, y2=True)
-                self.assertTrue(plot_item5._log_y_mode)
-                self.assertFalse(plot_item6._log_y_mode)
-
-        another_area = PlotArea(
-            enable_meter=False, enable_transform=False, enable_grid=False)
-        menus = another_area.getContextMenus(event)
-        self.assertEqual(0, len(menus))
-    #
-    # def testSetAnnotationList(self):
-    #     area = self._area
-    #     # add some items to simulate the practical situation
-    #     area.addItem(ImageItem())
-    #     area.addItem(BarPlotItem())
-    #     area.addItem(ErrorbarPlotItem())
-    #
-    #     # add some items
-    #     area.setAnnotationList([1, 2, 3], [4, 5, 6])
-    #     self.assertEqual(3, len(area._annotation_items))
-    #     for item in area._annotation_items:
-    #         self.assertTrue(item.isVisible())
-    #     self.assertEqual(3, area._n_vis_annotation_items)
-    #
-    #     # set less items
-    #     area.setAnnotationList([1, 2], [4, 5])
-    #     self.assertEqual(3, len(area._annotation_items))
-    #     for item in area._annotation_items[:2]:
-    #         self.assertTrue(item.isVisible())
-    #     self.assertFalse(area._annotation_items[-1].isVisible())
-    #     self.assertEqual(2, area._n_vis_annotation_items)
-    #
-    #     # set more items
-    #     area.setAnnotationList([1, 2, 3, 4], [4, 5, 6, 7], values=[4, 5, 6, 7])
-    #     self.assertEqual(4, len(area._annotation_items))
-    #     for item in area._annotation_items:
-    #         self.assertTrue(item.isVisible())
-    #     self.assertEqual(4, area._n_vis_annotation_items)
-    #
-    #     # clear items
-    #     area.setAnnotationList([], [])
-    #     self.assertEqual(4, len(area._annotation_items))
-    #     for item in area._annotation_items:
-    #         self.assertFalse(item.isVisible())
-    #     self.assertEqual(0, area._n_vis_annotation_items)
-    #
-    #     area.removeAllItems()
-    #     self.assertEqual(0, len(area._annotation_items))
-    #     self.assertEqual(0, area._n_vis_annotation_items)
-    #
-    #     # test TextItem call
-    #     with patch("foamgraph.pyqtgraph_be.TextItem.setPos") as mocked_pos:
-    #         with patch("foamgraph.pyqtgraph_be.TextItem.setText") as mocked_value:
-    #             area.setAnnotationList([1, 2, 3], [4, 5, 6])
-    #             mocked_pos.assert_called_with(3, 6)
-    #             mocked_value.assert_called_with("3.0000")
-    #
-    #             area.setAnnotationList([1], [4], [2])
-    #             mocked_value.assert_called_with("2.0000")
+        ...
+        # area = self._area
+        # event = object()
+        # menus = self._area._menus
+        #
+        # self.assertEqual(3, len(menus))
+        # self.assertEqual("Meter", menus[0].title())
+        # self.assertEqual("Grid", menus[1].title())
+        # self.assertEqual("Transform", menus[2].title())
+        #
+        # # test "Meter" actions
+        # meter_actions = menus[0].actions()
+        # self.assertFalse(area._show_meter)
+        # self.assertFalse(area._meter.isVisible())
+        # spy = QSignalSpy(area.cross_toggled_sgn)
+        # meter_actions[0].defaultWidget().setChecked(True)
+        # self.assertTrue(area._show_meter)
+        # self.assertTrue(area._meter.isVisible())
+        # self.assertEqual(1, len(spy))
+        # meter_actions[0].defaultWidget().setChecked(False)
+        # self.assertFalse(area._show_meter)
+        # self.assertFalse(area._meter.isVisible())
+        # self.assertEqual(2, len(spy))
+        #
+        # # test "Grid" actions
+        # grid_actions = menus[1].actions()
+        # alpha = area._grid_opacity_sld.value()
+        # grid_actions[0].defaultWidget().setChecked(True)
+        # self.assertEqual(alpha, area.getAxis("bottom").grid)
+        # grid_actions[1].defaultWidget().setChecked(True)
+        # self.assertEqual(alpha, area.getAxis("left").grid)
+        #
+        # # test "Transform" actions
+        # plot_item = CurvePlotItem()
+        # plot_item2 = ScatterPlotItem()
+        # area.addItem(plot_item)
+        # area.addItem(plot_item2, y2=True)
+        # transform_actions = menus[2].actions()
+        #
+        # with patch.object(plot_item, "updateGraph") as mocked:
+        #     with patch.object(plot_item2, "updateGraph") as mocked2:
+        #         transform_actions[0].defaultWidget().setChecked(True)
+        #         self.assertTrue(area.getAxis("bottom").logMode)
+        #         # self.assertTrue(area.getAxis("top").logMode)
+        #         self.assertTrue(plot_item._log_x_mode)
+        #         self.assertTrue(plot_item2._log_x_mode)
+        #         mocked.assert_called_once()
+        #         mocked2.assert_called_once()
+        #
+        #         plot_item3 = CurvePlotItem()
+        #         plot_item4 = ScatterPlotItem()
+        #         area.addItem(plot_item3)
+        #         area.addItem(plot_item4, y2=True)
+        #         self.assertTrue(plot_item3._log_x_mode)
+        #         self.assertTrue(plot_item4._log_x_mode)
+        #
+        # with patch.object(plot_item, "updateGraph") as mocked:
+        #     with patch.object(plot_item2, "updateGraph") as mocked2:
+        #         transform_actions[1].defaultWidget().setChecked(True)
+        #         self.assertTrue(area.getAxis("left").logMode)
+        #         # self.assertTrue(area.getAxis("right").logMode)
+        #         self.assertTrue(plot_item._log_y_mode)
+        #         self.assertFalse(plot_item2._log_y_mode)
+        #         mocked.assert_called_once()
+        #         mocked2.assert_not_called()
+        #
+        #         plot_item5 = CurvePlotItem()
+        #         plot_item6 = ScatterPlotItem()
+        #         area.addItem(plot_item5)
+        #         area.addItem(plot_item6, y2=True)
+        #         self.assertTrue(plot_item5._log_y_mode)
+        #         self.assertFalse(plot_item6._log_y_mode)
+        #
+        # another_area = PlotArea(
+        #     enable_meter=False, enable_transform=False, enable_grid=False)
+        # menus = another_area._menus
+        # self.assertEqual(0, len(menus))

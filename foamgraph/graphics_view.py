@@ -59,11 +59,6 @@ class GraphicsView(QGraphicsView):
         self.scene().prepareForPaint()
         return QGraphicsView.render(self, *args, **kwds)
 
-    def close(self):
-        self._central_widget = None
-        self.scene().clear()
-        super(GraphicsView, self).close()
-
     def setCentralWidget(self, widget: QGraphicsWidget):
         """Sets a QGraphicsWidget to automatically fill the entire view (the item will be automatically
         resize whenever the GraphicsView is resized)."""
@@ -85,21 +80,9 @@ class GraphicsView(QGraphicsView):
         else:
             self.fitInView(self.range, Qt.IgnoreAspectRatio)
 
-        self.device_range_changed_sgn.emit(self, self.range)
-        self.device_transform_changed_sgn.emit(self)
-
-    def viewRect(self):
-        """Return the boundaries of the view in scene coordinates"""
-        # easier to just return self.range ?
-        r = QRectF(self.rect())
-        return self.viewportTransform().inverted()[0].mapRect(r)
-
-    def setRange(self, newRect=None, padding=0.05, disableAutoPixel=True):
+    def setRange(self, newRect, padding=0.05, disableAutoPixel=True):
         if disableAutoPixel:
             self.autoPixelRange=False
-        if newRect is None:
-            newRect = self.viewRect()
-            padding = 0
 
         padding = Point(padding)
         newRect = QRectF(newRect)

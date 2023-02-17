@@ -132,9 +132,6 @@ class PlotWidgetF(GraphicsView):
         self._plot_area.addItem(item, ignore_bounds=True)
         return item
 
-    def setAspectLocked(self, *args, **kwargs):
-        self._plot_area.setAspectLocked(*args, **kwargs)
-
     def setLabel(self, *args, **kwargs):
         self._plot_area.setLabel(*args, **kwargs)
 
