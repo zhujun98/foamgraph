@@ -459,9 +459,9 @@ class GraphicsItem:
         # disconnect from previous view
         if oldView is not None:
             for signal, slot in [('range_changed_sgn', self.viewRangeChanged),
-                                 ('sigDeviceRangeChanged', self.viewRangeChanged), 
+                                 ('device_range_changed_sgn', self.viewRangeChanged),
                                  ('transform_changed_sgn', self.viewTransformChanged),
-                                 ('sigDeviceTransformChanged', self.viewTransformChanged)]:
+                                 ('device_transform_changed_sgn', self.viewTransformChanged)]:
                 try:
                     getattr(oldView, signal).disconnect(slot)
                 except (TypeError, AttributeError, RuntimeError):
@@ -472,10 +472,10 @@ class GraphicsItem:
 
         # connect to new view
         if view is not None:
-            if hasattr(view, 'sigDeviceRangeChanged'):
+            if hasattr(view, 'device_range_changed_sgn'):
                 # connect signals from GraphicsView
-                view.sigDeviceRangeChanged.connect(self.viewRangeChanged)
-                view.sigDeviceTransformChanged.connect(self.viewTransformChanged)
+                view.device_range_changed_sgn.connect(self.viewRangeChanged)
+                view.device_transform_changed_sgn.connect(self.viewTransformChanged)
             else:
                 # connect signals from ViewBox
                 view.range_changed_sgn.connect(self.viewRangeChanged)

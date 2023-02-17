@@ -42,7 +42,6 @@ class PlotWidgetF(GraphicsView):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding,
                            QSizePolicy.Policy.Expanding)
-        self.enableMouse(False)
 
         self._title = ""
 
