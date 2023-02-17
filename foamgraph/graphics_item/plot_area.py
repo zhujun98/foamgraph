@@ -410,10 +410,10 @@ class PlotArea(GraphicsWidget):
             return
 
         if pos is None:
-            self._meter.setText("")
+            self._meter.setPlainText("")
         else:
             x, y = pos
-            self._meter.setText(f"x = {x}, y = {y}")
+            self._meter.setPlainText(f"x = {x}, y = {y}")
 
     def setTitle(self, *args) -> None:
         """Set the title of the plot."""
