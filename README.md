@@ -35,14 +35,14 @@ between the GUI and the processor can still be fulfilled using Qt's signal-slot 
 
 ## Getting started
 
-Every plot widget should inherit from `PlotWidgetF`. The following code snippet
+Every plot widget should inherit from `GraphView`. The following code snippet
 shows how to create a double-y plot with a title, axis labels and a legend:
 
 ```py
-from foamgraph import FColor, PlotWidgetF
+from foamgraph import FColor, GraphView
 
 
-class DoubleYPlot(PlotWidgetF):
+class DoubleYPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -60,14 +60,14 @@ class DoubleYPlot(PlotWidgetF):
         self._plot2.setData(data['x'], data['y2'])
 ```
 
-Every widget for image analysis should inherit from `ImageViewF`. The following
+Every widget for image analysis should inherit from `ImageView`. The following
 code snippet shows how to create a simple widget for displaying an image:
 
 ```py
-from foamgraph import ImageViewF
+from foamgraph import ImageView
 
 
-class ImageAnalysis(ImageViewF):
+class ImageAnalysis(ImageView):
     def updateF(self, data):
         """Override."""
         self.setImage(data['image']['data'])

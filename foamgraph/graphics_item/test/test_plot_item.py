@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 from foamgraph.backend.QtCore import QByteArray, QDataStream, QIODevice, QPointF, QRectF
-from foamgraph import mkQApp, PlotWidgetF
+from foamgraph import mkQApp, GraphView
 from foamgraph.graphics_item.plot_item import (
     CurvePlotItem, BarPlotItem, ScatterPlotItem, ErrorbarPlotItem
 )
@@ -16,7 +16,7 @@ app = mkQApp()
 class TestPlotItems:
     @classmethod
     def setup_class(cls):
-        cls._widget = PlotWidgetF()
+        cls._widget = GraphView()
         if _display():
             cls._widget.show()
 
@@ -88,11 +88,11 @@ class TestPlotItems:
             item.setData(np.arange(2).astype(dtype), np.arange(3).astype(dtype))
 
         # test log mode
-        self._widget._plot_area._onLogXChanged(True)
+        self._widget._cw._onLogXChanged(True)
         if dtype == float:
             _display()
         assert item.boundingRect() == QRectF(0, 0, 1.0, 13.5)
-        self._widget._plot_area._onLogYChanged(True)
+        self._widget._cw._onLogYChanged(True)
         if dtype == float:
             _display()
         assert item.boundingRect().topLeft() == QPointF(0, 0)
@@ -126,10 +126,10 @@ class TestPlotItems:
             item.setData(np.arange(2), np.arange(3))
 
         # test log mode
-        self._widget._plot_area._onLogXChanged(True)
+        self._widget._cw._onLogXChanged(True)
         _display()
         assert item.boundingRect() == QRectF(-1.0, 0, 3.0, 14.0)
-        self._widget._plot_area._onLogYChanged(True)
+        self._widget._cw._onLogYChanged(True)
         _display()
         assert item.boundingRect() == QRectF(-1.0, 0, 3.0, 2.0)
 
@@ -170,10 +170,10 @@ class TestPlotItems:
             item.setData(np.arange(2), np.arange(2), y_min=np.arange(2), y_max=np.arange(3))
 
         # test log mode
-        self._widget._plot_area._onLogXChanged(True)
+        self._widget._cw._onLogXChanged(True)
         _display()
         assert item.boundingRect() == QRectF(-0.5, -1.0, 2.0, 11.0)
-        self._widget._plot_area._onLogYChanged(True)
+        self._widget._cw._onLogYChanged(True)
         _display()
         assert item.boundingRect().topLeft() == QPointF(-0.5, 0.0)
         assert 1.5, item.boundingRect().bottomRight().x()
@@ -216,7 +216,7 @@ class TestPlotItems:
             item.setData(np.arange(2).astype(dtype), np.arange(3).astype(dtype))
 
         # test log mode
-        self._widget._plot_area._onLogXChanged(True)
+        self._widget._cw._onLogXChanged(True)
         if dtype == float:
             _display()
         assert -0.2 < item.boundingRect().topLeft().x() < 0
@@ -224,7 +224,7 @@ class TestPlotItems:
         assert 1.0 < item.boundingRect().bottomRight().x() < 1.2
         assert 13.5 < item.boundingRect().bottomRight().y() < 14.0
 
-        self._widget._plot_area._onLogYChanged(True)
+        self._widget._cw._onLogYChanged(True)
         if dtype == float:
             _display()
         assert -0.1 < item.boundingRect().topLeft().x() < 0

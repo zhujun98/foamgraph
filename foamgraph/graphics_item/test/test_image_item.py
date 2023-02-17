@@ -1,7 +1,7 @@
 import unittest
 
 from foamgraph import mkQApp
-from foamgraph import PlotWidgetF
+from foamgraph import GraphView
 from foamgraph.graphics_item.image_item import ImageItem, RingItem
 
 from foamgraph.test import _display
@@ -19,7 +19,7 @@ class TestImageItem(unittest.TestCase):
 class TestGeometryItem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls._widget = PlotWidgetF()
+        cls._widget = GraphView()
         if _display():
             cls._widget.show()
 

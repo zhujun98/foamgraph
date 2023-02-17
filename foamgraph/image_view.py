@@ -10,14 +10,14 @@ from typing import final
 
 import numpy as np
 
-from .backend.QtCore import pyqtSlot, QTimer
+from .backend.QtCore import pyqtSlot, Qt, QTimer
 from .backend.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from .aesthetics import ColorMap
 from .config import config
 from .graphics_view import GraphicsView
-from .graphics_item import ImageColorbarItem, ImageItem, RectROI
-from .plot_widget import PlotWidgetF
+from .graphics_item import ImageColorbarWidget, ImageItem, PlotWidget, RectROI
+from .graph_view import GraphView
 
 
 class HistogramLUTWidget(GraphicsView):
@@ -27,28 +27,19 @@ class HistogramLUTWidget(GraphicsView):
         if not isinstance(image_item, ImageItem):
             raise TypeError
 
-        self._item = ImageColorbarItem(image_item)
+        self._item = ImageColorbarWidget(image_item)
         self.setCentralWidget(self._item)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred,
+                           QSizePolicy.Policy.Expanding)
         self.setMinimumWidth(95)
 
     def setColorMap(self, cm: ColorMap):
         self._item.setColorMap(cm)
 
 
-class ImageViewF(QWidget):
-    """ImageView base class.
-
-    A widget used for displaying 2D image data.
-
-    Note: it is different from the ImageView in pyqtgraph!
-
-    Attributes:
-        _image_item (pyqtgraph.ImageItem): This object will be used to
-            display the image.
-    """
+class ImageView(QWidget):
+    """QWidget for displaying an image."""
     def __init__(self, *,
-                 hide_axis: bool = True,
                  color_map=None,
                  n_rois: int = 0,
                  roi_position: tuple = (0, 0),
@@ -57,7 +48,6 @@ class ImageViewF(QWidget):
         """Initialization.
 
         :param n_roi: Number of ROIs included.
-        :param hide_axis: True for hiding left and bottom axes.
         :param roi_position: Initial upper-left corner position (x, y)
             of the first ROI.
         :param roi_size: Initial size (w, h) of all ROIs.
@@ -72,23 +62,19 @@ class ImageViewF(QWidget):
             raise ValueError("Maximum number of ROIs is 4.")
         self._initializeROIs(n_rois, roi_position, roi_size)
 
-        self._plot_widget = PlotWidgetF(enable_meter=False,
-                                        enable_grid=False,
-                                        enable_transform=False)
+        self._graph_view = GraphView(image=True)
+        self._graph_view.hideAxis()
 
         self._cached_title = None
         # use the public interface for caching
         self.setTitle("")  # reserve space for display
 
-        if hide_axis:
-            self._plot_widget.hideAxis()
-
         self._image_item = ImageItem()
-        self._plot_widget.addItem(self._image_item)
+        self._graph_view.addItem(self._image_item)
         self._image_item.mouse_moved_sgn.connect(self.onMouseMoved)
 
         for roi in self._rois:
-            self._plot_widget.addItem(roi)
+            self._graph_view.addItem(roi)
 
         self.invertY(True)  # y-axis points from top to bottom
 
@@ -109,7 +95,7 @@ class ImageViewF(QWidget):
 
     def initUI(self):
         layout = QHBoxLayout()
-        layout.addWidget(self._plot_widget, 4)
+        layout.addWidget(self._graph_view, 4)
         layout.addWidget(self._hist_widget, 1)
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -223,16 +209,16 @@ class ImageViewF(QWidget):
     @pyqtSlot(int, int, float)
     def onMouseMoved(self, x, y, v):
         if x < 0 or y < 0:
-            self._plot_widget.setTitle(self._cached_title)
+            self._graph_view.setTitle(self._cached_title)
         else:
-            self._plot_widget.setTitle(
+            self._graph_view.setTitle(
                 f'x={x}, y={y}, '
                 f'value={round(v, self._mouse_hover_v_rounding_decimals)}')
 
     def setLevels(self, *args, **kwargs):
         """Set the min/max (bright and dark) levels.
 
-        See ImageColorbarItem.setLevels.
+        See ImageColorbarWidget.setLevels.
         """
         self._hist_widget.setLevels(*args, **kwargs)
 
@@ -244,28 +230,28 @@ class ImageViewF(QWidget):
         self._hist_widget.setColorMap(cm)
 
     def setLabel(self, *args, **kwargs):
-        self._plot_widget.setLabel(*args, **kwargs)
+        self._graph_view.setLabel(*args, **kwargs)
 
     def setTitle(self, *args, **kwargs):
         # This is the public interface. Therefore, we ought to cache
         # the title.
         self._cached_title = None if len(args) == 0 else args[0]
-        self._plot_widget.setTitle(*args, **kwargs)
+        self._graph_view.setTitle(*args, **kwargs)
 
     def invertX(self, *args, **kwargs):
-        self._plot_widget.invertX(*args, **kwargs)
+        self._graph_view.invertX(*args, **kwargs)
 
     def invertY(self, *args, **kwargs):
-        self._plot_widget.invertY(*args, **kwargs)
+        self._graph_view.invertY(*args, **kwargs)
 
     def autoRange(self, *args, **kwargs):
-        self._plot_widget.autoRange(*args, **kwargs)
+        self._graph_view.autoRange(*args, **kwargs)
 
     def addItem(self, *args, **kwargs):
-        self._plot_widget.addItem(*args, **kwargs)
+        self._graph_view.addItem(*args, **kwargs)
 
     def removeItem(self, *args, **kwargs):
-        self._plot_widget.removeItem(*args, **kwargs)
+        self._graph_view.removeItem(*args, **kwargs)
 
     def closeEvent(self, event):
         """Override."""
@@ -275,7 +261,7 @@ class ImageViewF(QWidget):
         super().closeEvent(event)
 
 
-class TimedImageViewF(ImageViewF):
+class TimedImageView(ImageView):
     def __init__(self, interval: int = 1000, *args, **kwargs):
         """Initialization.
 

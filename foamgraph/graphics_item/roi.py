@@ -81,11 +81,6 @@ class UIGraphicsItem(GraphicsObject):
             self._bounding_rect = br
         return QRectF(self._bounding_rect)
 
-    def dataBounds(self, axis, frac=1.0, orthoRange=None):
-        """Called by ViewBox for determining the auto-range bounds.
-        By default, UIGraphicsItems are excluded from autoRange."""
-        return None
-
     def viewRangeChanged(self):
         """Called when the view widget/viewbox is resized/rescaled"""
         self.setNewBounds()

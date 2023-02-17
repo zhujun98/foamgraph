@@ -24,13 +24,12 @@ class InfiniteLineItem(GraphicsObject):
     position_changed_sgn = pyqtSignal(object)
 
     def __init__(self, pos: Union[tuple, list, Point, QPointF], *,
-                 angle: float = 0., draggable=True, parent=None):
+                 angle: float = 0., parent=None):
         """Initialization.
 
         :param pos: (x, y) position of the line.
         :param angle: Rotation angle of the line. 0 for a horizontal line
             and 90 for a vertical one.
-        :param draggable: Whether the line is draggable.
         """
         self._bounding_rect = None
 
@@ -46,7 +45,7 @@ class InfiniteLineItem(GraphicsObject):
         self._angle = None
         self.__setAngle(angle)
 
-        self.setAcceptHoverEvents(draggable)
+        self.setDraggable(True)
 
         self._pen = None
         self.setPen(FColor.mkPen('k'))
@@ -56,7 +55,10 @@ class InfiniteLineItem(GraphicsObject):
         # Cache variables for managing bounds
         self._endPoints = [0, 1]
         self._lastViewSize = None
-        
+
+    def setDraggable(self, state: bool):
+        self.setAcceptHoverEvents(state)
+
     def setPen(self, pen: QPen) -> None:
         """Set the QPen used to draw the ROI."""
         self._pen = pen
@@ -136,11 +138,6 @@ class InfiniteLineItem(GraphicsObject):
         pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
         p.setPen(pen)
         p.drawLine(Point(left, 0), Point(right, 0))
-
-    def dataBounds(self, axis, frac=1.0, orthoRange=None):
-        if axis == 0:
-            return None   # x axis should never be auto-scaled
-        return 0, 0
 
     def mouseDragEvent(self, ev: MouseDragEvent) -> None:
         if ev.button() != Qt.MouseButton.LeftButton:

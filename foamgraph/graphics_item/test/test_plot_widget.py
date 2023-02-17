@@ -10,7 +10,7 @@ from foamgraph.graphics_view import GraphicsView
 from foamgraph.graphics_item import ImageItem
 from foamgraph.graphics_item.label_item import LabelItem
 from foamgraph.graphics_item.legend_item import LegendItem
-from foamgraph.graphics_item import PlotArea
+from foamgraph.graphics_item import PlotWidget
 from foamgraph.graphics_item import (
     CurvePlotItem, BarPlotItem, ScatterPlotItem, ErrorbarPlotItem
 )
@@ -20,10 +20,10 @@ from foamgraph.graphics_item.roi import RectROI
 app = mkQApp()
 
 
-class TestPlotArea(unittest.TestCase):
+class TestPlotWidget(unittest.TestCase):
     def setUp(self):
         self._view = GraphicsView()
-        self._area = PlotArea()
+        self._area = PlotWidget()
         self._area.removeAllItems()  # axis items etc. should not be affected
 
         # FIXME: need the following line because of the implementation of ViewBox
@@ -236,7 +236,7 @@ class TestPlotArea(unittest.TestCase):
         #         self.assertTrue(plot_item5._log_y_mode)
         #         self.assertFalse(plot_item6._log_y_mode)
         #
-        # another_area = PlotArea(
+        # another_area = PlotWidget(
         #     enable_meter=False, enable_transform=False, enable_grid=False)
         # menus = another_area._menus
         # self.assertEqual(0, len(menus))

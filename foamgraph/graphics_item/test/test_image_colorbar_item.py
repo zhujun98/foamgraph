@@ -1,5 +1,5 @@
 from foamgraph import mkQApp
-from foamgraph.graphics_item.image_colorbar_item import ImageColorbarItem
+from foamgraph.graphics_item.image_colorbar_item import ImageColorbarWidget
 from foamgraph.graphics_item.image_item import ImageItem
 
 

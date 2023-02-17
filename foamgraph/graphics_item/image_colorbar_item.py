@@ -15,14 +15,14 @@ from foamgraph.pyqtgraph_be import Point
 
 from ..aesthetics import ColorMap, FColor
 from .axis_item import AxisItem
+from .canvas_item import ViewBox
 from .gradient_editor_item import GradientEditorItem
 from .graphics_item import GraphicsWidget
 from .linear_region_item import LinearRegionItem
 from .plot_item import CurvePlotItem
-from .view_box import ViewBox
 
 
-class ImageColorbarItem(GraphicsWidget):
+class ImageColorbarWidget(GraphicsWidget):
     """GraphicsWidget for adjusting the display of an image."""
 
     lut_changed_sgn = pyqtSignal(object)
@@ -49,14 +49,12 @@ class ImageColorbarItem(GraphicsWidget):
         vb.setMaximumWidth(152)
         vb.setMinimumWidth(45)
         vb.addItem(self._hist)
-        vb.addItem(self._lri)
-        vb.enableAutoRange(ViewBox.XYAxes)
+        vb.addItem(self._lri, ignore_bounds=True)
+        vb.enableAutoRange(ViewBox.Axis.XY)
         self._vb = vb
 
-        self._axis = AxisItem(Qt.Edge.LeftEdge,
-                              linkView=self._vb,
-                              maxTickLength=-10,
-                              parent=self)
+        self._axis = AxisItem(Qt.Edge.LeftEdge, parent=self)
+        self._axis.linkToView(vb)
 
         self.initUI()
         self.initConnections()
@@ -73,7 +71,7 @@ class ImageColorbarItem(GraphicsWidget):
 
     def initUI(self):
         layout = QGraphicsGridLayout()
-        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setContentsMargins(*self.CONTENT_MARGIN)
         layout.setSpacing(0)
         layout.addItem(self._axis, 0, 0)
         layout.addItem(self._vb, 0, 1)
@@ -86,7 +84,7 @@ class ImageColorbarItem(GraphicsWidget):
 
         self._gradient.gradient_changed_sgn.connect(self.gradientChanged)
 
-        self._vb.range_changed_sgn.connect(self.update)
+        # self._vb.x_range_changed_sgn.connect(self.update)
 
     def paint(self, p, *args) -> None:
         """Override."""

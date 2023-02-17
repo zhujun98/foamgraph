@@ -42,6 +42,7 @@ class QualitativeColor:
     Orange = (255, 165, 0)
 
     Yellow = (255, 255, 0)
+    Gold = (255, 215, 0)
     Khaki = (240, 230, 140)
 
     Violet = (238, 130, 238)

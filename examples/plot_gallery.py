@@ -9,7 +9,7 @@ from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QGridLayout
 
 from foamgraph import (
-    AbstractScene, FColor, mkQApp, PlotWidgetF, TimedPlotWidgetF
+    AbstractScene, FColor, mkQApp, GraphView, TimedGraphView
 )
 
 from consumer import Consumer
@@ -17,7 +17,7 @@ from consumer import Consumer
 app = mkQApp()
 
 
-class LinePlot(PlotWidgetF):
+class LinePlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -32,7 +32,7 @@ class LinePlot(PlotWidgetF):
         self._plot.setData(data['x'], data['y'])
 
 
-class ScatterPlot(PlotWidgetF):
+class ScatterPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -48,7 +48,7 @@ class ScatterPlot(PlotWidgetF):
         self._plot.setData(data['x'], data['y'])
 
 
-class BarPlot(PlotWidgetF):
+class BarPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -64,7 +64,7 @@ class BarPlot(PlotWidgetF):
         self._plot.setData(data['x'], data['y'])
 
 
-class ErrorbarPlot(TimedPlotWidgetF):
+class ErrorbarPlot(TimedGraphView):
     def __init__(self, *, parent=None):
         super().__init__(1000, parent=parent)
 
@@ -83,7 +83,7 @@ class ErrorbarPlot(TimedPlotWidgetF):
         self._plot2.setData(data['x'], data['y'])
 
 
-class MultiLinePlot(PlotWidgetF):
+class MultiLinePlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -107,7 +107,7 @@ class MultiLinePlot(PlotWidgetF):
         self._plot3.setData(data['x'], data['y3'])
 
 
-class DoubleYPlot(PlotWidgetF):
+class DoubleYPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -130,7 +130,7 @@ class DoubleYPlot(PlotWidgetF):
         self._plot2.setData(data['x'], data['y2'])
 
 
-class LinePlotWithAnnotation(PlotWidgetF):
+class LinePlotWithAnnotation(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 

@@ -611,10 +611,6 @@ def downsample(data, n, axis=0, xvals='subsample'):
     or downsampled to match.
     """
     ma = None
-    if (hasattr(data, 'implements') and data.implements('MetaArray')):
-        ma = data
-        data = data.view(np.ndarray)
-        
     
     if hasattr(axis, '__len__'):
         if not hasattr(n, '__len__'):
@@ -632,7 +628,6 @@ def downsample(data, n, axis=0, xvals='subsample'):
     sl = [slice(None)] * data.ndim
     sl[axis] = slice(0, nPts*n)
     d1 = data[tuple(sl)]
-    #print d1.shape, s
     d1.shape = tuple(s)
     d2 = d1.mean(axis+1)
     

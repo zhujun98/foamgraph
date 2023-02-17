@@ -484,14 +484,8 @@ class ScatterPlotItem(PlotItem):
         """Override."""
         return self._x, self._y
 
-    def implements(self, interface=None):
-        ints = ['plotData']
-        if interface is None:
-            return ints
-        return interface in ints
-
-    def dataBounds(self, ax, frac=1.0, orthoRange=None):
-        if frac >= 1.0 and orthoRange is None and self._bounds[ax] is not None:
+    def _dataBounds(self, ax, orthoRange=None):
+        if orthoRange is None and self._bounds[ax] is not None:
             return self._bounds[ax]
 
         if len(self._y) == 0:
@@ -513,23 +507,16 @@ class ScatterPlotItem(PlotItem):
             if d.size == 0:
                 return None, None
 
-        if frac >= 1.0:
-            self._bounds[ax] = (np.nanmin(d), np.nanmax(d))
-            return self._bounds[ax]
-        elif frac <= 0.0:
-            raise Exception("Value for parameter 'frac' must be > 0. (got %s)" % str(frac))
-        else:
-            mask = np.isfinite(d)
-            d = d[mask]
-            return np.percentile(d, [50 * (1 - frac), 50 * (1 + frac)])
+        self._bounds[ax] = (np.nanmin(d), np.nanmax(d))
+        return self._bounds[ax]
 
     def pixelPadding(self):
         return 0.7072 * self._symbol_width
 
     def boundingRect(self) -> QRectF:
         """Override."""
-        xmn, xmx = self.dataBounds(ax=0)
-        ymn, ymx = self.dataBounds(ax=1)
+        xmn, xmx = self._dataBounds(ax=0)
+        ymn, ymx = self._dataBounds(ax=1)
         if xmn is None or xmx is None:
             xmn = 0
             xmx = 0
@@ -564,7 +551,7 @@ class ScatterPlotItem(PlotItem):
     def mapPointsToDevice(self, pts):
         tr = self.deviceTransform()
         if tr is None:
-            return None
+            return
 
         pts = fn.transformCoordinates(tr, pts)
         pts -= 0.5 * self._symbol_width
@@ -576,7 +563,7 @@ class ScatterPlotItem(PlotItem):
     def getViewMask(self, pts):
         vb = self.getViewBox()
         if vb is None:
-            return None
+            return
 
         rect = vb.mapRectToDevice(vb.boundingRect())
         w = 0.5 * self._symbol_width

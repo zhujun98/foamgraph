@@ -131,7 +131,7 @@ class GraphicsItem:
 
         self._pixelVectorCache = [None, None]
         self._viewWidget = None
-        self._viewBox = None
+        self._vb = None
         self._connectedView = None
         self._cachedView = None
 
@@ -146,15 +146,15 @@ class GraphicsItem:
         if self._viewWidget is None:
             scene = self.scene()
             if scene is None:
-                return None
+                return
             views = scene.views()
             if len(views) < 1:
-                return None
+                return
             self._viewWidget = weakref.ref(self.scene().views()[0])
-            
+
         v = self._viewWidget()
         if v is not None and not isQObjectAlive(v):
-            return None
+            return
             
         return v
 
@@ -165,24 +165,22 @@ class GraphicsItem:
         If the item is contained inside nested ViewBoxes, then the inner-most ViewBox is returned.
         The result is cached; clear the cache with forgetViewBox()
         """
-        if self._viewBox is None:
-            p = self
+        from .canvas_item import ViewBox
+        if self._vb is None:
+            parent = self
             while True:
                 try:
-                    p = p.parentItem()
+                    parent = parent.parentItem()
                 except RuntimeError:  # sometimes happens as items are being removed from a scene and collected.
                     return None
-                if p is None:
-                    vb = self.getViewWidget()
-                    if vb is None:
-                        return None
-                    else:
-                        self._viewBox = weakref.ref(vb)
-                        break
-                if hasattr(p, 'implements') and p.implements('ViewBox'):
-                    self._viewBox = weakref.ref(p)
+
+                if parent is None:
+                    return
+
+                if isinstance(parent, ViewBox):
+                    self._vb = weakref.ref(parent)
                     break
-        return self._viewBox()  # If we made it this far, _viewBox is definitely not None
+        return self._vb()  # If we made it this far, _viewBox is definitely not None
 
     def deviceTransform(self, viewportTransform=None):
         """
@@ -192,7 +190,7 @@ class GraphicsItem:
         if viewportTransform is None:
             view = self.getViewWidget()
             if view is None:
-                return None
+                return
             viewportTransform = view.viewportTransform()
         dt = self._qtBaseClass.deviceTransform(self, viewportTransform)
 
@@ -206,13 +204,12 @@ class GraphicsItem:
         Returns None if the item does not have a view."""
         view = self.getViewBox()
         if view is None:
-            return None
-        if hasattr(view, 'implements') and view.implements('ViewBox'):
-            tr = self.itemTransform(view.innerSceneItem())
-            if isinstance(tr, tuple):
-                tr = tr[0]   # difference between pyside and pyqt
-            return tr
-        return self.sceneTransform()
+            self.sceneTransform()
+
+        tr = self.itemTransform(view.childGroup)
+        if isinstance(tr, tuple):
+            tr = tr[0]   # difference between pyside and pyqt
+        return tr
 
     def getBoundingParents(self):
         """Return a list of parents to this item that have child clipping enabled."""
@@ -231,10 +228,10 @@ class GraphicsItem:
         in the local coordinate system of the item."""
         view = self.getViewBox()
         if view is None:
-            return None
+            return
         bounds = self.mapRectFromView(view.viewRect())
         if bounds is None:
-            return None
+            return
 
         return bounds.normalized()
 
@@ -443,7 +440,7 @@ class GraphicsItem:
 
         # It is possible this item has moved to a different ViewBox or widget;
         # clear out previously determined references to these.
-        self._viewBox = None
+        self._vb = None
         self._viewWidget = None
         
         # check for this item's current viewbox or view widget
@@ -516,7 +513,7 @@ class GraphicsItem:
         This is used by ViewBox to react if auto-range is enabled.
         """
         view = self.getViewBox()
-        if view is not None and hasattr(view, 'implements') and view.implements('ViewBox'):
+        if view is not None:
             view.itemBoundsChanged(self)  # inform view so it can update its range if it wants
 
 
@@ -558,6 +555,8 @@ class GraphicsObject(GraphicsItem, QGraphicsObject):
 
 class GraphicsWidget(GraphicsItem, QGraphicsWidget):
     _qtBaseClass = QGraphicsWidget
+
+    CONTENT_MARGIN = (5, 5, 5, 5)
 
     def __init__(self, parent: QGraphicsItem = None, **kwargs):
         QGraphicsWidget.__init__(self, parent=parent, **kwargs)

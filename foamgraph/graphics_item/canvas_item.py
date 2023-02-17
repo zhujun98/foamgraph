@@ -1,18 +1,22 @@
+from enum import Enum
 import weakref
-from copy import deepcopy
 
 import numpy as np
 
-from foamgraph.backend.QtWidgets import QGraphicsRectItem, QMenu, QWidget, QWidgetAction
+from foamgraph.backend.QtWidgets import (
+    QGraphicsRectItem, QHBoxLayout, QLabel, QMenu, QWidget, QWidgetAction
+)
 from foamgraph.backend.QtCore import pyqtSignal, QRectF, Qt
-from foamgraph.backend.QtGui import QAction, QActionGroup, QDoubleValidator, QSizePolicy, QTransform
+from foamgraph.backend.QtGui import (
+    QAction, QActionGroup, QDoubleValidator, QGraphicsSceneWheelEvent,
+    QSizePolicy, QTransform
+)
 
-from foamgraph.pyqtgraph_be import getConfigOption
 from foamgraph.pyqtgraph_be import functions as fn
 from foamgraph.pyqtgraph_be.Point import Point
 
 from foamgraph.aesthetics import FColor
-from foamgraph.graphics_scene import MouseDragEvent
+from foamgraph.graphics_scene import MouseClickEvent, MouseDragEvent
 from foamgraph.graphics_item.graphics_item import GraphicsObject, GraphicsWidget
 
 
@@ -71,7 +75,7 @@ class ChildGroup(GraphicsObject):
                 pass
             else:
                 for listener in itemsChangedListeners:
-                    listener.itemsChanged()
+                    listener.updateAutoRange()
         return ret
 
     def shape(self):
@@ -97,34 +101,30 @@ class ViewBox(GraphicsWidget):
     * Item coordinate mapping methods
 
     """
-    y_range_changed_sgn = pyqtSignal(object, object)
-    x_range_changed_sgn = pyqtSignal(object, object)
+    y_range_changed_sgn = pyqtSignal()
+    x_range_changed_sgn = pyqtSignal()
     range_changed_sgn = pyqtSignal(object, object)
-    state_changed_sgn = pyqtSignal(object)
     transform_changed_sgn = pyqtSignal(object)
     resized_sgn = pyqtSignal(object)
 
-    # mouse modes
-    PanMode = 3
-    RectMode = 1
+    cross_cursor_toggled_sgn = pyqtSignal(bool)
 
-    # axes
-    XAxis = 0
-    YAxis = 1
-    XYAxes = 2
+    class MouseMode(Enum):
+        Pan = 3
+        Rect = 1
+
+    class Axis:
+        X = 0
+        Y = 1
+        XY = 2
 
     # for linking views together
     NamedViews = weakref.WeakValueDictionary()   # name: ViewBox
 
-    def __init__(self, parent=None, lockAspect=False):
-        """Initialization.
+    WHEEL_SCALE_FACTOR = 0.00125
 
-        *parent*        (QGraphicsWidget) Optional parent widget
-        *lockAspect*    (False or float) The aspect ratio to lock the view
-                        coorinates to. (or False to allow the ratio to change)
-        ==============  =============================================================
-        """
-
+    def __init__(self, parent=None, *, image: bool = False, debug: bool = True):
+        """Initialization."""
         super().__init__(parent)
 
         self._block_links = False
@@ -133,22 +133,16 @@ class ViewBox(GraphicsWidget):
         self._matrixNeedsUpdate = True  # indicates that range has changed, but matrix update was deferred
         self._autoRangeNeedsUpdate = True # indicates auto-range needs to be recomputed.
 
-        self.state = {
-            # separating targetRange and viewRange allows the view to be resized
-            # while keeping all previously viewed contents visible
-            'targetRange': [[0,1], [0,1]],   # child coord. range visible [[xmin, xmax], [ymin, ymax]]
-            'viewRange': [[0,1], [0,1]],     # actual range viewed
+        self._axis_inverted = [False, False]
+        self._auto_range = [True, True]
 
-            'yInverted': False,
-            'xInverted': False,
-            'aspectLocked': False,    # False if aspect is unlocked, otherwise float specifies the locked ratio.
-            'autoRange': [True, True],  # False if auto range is disabled,
-                                          # otherwise float gives the fraction of data that is visible
-            'autoVisibleOnly': [False, False], # whether to auto-range only to the visible portion of a plot
+        # separating targetRange and viewRange allows the view to be resized
+        # while keeping all previously viewed contents visible
+        self._view_range = [[0, 1], [0, 1]]  # actual range viewed
+        self._target_range = [[0, 1], [0, 1]]
+        self.state = {
             'linkedViews': [None, None],  # may be None, "viewName", or weakref.ref(view)
                                           # a name string indicates that the view *should* link to another, but no view with that name exists yet.
-
-            'mouseMode': ViewBox.PanMode if getConfigOption('leftButtonPan') else ViewBox.RectMode,
 
             # Limits
             'limits': {
@@ -159,7 +153,9 @@ class ViewBox(GraphicsWidget):
                 }
 
         }
-        self._wheel_scale_factor = -1.0 / 8.0
+
+        self._mouse_mode = self.MouseMode.Pan
+
         self._updatingRange = False  # Used to break recursive loops. See updateAutoRange.
         self._itemBoundsCache = weakref.WeakKeyDictionary()
 
@@ -174,41 +170,53 @@ class ViewBox(GraphicsWidget):
 
         # Make scale box that is shown when dragging on the view
         self.rbScaleBox = QGraphicsRectItem(0, 0, 1, 1)
-        # self.rbScaleBox.setPen(FColor.mkPen((255, 255, 100), width=1))
-        # self.rbScaleBox.setBrush(FColor.mkBrush(255, 255, 0, 100))
-        self.rbScaleBox.setPen(FColor.mkPen("foreground"))
-        self.rbScaleBox.setBrush(FColor.mkBrush())
+        self.rbScaleBox.setPen(FColor.mkPen('Gold'))
+        self.rbScaleBox.setBrush(FColor.mkBrush('Gold', alpha=100))
         self.rbScaleBox.setZValue(1e9)
         self.rbScaleBox.hide()
-        self.addItem(self.rbScaleBox, ignoreBounds=True)
+        self.addItem(self.rbScaleBox, ignore_bounds=True)
 
-        # show target rect for debugging
-        self.target = QGraphicsRectItem(0, 0, 1, 1)
-        self.target.setPen(FColor.mkPen('r'))
-        self.target.setParentItem(self)
-        self.target.hide()
+        if debug:
+            self._border = QGraphicsRectItem(0, 0, 1, 1, parent=self)
+            self._border.setPen(FColor.mkPen('r', width=2))
+        else:
+            self._border = None
 
         self.setZValue(-100)
         self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding,
                                        QSizePolicy.Policy.Expanding))
 
-    def getAspectRatio(self):
-        '''return the current aspect ratio'''
-        rect = self.rect()
-        vr = self.viewRect()
-        if rect.height() == 0 or vr.width() == 0 or vr.height() == 0:
-            currentRatio = 1.0
-        else:
-            currentRatio = (rect.width()/float(rect.height())) / (
-                                                vr.width()/vr.height())
-        return currentRatio
+        self._menu = self.createContextMenu(image=image)
 
-    def close(self):
-        self.clear()
+    def createContextMenu(self, image: bool):
+        root = QMenu()
 
-    def implements(self, interface):
-        return interface == 'ViewBox'
-        
+        action = root.addAction("View All")
+        action.triggered.connect(self.autoRange)
+
+        # ---
+        menu = root.addMenu("Mouse Mode")
+        group = QActionGroup(menu)
+
+        action = menu.addAction("Pan")
+        action.setActionGroup(group)
+        action.setCheckable(True)
+        action.triggered.connect(lambda: self.setMouseMode(self.MouseMode.Pan))
+        action.setChecked(True)
+
+        action = menu.addAction("Zoom")
+        action.setActionGroup(group)
+        action.setCheckable(True)
+        action.triggered.connect(lambda: self.setMouseMode(self.MouseMode.Rect))
+
+        if not image:
+            # ---
+            action = root.addAction("Cross Cursor")
+            action.setCheckable(True)
+            action.triggered.connect(self.cross_cursor_toggled_sgn)
+
+        return root
+
     def update(self, *args, **kwargs):
         self.prepareForPaint()
         GraphicsWidget.update(self, *args, **kwargs)
@@ -219,39 +227,10 @@ class ViewBox(GraphicsWidget):
             self.updateAutoRange()
         self.updateMatrix()
 
-    def getState(self, copy=True):
-        """Return the current state of the ViewBox.
-        Linked views are always converted to view names in the returned state."""
-        state = self.state.copy()
-        views = []
-        for v in state['linkedViews']:
-            if isinstance(v, weakref.ref):
-                v = v()
-            if v is None or isinstance(v, str):
-                views.append(v)
-            else:
-                views.append(v.name)
-        state['linkedViews'] = views
-        if copy:
-            return deepcopy(state)
-        else:
-            return state
+    def setMouseMode(self, mode: "ViewBox.MouseMode"):
+        self._mouse_mode = mode
 
-    def setMouseMode(self, mode):
-        """
-        Set the mouse interaction mode. *mode* must be either ViewBox.PanMode or ViewBox.RectMode.
-        In PanMode, the left mouse button pans the view and the right button scales.
-        In RectMode, the left button draws a rectangle which updates the visible region (this mode is more suitable for single-button mice)
-        """
-        if mode not in [ViewBox.PanMode, ViewBox.RectMode]:
-            raise Exception("Mode must be ViewBox.PanMode or ViewBox.RectMode")
-        self.state['mouseMode'] = mode
-        self.state_changed_sgn.emit(self)
-
-    def innerSceneItem(self):
-        return self.childGroup
-
-    def addItem(self, item, ignoreBounds=False):
+    def addItem(self, item, ignore_bounds: bool = False):
         """Add a QGraphicsItem to this view.
 
         The view will include this item when determining how to set its range
@@ -265,7 +244,7 @@ class ViewBox(GraphicsWidget):
             scene.addItem(item)  # Necessary due to Qt bug: https://bugreports.qt-project.org/browse/QTBUG-18616
         item.setParentItem(self.childGroup)
 
-        if not ignoreBounds:
+        if not ignore_bounds:
             self._items.append(item)
         self.updateAutoRange()
 
@@ -283,12 +262,6 @@ class ViewBox(GraphicsWidget):
 
         self.updateAutoRange()
 
-    def clear(self):
-        for i in self._items:
-            self.removeItem(i)
-        for ch in self.childGroup.childItems():
-            ch.setParentItem(None)
-
     def resizeEvent(self, ev):
         self._matrixNeedsUpdate = True
         self.updateMatrix()
@@ -302,26 +275,18 @@ class ViewBox(GraphicsWidget):
         self._matrixNeedsUpdate = True
         self.updateMatrix()
 
-        self.state_changed_sgn.emit(self)
         self.resized_sgn.emit(self)
         self.childGroup.prepareGeometryChange()
 
     def viewRange(self):
         """Return a the view's visible range as a list: [[xmin, xmax], [ymin, ymax]]"""
-        return [x[:] for x in self.state['viewRange']]  # return copy
+        return [x[:] for x in self._view_range]  # return copy
 
     def viewRect(self):
         """Return a QRectF bounding the region visible within the ViewBox"""
-        try:
-            vr0 = self.state['viewRange'][0]
-            vr1 = self.state['viewRange'][1]
-            return QRectF(vr0[0], vr1[0], vr0[1]-vr0[0], vr1[1] - vr1[0])
-        except:
-            print("make qrectf failed:", self.state['viewRange'])
-            raise
-
-    def targetRange(self):
-        return [x[:] for x in self.state['targetRange']]  # return copy
+        vr0 = self._view_range[0]
+        vr1 = self._view_range[1]
+        return QRectF(vr0[0], vr1[0], vr0[1]-vr0[0], vr1[1] - vr1[0])
 
     def targetRect(self):
         """
@@ -329,22 +294,16 @@ class ViewBox(GraphicsWidget):
         (this is not necessarily the same as the region that is *actually* visible--
         resizing and aspect ratio constraints can cause targetRect() and viewRect() to differ)
         """
-        try:
-            tr0 = self.state['targetRange'][0]
-            tr1 = self.state['targetRange'][1]
-            return QRectF(tr0[0], tr1[0], tr0[1]-tr0[0], tr1[1] - tr1[0])
-        except:
-            print("make qrectf failed:", self.state['targetRange'])
-            raise
+        tr0, tr1 = self._target_range
+        return QRectF(tr0[0], tr1[0], tr0[1]-tr0[0], tr1[1] - tr1[0])
 
     def _resetTarget(self):
         # Reset target range to exactly match current view range.
         # This is used during mouse interaction to prevent unpredictable
         # behavior (because the user is unaware of targetRange).
-        if self.state['aspectLocked'] is False: # (interferes with aspect locking)
-            self.state['targetRange'] = [self.state['viewRange'][0][:], self.state['viewRange'][1][:]]
+        self._target_range = [self._view_range[0][:], self._view_range[1][:]]
 
-    def setRange(self, rect=None, xRange=None, yRange=None, padding=None, update=True, disableAutoRange=True):
+    def setRange(self, rect=None, xRange=None, yRange=None, update=True, padding=None, disableAutoRange=True):
         """
         Set the visible range of the ViewBox.
         Must specify at least one of *rect*, *xRange*, or *yRange*.
@@ -354,11 +313,6 @@ class ViewBox(GraphicsWidget):
         *rect*             (QRectF) The full range that should be visible in the view box.
         *xRange*           (min,max) The range that should be visible along the x-axis.
         *yRange*           (min,max) The range that should be visible along the y-axis.
-        *padding*          (float) Expand the view by a fraction of the requested range.
-                           By default, this value is set between 0.02 and 0.1 depending on
-                           the size of the ViewBox.
-        *update*           (bool) If True, update the range of the ViewBox immediately.
-                           Otherwise, the update is deferred until before the next render.
         *disableAutoRange* (bool) If True, auto-ranging is diabled. Otherwise, it is left
                            unchanged.
         ================== =====================================================================
@@ -401,7 +355,7 @@ class ViewBox(GraphicsWidget):
             # If we requested 0 range, try to preserve previous scale.
             # Otherwise just pick an arbitrary scale.
             if mn == mx:
-                dy = self.state['viewRange'][ax][1] - self.state['viewRange'][ax][0]
+                dy = self._view_range[ax][1] - self._view_range[ax][0]
                 if dy == 0:
                     dy = 1
                 mn -= dy*0.5
@@ -453,8 +407,8 @@ class ViewBox(GraphicsWidget):
                     mn += delta
 
             # Set target range
-            if self.state['targetRange'][ax] != [mn, mx]:
-                self.state['targetRange'][ax] = [mn, mx]
+            if self._target_range[ax] != [mn, mx]:
+                self._target_range[ax] = [mn, mx]
                 changed[ax] = True
 
         # Update viewRange to match targetRange as closely as possible while
@@ -468,17 +422,15 @@ class ViewBox(GraphicsWidget):
         # If nothing has changed, we are done.
         if any(changed):
             # Update target rect for debugging
-            if self.target.isVisible():
-                self.target.setRect(self.mapRectFromItem(self.childGroup, self.targetRect()))
+            if self._border is not None:
+                self._border.setRect(self.mapRectFromItem(self.childGroup, self.targetRect()))
 
             # If ortho axes have auto-visible-only, update them now
             # Note that aspect ratio constraints and auto-visible probably do not work together..
-            if changed[0] and self.state['autoVisibleOnly'][1] and (self.state['autoRange'][0] is not False):
+            if changed[0] and self._auto_range[0]:
                 self._autoRangeNeedsUpdate = True
-            elif changed[1] and self.state['autoVisibleOnly'][0] and (self.state['autoRange'][1] is not False):
+            elif changed[1] and self._auto_range[1]:
                 self._autoRangeNeedsUpdate = True
-
-            self.state_changed_sgn.emit(self)
 
     def setYRange(self, min, max, padding=None, update=True):
         """
@@ -496,74 +448,41 @@ class ViewBox(GraphicsWidget):
         """
         self.setRange(xRange=[min, max], update=update, padding=padding)
 
-    def autoRange(self, padding=None, items=None, item=None, disableAutoRange=True):
+    def autoRange(self, disableAutoRange=True):
         """
         Set the range of the view box to make all children visible.
         Note that this is not the same as enableAutoRange, which causes the view to
         automatically auto-range whenever its contents are changed.
-
-        ==============  ====o========================================================
-        **Arguments:**
-        padding         The fraction of the total data range to add on to the final
-                        visible range. By default, this value is set between 0.02
-                        and 0.1 depending on the size of the ViewBox.
-        items           If specified, this is a list of items to consider when
-                        determining the visible range.
-        ==============  ============================================================
         """
-        if item is None:
-            bounds = self.childrenBoundingRect(items=items)
-        else:
-            print("Warning: ViewBox.autoRange(item=__) is deprecated. Use 'items' argument instead.")
-            bounds = self.mapFromItemToView(item, item.boundingRect()).boundingRect()
-
-        if bounds is not None:
-            self.setRange(bounds, padding=padding, disableAutoRange=disableAutoRange)
+        range = self.childrenBounds()
+        bounds = QRectF(range[0][0], range[1][0], range[0][1]-range[0][0], range[1][1]-range[1][0])
+        self.setRange(bounds, disableAutoRange=disableAutoRange)
 
     def suggestPadding(self, axis):
         l = self.geometry().width() if axis == 0 else self.geometry().height()
         if l > 0:
-            padding = np.clip(1./(l**0.5), 0.02, 0.1)
-        else:
-            padding = 0.02
-        return padding
+            return np.clip(1./(l**0.5), 0.02, 0.1)
+        return 0.02
 
-    def scaleBy(self, s=None, center=None, x=None, y=None):
+    def scaleBy(self, s, center):
         """
         Scale by *s* around given center point (or center of view).
         *s* may be a Point or tuple (x, y).
-
-        Optionally, x or y may be specified individually. This allows the other
-        axis to be left unaffected (note that using a scale factor of 1.0 may
-        cause slight changes due to floating-point error).
         """
-        if s is not None:
-            x, y = s[0], s[1]
-
-        affect = [x is not None, y is not None]
-        if not any(affect):
-            return
-
-        scale = Point([1.0 if x is None else x, 1.0 if y is None else y])
-
-        if self.state['aspectLocked'] is not False:
-            scale[0] = scale[1]
+        scale = Point(s)
 
         vr = self.targetRect()
-        if center is None:
-            center = Point(vr.center())
-        else:
-            center = Point(center)
+        center = Point(center)
 
-        tl = center + (vr.topLeft()-center) * scale
-        br = center + (vr.bottomRight()-center) * scale
+        tl = center + (vr.topLeft() - center) * scale
+        br = center + (vr.bottomRight() - center) * scale
 
-        if not affect[0]:
-            self.setYRange(tl.y(), br.y(), padding=0)
-        elif not affect[1]:
-            self.setXRange(tl.x(), br.x(), padding=0)
-        else:
-            self.setRange(QRectF(tl, br), padding=0)
+        # if not affect[0]:
+        #     self.setYRange(tl.y(), br.y(), padding=0)
+        # elif not affect[1]:
+        #     self.setXRange(tl.x(), br.x(), padding=0)
+        # else:
+        self.setRange(QRectF(tl, br), padding=0)
 
     def translateBy(self, t=None, x=None, y=None):
         """
@@ -596,45 +515,32 @@ class ViewBox(GraphicsWidget):
         # support simpler interface:
         if x is not None or y is not None:
             if x is not None:
-                self.enableAutoRange(ViewBox.XAxis, x)
+                self.enableAutoRange(self.Axis.X, x)
             if y is not None:
-                self.enableAutoRange(ViewBox.YAxis, y)
+                self.enableAutoRange(self.Axis.Y, y)
             return
 
-        if enable is True:
-            enable = 1.0
-
-        if axis is None:
-            axis = ViewBox.XYAxes
-
-        if axis == ViewBox.XYAxes or axis == 'xy':
-            axes = [0, 1]
-        elif axis == ViewBox.XAxis or axis == 'x':
+        if axis == self.Axis.X or axis == 'x':
             axes = [0]
-        elif axis == ViewBox.YAxis or axis == 'y':
+        elif axis == self.Axis.Y or axis == 'y':
             axes = [1]
         else:
-            raise Exception('axis argument must be ViewBox.XAxis, ViewBox.YAxis, or ViewBox.XYAxes.')
+            axes = [0, 1]
 
         for ax in axes:
-            if self.state['autoRange'][ax] != enable:
+            if self._auto_range[ax] != enable:
                 # If we are disabling, do one last auto-range to make sure that
                 # previously scheduled auto-range changes are enacted
-                if enable is False and self._autoRangeNeedsUpdate:
+                if not enable and self._autoRangeNeedsUpdate:
                     self.updateAutoRange()
 
-                self.state['autoRange'][ax] = enable
-                self._autoRangeNeedsUpdate |= (enable is not False)
+                self._auto_range[ax] = enable
+                self._autoRangeNeedsUpdate |= enable
                 self.update()
-
-        self.state_changed_sgn.emit(self)
 
     def disableAutoRange(self, axis=None):
         """Disables auto-range. (See enableAutoRange)"""
         self.enableAutoRange(axis, enable=False)
-
-    def autoRangeEnabled(self):
-        return self.state['autoRange'][:]
 
     def updateAutoRange(self):
         # Break recursive loops when auto-ranging.
@@ -646,32 +552,19 @@ class ViewBox(GraphicsWidget):
         self._updatingRange = True
         try:
             targetRect = self.viewRange()
-            if not any(self.state['autoRange']):
+            if not self._auto_range[0] and not self._auto_range[1]:
                 return
 
-            fractionVisible = self.state['autoRange'][:]
-            for i in [0,1]:
-                if type(fractionVisible[i]) is bool:
-                    fractionVisible[i] = 1.0
-
-            childRange = None
-
-            order = [0,1]
-            if self.state['autoVisibleOnly'][0] is True:
-                order = [1,0]
+            order = [1,0]
 
             args = {}
             for ax in order:
-                if self.state['autoRange'][ax] is False:
+                if not self._auto_range[ax]:
                     continue
-                if self.state['autoVisibleOnly'][ax]:
-                    oRange = [None, None]
-                    oRange[ax] = targetRect[1-ax]
-                    childRange = self.childrenBounds(frac=fractionVisible, orthoRange=oRange)
 
-                else:
-                    if childRange is None:
-                        childRange = self.childrenBounds(frac=fractionVisible)
+                oRange = [None, None]
+                oRange[ax] = targetRect[1-ax]
+                childRange = self.childrenBounds(orthoRange=oRange)
 
                 # Make corrections to range
                 xr = childRange[ax]
@@ -699,30 +592,20 @@ class ViewBox(GraphicsWidget):
             self._autoRangeNeedsUpdate = False
             self._updatingRange = False
 
-    def setXLink(self, view):
+    def setXLink(self, view: "ViewBox"):
         """Link this view's X axis to another view. (see LinkView)"""
-        self.linkView(self.XAxis, view)
+        self.linkView(self.Axis.X, view)
 
-    def setYLink(self, view):
+    def setYLink(self, view: "ViewBox"):
         """Link this view's Y axis to another view. (see LinkView)"""
-        self.linkView(self.YAxis, view)
+        self.linkView(self.Axis.Y, view)
 
     def linkView(self, axis, view):
         """
         Link X or Y axes of two views and unlink any previously connected axes. *axis* must be ViewBox.XAxis or ViewBox.YAxis.
         If view is None, the axis is left unlinked.
         """
-        if isinstance(view, str):
-            if view == '':
-                view = None
-            else:
-                view = ViewBox.NamedViews.get(view, view)  ## convert view name to ViewBox if possible
-
-        if hasattr(view, 'implements') and view.implements('ViewBoxWrapper'):
-            view = view.getViewBox()
-
-        # used to connect/disconnect signals between a pair of views
-        if axis == ViewBox.XAxis:
+        if axis == self.Axis.X:
             signal = 'x_range_changed_sgn'
             slot = self.linkedXChanged
         else:
@@ -738,30 +621,25 @@ class ViewBox(GraphicsWidget):
                 # This can occur if the view has been deleted already
                 pass
 
-        if view is None or isinstance(view, str):
-            self.state['linkedViews'][axis] = view
+        self.state['linkedViews'][axis] = weakref.ref(view)
+        getattr(view, signal).connect(slot)
+        view.resized_sgn.connect(slot)
+        if view._auto_range[axis]:
+            self.enableAutoRange(axis, False)
+            slot()
         else:
-            self.state['linkedViews'][axis] = weakref.ref(view)
-            getattr(view, signal).connect(slot)
-            view.resized_sgn.connect(slot)
-            if view.autoRangeEnabled()[axis] is not False:
-                self.enableAutoRange(axis, False)
+            if not self._auto_range[axis]:
                 slot()
-            else:
-                if self.autoRangeEnabled()[axis] is False:
-                    slot()
-
-        self.state_changed_sgn.emit(self)
 
     def linkedXChanged(self):
         # called when x range of linked view has changed
         view = self.linkedView(0)
-        self.linkedViewChanged(view, ViewBox.XAxis)
+        self.linkedViewChanged(view, self.Axis.X)
 
     def linkedYChanged(self):
         # called when y range of linked view has changed
         view = self.linkedView(1)
-        self.linkedViewChanged(view, ViewBox.YAxis)
+        self.linkedViewChanged(view, self.Axis.Y)
 
     def linkedView(self, ax):
         # Return the linked view for axis *ax*.
@@ -784,7 +662,7 @@ class ViewBox(GraphicsWidget):
 
         view._block_links = True
         try:
-            if axis == ViewBox.XAxis:
+            if axis == self.Axis.X:
                 overlap = min(sg.right(), vg.right()) - max(sg.left(), vg.left())
                 if overlap < min(vg.width()/3, sg.width()/3):  # if less than 1/3 of views overlap,
                                                                # then just replicate the view
@@ -792,12 +670,12 @@ class ViewBox(GraphicsWidget):
                     x2 = vr.right()
                 else:  # views overlap; line them up
                     upp = float(vr.width()) / vg.width()
-                    if self.xInverted():
-                        x1 = vr.left()   + (sg.right()-vg.right()) * upp
+                    if self._axis_inverted[0]:
+                        x1 = vr.left() + (sg.right()-vg.right()) * upp
                     else:
-                        x1 = vr.left()   + (sg.x()-vg.x()) * upp
+                        x1 = vr.left() + (sg.x()-vg.x()) * upp
                     x2 = x1 + sg.width() * upp
-                self.enableAutoRange(ViewBox.XAxis, False)
+                self.enableAutoRange(self.Axis.X, False)
                 self.setXRange(x1, x2, padding=0)
             else:
                 overlap = min(sg.bottom(), vg.bottom()) - max(sg.top(), vg.top())
@@ -807,12 +685,12 @@ class ViewBox(GraphicsWidget):
                     y2 = vr.bottom()
                 else:  # views overlap; line them up
                     upp = float(vr.height()) / vg.height()
-                    if self.yInverted():
+                    if self._axis_inverted[1]:
                         y2 = vr.bottom() + (sg.bottom()-vg.bottom()) * upp
                     else:
                         y2 = vr.bottom() + (sg.top()-vg.top()) * upp
                     y1 = y2 - sg.height() * upp
-                self.enableAutoRange(ViewBox.YAxis, False)
+                self.enableAutoRange(self.Axis.Y, False)
                 self.setYRange(y1, y2, padding=0)
         finally:
             view._block_links = False
@@ -821,55 +699,34 @@ class ViewBox(GraphicsWidget):
         """return the screen geometry of the viewbox"""
         v = self.getViewWidget()
         if v is None:
-            return None
+            return
         b = self.sceneBoundingRect()
         wr = v.mapFromScene(b).boundingRect()
         pos = v.mapToGlobal(v.pos())
-        wr.adjust(pos.x(), pos.y(), pos.x(), pos.y())
+        wr.adjust(pos.x(), pos.y(), pos.x() , pos.y())
         return wr
-
-    def itemsChanged(self):
-        # called when items are added/removed from self.childGroup
-        self.updateAutoRange()
 
     def itemBoundsChanged(self, item):
         self._itemBoundsCache.pop(item, None)
-        if (self.state['autoRange'][0] is not False) or (self.state['autoRange'][1] is not False):
+        if self._auto_range[0] or self._auto_range[1]:
             self._autoRangeNeedsUpdate = True
             self.update()
 
     def _invertAxis(self, ax, inv):
-        key = 'xy'[ax] + 'Inverted'
-        if self.state[key] == inv:
-            return
-
-        self.state[key] = inv
+        self._axis_inverted[ax] = inv
         self._matrixNeedsUpdate = True  # updateViewRange won't detect this for us
         self.updateViewRange()
         self.update()
-        self.state_changed_sgn.emit(self)
         if ax:
-            self.y_range_changed_sgn.emit(self, tuple(self.state['viewRange'][ax]))
+            self.y_range_changed_sgn.emit()
         else:
-            self.x_range_changed_sgn.emit(self, tuple(self.state['viewRange'][ax]))
+            self.x_range_changed_sgn.emit()
 
     def invertY(self, b=True):
-        """
-        By default, the positive y-axis points upward on the screen. Use invertY(True) to reverse the y-axis.
-        """
         self._invertAxis(1, b)
 
-    def yInverted(self):
-        return self.state['yInverted']
-
     def invertX(self, b=True):
-        """
-        By default, the positive x-axis points rightward on the screen. Use invertX(True) to reverse the x-axis.
-        """
         self._invertAxis(0, b)
-
-    def xInverted(self):
-        return self.state['xInverted']
 
     def childTransform(self):
         """
@@ -912,42 +769,36 @@ class ViewBox(GraphicsWidget):
         self.updateMatrix()
         return self.childGroup.mapToItem(item, obj)
 
-    def itemBoundingRect(self, item):
-        """Return the bounding rect of the item in view coordinates"""
-        return self.mapSceneToView(item.sceneBoundingRect()).boundingRect()
-
-    def wheelEvent(self, ev, axis=None):
-        s = 1.02 ** (ev.delta() * self._wheel_scale_factor)
+    def wheelEvent(self, ev: QGraphicsSceneWheelEvent) -> None:
+        """Override."""
+        s = 1. + ev.delta() * self.WHEEL_SCALE_FACTOR
+        # center = self.mapSceneToView(ev.pos())
         center = Point(fn.invertQTransform(self.childGroup.transform()).map(ev.pos()))
 
         self._resetTarget()
         self.scaleBy((s, s), center)
         ev.accept()
 
-    def mouseDragEvent(self, ev: MouseDragEvent, axis=None):
-        # if axis is specified, event will only affect that axis.
+    def mouseDragEvent(self, ev: MouseDragEvent):
         ev.accept()  # we accept all buttons
 
         pos = ev.pos()
-        lastPos = ev.lastPos()
-        dif = pos - lastPos
-        dif = dif * -1
+        delta = ev.lastPos() - pos
 
         # Scale or translate based on mouse button
-        if ev.button() & (Qt.MouseButton.LeftButton | Qt.MouseButton.MiddleButton):
-            if self.state['mouseMode'] == ViewBox.RectMode:
+        if ev.button() & Qt.MouseButton.LeftButton:
+            if self._mouse_mode == self.MouseMode.Rect:
                 if ev.exiting():  # This is the final move in the drag; change the view scale now
                     self.rbScaleBox.hide()
                     ax = QRectF(Point(ev.buttonDownPos(ev.button())), Point(pos))
                     ax = self.childGroup.mapRectFromParent(ax)
-                    self.showAxRect(ax)
+                    self.setRange(ax.normalized())
                 else:
                     # update shape of scale box
                     self.updateScaleBox(ev.buttonDownPos(), ev.pos())
             else:
-                tr = self.childGroup.transform()
-                tr = fn.invertQTransform(tr)
-                tr = tr.map(dif) - tr.map(Point(0,0))
+                tr = fn.invertQTransform(self.childGroup.transform())
+                tr = tr.map(delta) - tr.map(Point(0, 0))
 
                 x = tr.x()
                 y = tr.y()
@@ -964,22 +815,12 @@ class ViewBox(GraphicsWidget):
         self.rbScaleBox.scale(r.width(), r.height())
         self.rbScaleBox.show()
 
-    def showAxRect(self, ax, **kwargs):
-        """Set the visible range to the given rectangle
-        Passes keyword arguments to setRange
-        """
-        self.setRange(ax.normalized(), **kwargs) # be sure w, h are correct coordinates
-
-    def childrenBounds(self, frac=None, orthoRange=(None,None), items=None):
+    def childrenBounds(self, orthoRange=(None,None)):
         """Return the bounding range of all children.
         [[xmin, xmax], [ymin, ymax]]
         Values may be None if there are no specific bounds for an axis.
         """
-        if items is None:
-            items = self._items
-
-        # measure pixel dimensions in view box
-        px, py = [v.length() if v is not None else 0 for v in self.childGroup.pixelVectors()]
+        items = self._items
 
         # First collect all boundary information
         itemBounds = []
@@ -987,53 +828,17 @@ class ViewBox(GraphicsWidget):
             if not item.isVisible() or not item.scene() is self.scene():
                 continue
 
-            useX = True
-            useY = True
-
             # FIXME: EXtra-foam patch start
             if item.boundingRect().isEmpty():
                 continue
             # FIXME: EXtra-foam patch end
 
-            if hasattr(item, 'dataBounds'):
-                if frac is None:
-                    frac = (1.0, 1.0)
-                xr = item.dataBounds(0, frac=frac[0], orthoRange=orthoRange[0])
-                yr = item.dataBounds(1, frac=frac[1], orthoRange=orthoRange[1])
-                pxPad = 0 if not hasattr(item, 'pixelPadding') else item.pixelPadding()
-                if xr is None or (xr[0] is None and xr[1] is None) or np.isnan(xr).any() or np.isinf(xr).any():
-                    useX = False
-                    xr = (0,0)
-                if yr is None or (yr[0] is None and yr[1] is None) or np.isnan(yr).any() or np.isinf(yr).any():
-                    useY = False
-                    yr = (0,0)
-
-                bounds = QRectF(xr[0], yr[0], xr[1]-xr[0], yr[1]-yr[0])
-                bounds = self.mapFromItemToView(item, bounds).boundingRect()
-
-                if not any([useX, useY]):
-                    continue
-
-                # If we are ignoring only one axis, we need to check for rotations
-                if useX != useY:  #   !=  means  xor
-                    ang = round(item.transformAngle())
-                    if ang == 0 or ang == 180:
-                        pass
-                    elif ang == 90 or ang == 270:
-                        useX, useY = useY, useX
-                    else:
-                        # Item is rotated at non-orthogonal angle, ignore bounds entirely.
-                        # Not really sure what is the expected behavior in this case.
-                        continue  # need to check for item rotations and decide how best to apply this boundary.
-
-                itemBounds.append((bounds, useX, useY, pxPad))
+            if item.flags() & item.GraphicsItemFlag.ItemHasNoContents:
+                continue
             else:
-                if item.flags() & item.GraphicsItemFlag.ItemHasNoContents:
-                    continue
-                else:
-                    bounds = item.boundingRect()
-                bounds = self.mapFromItemToView(item, bounds).boundingRect()
-                itemBounds.append((bounds, True, True, 0))
+                bounds = item.boundingRect()
+            bounds = self.mapFromItemToView(item, bounds).boundingRect()
+            itemBounds.append((bounds, True, True, 0))
 
         # determine tentative new range
         range = [None, None]
@@ -1070,22 +875,11 @@ class ViewBox(GraphicsWidget):
 
         return range
 
-    def childrenBoundingRect(self, *args, **kwds):
-        range = self.childrenBounds(*args, **kwds)
-        tr = self.targetRange()
-        if range[0] is None:
-            range[0] = tr[0]
-        if range[1] is None:
-            range[1] = tr[1]
-
-        bounds = QRectF(range[0][0], range[1][0], range[0][1]-range[0][0], range[1][1]-range[1][0])
-        return bounds
-
     def updateViewRange(self, forceX=False, forceY=False):
         # Update viewRange to match targetRange as closely as possible, given
         # aspect ratio constraints. The *force* arguments are used to indicate
         # which axis (if any) should be unchanged when applying constraints.
-        viewRange = [self.state['targetRange'][0][:], self.state['targetRange'][1][:]]
+        viewRange = [self._target_range[0][:], self._target_range[1][:]]
 
         limits = (self.state['limits']['xLimits'], self.state['limits']['yLimits'])
         minRng = [self.state['limits']['xRange'][0], self.state['limits']['yRange'][0]]
@@ -1103,10 +897,10 @@ class ViewBox(GraphicsWidget):
                     maxRng[axis] = limits[axis][1] - limits[axis][0]
 
         changed = [
-            (viewRange[i][0] != self.state['viewRange'][i][0])
-            or (viewRange[i][1] != self.state['viewRange'][i][1])
+            (viewRange[i][0] != self._view_range[i][0])
+            or (viewRange[i][1] != self._view_range[i][1])
             for i in (0, 1)]
-        self.state['viewRange'] = viewRange
+        self._view_range = viewRange
 
         if any(changed):
             self._matrixNeedsUpdate = True
@@ -1122,10 +916,10 @@ class ViewBox(GraphicsWidget):
 
             # emit range change signals
             if changed[0]:
-                self.x_range_changed_sgn.emit(self, tuple(self.state['viewRange'][0]))
+                self.x_range_changed_sgn.emit()
             if changed[1]:
-                self.y_range_changed_sgn.emit(self, tuple(self.state['viewRange'][1]))
-            self.range_changed_sgn.emit(self, self.state['viewRange'])
+                self.y_range_changed_sgn.emit()
+            self.range_changed_sgn.emit(self, self._view_range)
 
     def updateMatrix(self, changed=None):
         if not self._matrixNeedsUpdate:
@@ -1136,10 +930,10 @@ class ViewBox(GraphicsWidget):
         vr = self.viewRect()
         if vr.height() == 0 or vr.width() == 0:
             return
-        scale = Point(bounds.width()/vr.width(), bounds.height()/vr.height())
-        if not self.state['yInverted']:
+        scale = Point(bounds.width() / vr.width(), bounds.height() / vr.height())
+        if not self._axis_inverted[1]:
             scale = scale * Point(1, -1)
-        if self.state['xInverted']:
+        if self._axis_inverted[0]:
             scale = scale * Point(-1, 1)
         m = QTransform()
 
@@ -1156,3 +950,24 @@ class ViewBox(GraphicsWidget):
         self._matrixNeedsUpdate = False
 
         self.transform_changed_sgn.emit(self)  # segfaults here: 1
+
+    def mouseClickEvent(self, ev: MouseClickEvent):
+        if ev.button() == Qt.MouseButton.RightButton:
+            ev.accept()
+            self._menu.popup(ev.screenPos().toPoint())
+
+    def close(self) -> None:
+        """Override."""
+        for i in self._items:
+            self.removeItem(i)
+        for ch in self.childGroup.childItems():
+            ch.setParentItem(None)
+        super().close()
+
+    def onCrossToggled(self, state: bool):
+        if state:
+            self._v_line.show()
+            self._h_line.show()
+        else:
+            self._v_line.hide()
+            self._h_line.hide()

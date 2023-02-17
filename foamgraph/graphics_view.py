@@ -59,9 +59,7 @@ class GraphicsView(QGraphicsView):
         self.scene().prepareForPaint()
         return QGraphicsView.render(self, *args, **kwds)
 
-    def setCentralWidget(self, widget: QGraphicsWidget):
-        """Sets a QGraphicsWidget to automatically fill the entire view (the item will be automatically
-        resize whenever the GraphicsView is resized)."""
+    def setCentralWidget(self, widget: QGraphicsWidget) -> None:
         self._central_widget = widget
         self.scene().addItem(widget)
         # Otherwise ImageAnalysis will have TypeError

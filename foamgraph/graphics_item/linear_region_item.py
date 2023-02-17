@@ -45,20 +45,19 @@ class LinearRegionItem(GraphicsObject):
             
         if orientation == Qt.Orientation.Horizontal:
             self._lines = [
-                InfiniteHorizontalLineItem(v, draggable=draggable, parent=self)
-                for v in region]
+                InfiniteHorizontalLineItem(v, parent=self) for v in region]
             self._lines[0].scale(1, -1)
             self._lines[1].scale(1, -1)
         elif orientation == Qt.Orientation.Vertical:
             self._lines = [
-                InfiniteVerticalLineItem(v, draggable=draggable, parent=self)
-                for v in region]
+                InfiniteVerticalLineItem(v, parent=self) for v in region]
         else:
             raise ValueError(f"Unknown orientation value: {orientation}")
 
         self.setAcceptHoverEvents(draggable)
 
         for i, line in enumerate(self._lines):
+            line.setDraggable(draggable)
             line.position_change_finished_sgn.connect(self.lineMoveFinished)
             line.position_changed_sgn.connect(lambda: self.lineMoved(i))
 
@@ -103,6 +102,13 @@ class LinearRegionItem(GraphicsObject):
         self.lineMoved(1)
         self.lineMoveFinished()
 
+    # def dataBounds(self, axis, orthoRange=None):
+    #     if self._orientation == Qt.Orientation.Vertical and axis == 0:
+    #         return self.region()
+    #     if self._orientation == Qt.Orientation.Horizontal and axis == 1:
+    #         return self.region()
+    #     return None
+
     def boundingRect(self) -> QRectF:
         """Override."""
         br = self.viewRect()  # bounds of containing ViewBox mapped to local coords.
@@ -137,13 +143,6 @@ class LinearRegionItem(GraphicsObject):
             p.setBrush(self._brush)
         p.setPen(self._pen)
         p.drawRect(self.boundingRect())
-
-    def dataBounds(self, axis, frac=1.0, orthoRange=None):
-        if self._orientation == Qt.Orientation.Vertical and axis == 0:
-            return self.region()
-        if self._orientation == Qt.Orientation.Horizontal and axis == 1:
-            return self.region()
-        return None
 
     def lineMoved(self, i):
         if self._lines[0].value() > self._lines[1].value():

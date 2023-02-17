@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from foamgraph import ImageViewF, mkQApp, TimedImageViewF
+from foamgraph import ImageView, mkQApp, TimedImageView
 from foamgraph.graphics_item.image_item import ImageItem
 from foamgraph.graphics_item.roi import RectROI
 
@@ -15,20 +15,20 @@ app = mkQApp()
 
 class TestImageView:
     def testComponents(self):
-        widget = ImageViewF(n_rois=4)
-        items = widget._plot_widget._plot_area._vb._items
+        widget = ImageView(n_rois=4)
+        items = widget._plot_widget._cw._vb._items
         assert isinstance(items[0], ImageItem)
         for i in range(1, 5):
             assert isinstance(items[i], RectROI)
 
-        widget = ImageViewF()
-        assert len(widget._plot_widget._plot_area._items) == 1
+        widget = ImageView()
+        assert len(widget._plot_widget._cw._items) == 1
 
         with pytest.raises(TypeError, match="numpy array"):
             widget.setImage([[1, 2, 3], [4, 5, 6]])
 
     def testForwardMethod(self):
-        widget = ImageViewF(n_rois=4)
+        widget = ImageView(n_rois=4)
 
         for method in ["setLabel", "setTitle", "addItem",
                        "removeItem", "invertX", "invertY", "autoRange"]:
@@ -38,7 +38,7 @@ class TestImageView:
 
     @pytest.mark.parametrize("dtype", [np.uint8, int, np.float32])
     def testSetImage(self, dtype):
-        widget = ImageViewF(n_rois=4)
+        widget = ImageView(n_rois=4)
 
         if _display():
             widget.show()
@@ -63,7 +63,7 @@ class TestImageView:
 
 class TestTimedImageView(unittest.TestCase):
     def testUpdate(self):
-        view = TimedImageViewF()
+        view = TimedImageView()
         view.refresh = MagicMock()
 
         self.assertIsNone(view._data)

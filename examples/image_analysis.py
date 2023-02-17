@@ -11,7 +11,7 @@ from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 
 from foamgraph import (
-    AbstractScene, ImageViewF, mkQApp, PlotWidgetF
+    AbstractScene, ImageView, mkQApp, GraphView
 )
 from foamgraph.algorithm import extract_rect_roi
 from foamgraph.ctrl_widgets import RoiCtrlWidgetGroup
@@ -21,14 +21,14 @@ from consumer import Consumer
 app = mkQApp()
 
 
-class ImageAnalysis(ImageViewF):
+class ImageAnalysis(ImageView):
     def updateF(self, data):
         """Override."""
         self.setImage(data['image']['data'])
 
 
 # FIXME
-class RoiProjectionMonitor(PlotWidgetF):
+class RoiProjectionMonitor(GraphView):
     def __init__(self, idx: int, *, parent=None):
         super().__init__(parent=parent)
 

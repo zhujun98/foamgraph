@@ -16,49 +16,21 @@ from ..backend.QtWidgets import (
     QGridLayout, QHBoxLayout, QLabel, QMenu, QSizePolicy, QSlider, QWidget, QWidgetAction
 )
 
-from ..graphics_scene import MouseClickEvent
 from .axis_item import AxisItem
+from .canvas_item import ViewBox
 from .graphics_item import GraphicsWidget
 from .label_item import LabelItem
 from .legend_item import LegendItem
+from .line_item import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
 from .plot_item import PlotItem
-from .view_box import ViewBox
 
 
-class PlotArea(GraphicsWidget):
-    """GraphicsWidget implementing a standard 2D plotting area with axes.
-
-    It has the following functionalities:
-
-    - Manage placement of a ViewBox, AxisItems, and LabelItems;
-    - Manage a list of GraphicsItems displayed inside the ViewBox;
-    - Implement a context menu with display options.
-    """
-
-    class AxisMenuWidget(QWidget):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-            self.invert_x_cb = QCheckBox("Invert X Axis")
-            self.invert_y_cb = QCheckBox("Invert Y Axis")
-            self.auto_x_cb = QCheckBox("Auto X Range")
-            self.auto_y_cb = QCheckBox("Auto Y Range")
-            layout = QGridLayout(self)
-            layout.addWidget(self.auto_x_cb)
-            layout.addWidget(self.auto_y_cb)
-            layout.addWidget(self.invert_x_cb)
-            layout.addWidget(self.invert_y_cb)
+class PlotWidget(GraphicsWidget):
+    """2D plot widget for displaying graphs or an image."""
 
     cross_toggled_sgn = pyqtSignal(bool)
 
-    _METER_ROW = 0
-    _TITLE_ROW = 1
-
-    def __init__(self, *,
-                 enable_meter: bool = True,
-                 enable_grid: bool = True,
-                 enable_transform: bool = True,
-                 parent: QGraphicsItem = None):
+    def __init__(self, *, parent: QGraphicsItem = None, image: bool = False):
         super().__init__(parent=parent)
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding,
@@ -74,34 +46,16 @@ class PlotArea(GraphicsWidget):
         self._plot_items = OrderedDict()  # PlotItem: None
         self._plot_items_y2 = OrderedDict()  # PlotItem: None
 
-        self._vb = ViewBox(parent=self)
+        self._vb = ViewBox(parent=self, image=image)
         self._vb_y2 = None
+
+        self._v_line = None
+        self._h_line = None
+        self._cross_cursor_lb = LabelItem('')
 
         self._legend = None
         self._axes = {}
-        self._meter = LabelItem('')
         self._title = LabelItem('')
-
-        # context menu
-        self._show_cross_cb = QCheckBox("Cross cursor")
-
-        self._show_x_grid_cb = QCheckBox("Show X Grid")
-        self._show_y_grid_cb = QCheckBox("Show Y Grid")
-        self._grid_opacity_sld = QSlider(Qt.Orientation.Horizontal)
-        self._grid_opacity_sld.setMinimum(0)
-        self._grid_opacity_sld.setMaximum(255)
-        self._grid_opacity_sld.setValue(160)
-        self._grid_opacity_sld.setSingleStep(1)
-
-        self._log_x_cb = QCheckBox("Log X")
-        self._log_y_cb = QCheckBox("Log Y")
-
-        self._menu = QMenu()
-        self._enable_meter = enable_meter
-        self._enable_grid = enable_grid
-        self._enable_transform = enable_transform
-
-        self._show_meter = False
 
         self._layout = QGraphicsGridLayout()
 
@@ -111,12 +65,12 @@ class PlotArea(GraphicsWidget):
     def initUI(self):
         layout = self._layout
 
-        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setContentsMargins(*self.CONTENT_MARGIN)
         layout.setHorizontalSpacing(0)
         layout.setVerticalSpacing(0)
 
-        layout.addItem(self._meter, self._METER_ROW, 1)
-        layout.addItem(self._title, self._TITLE_ROW, 1,
+        layout.addItem(self._cross_cursor_lb, 0, 1)
+        layout.addItem(self._title, 1, 1,
                        alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addItem(self._vb, 3, 1)
 
@@ -137,96 +91,22 @@ class PlotArea(GraphicsWidget):
 
         self.setLayout(layout)
 
+        self._initCrossCursor()
         self._initAxisItems()
         self.setTitle()
-        self.showMeter(self._show_meter)
-
-        self._initContextMenu()
 
     def initConnections(self):
-        self._show_cross_cb.toggled.connect(self._onShowCrossChanged)
+        self._vb.cross_cursor_toggled_sgn.connect(self.onCrossCursorToggled)
 
-        self._show_x_grid_cb.toggled.connect(self._onShowGridChanged)
-        self._show_y_grid_cb.toggled.connect(self._onShowGridChanged)
-        self._grid_opacity_sld.sliderReleased.connect(self._onShowGridChanged)
+    def _initCrossCursor(self):
+        self._v_line = InfiniteVerticalLineItem(0.)
+        self._v_line.setDraggable(False)
+        self._h_line = InfiniteHorizontalLineItem(0.)
+        self._h_line.setDraggable(False)
+        self._vb.addItem(self._v_line, ignore_bounds=True)
+        self._vb.addItem(self._h_line, ignore_bounds=True)
 
-        self._log_x_cb.toggled.connect(self._onLogXChanged)
-        self._log_y_cb.toggled.connect(self._onLogYChanged)
-
-    def _initMeterManu(self):
-        menu = self._menu.addMenu("Meter")
-        cross_act = QWidgetAction(menu)
-        cross_act.setDefaultWidget(self._show_cross_cb)
-        menu.addAction(cross_act)
-
-    def _initGridMenu(self):
-        menu = self._menu.addMenu("Grid")
-        show_x_act = QWidgetAction(menu)
-        show_x_act.setDefaultWidget(self._show_x_grid_cb)
-        menu.addAction(show_x_act)
-        show_y_act = QWidgetAction(menu)
-        show_y_act.setDefaultWidget(self._show_y_grid_cb)
-        menu.addAction(show_y_act)
-        opacity_act = QWidgetAction(menu)
-        widget = QWidget()
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Opacity"))
-        layout.addWidget(self._grid_opacity_sld)
-        widget.setLayout(layout)
-        opacity_act.setDefaultWidget(widget)
-        menu.addAction(opacity_act)
-
-    def _initTransformMenu(self):
-        menu = self._menu.addMenu("Transform")
-        log_x_act = QWidgetAction(menu)
-        log_x_act.setDefaultWidget(self._log_x_cb)
-        menu.addAction(log_x_act)
-        log_y_act = QWidgetAction(menu)
-        log_y_act.setDefaultWidget(self._log_y_cb)
-        menu.addAction(log_y_act)
-
-    def _initMouseModeMenu(self):
-        menu = self._menu.addMenu("Mouse Mode")
-        group = QActionGroup(menu)
-
-        action = menu.addAction("Pan")
-        action.setActionGroup(group)
-        action.setCheckable(True)
-        action.triggered.connect(lambda: self._vb.setMouseMode(self._vb.PanMode))
-        action.setChecked(True)
-
-        action = menu.addAction("Zoom")
-        action.setActionGroup(group)
-        action.setCheckable(True)
-        action.triggered.connect(lambda: self._vb.setMouseMode(self._vb.RectMode))
-
-    def _initAxesMenu(self):
-        action = self._menu.addAction("View All")
-        action.triggered.connect(self._vb.autoRange)
-
-        menu = self._menu.addMenu(f"Axes")
-        action = QWidgetAction(menu)
-        widget = self.AxisMenuWidget()
-
-        action.setDefaultWidget(widget)
-        widget.invert_x_cb.toggled.connect(self._vb.invertX)
-        widget.invert_y_cb.toggled.connect(self._vb.invertY)
-        menu.addAction(action)
-
-    def _initContextMenu(self):
-        self._initAxesMenu()
-        self._initMouseModeMenu()
-
-        self._menu.addSeparator()
-
-        if self._enable_meter:
-            self._initMeterManu()
-
-        if self._enable_grid:
-            self._initGridMenu()
-
-        if self._enable_transform:
-            self._initTransformMenu()
+        self.onCrossCursorToggled(False)
 
     def _initAxisItems(self):
         for name, edge, pos in (('top', Qt.Edge.TopEdge, (2, 1)),
@@ -236,49 +116,76 @@ class PlotArea(GraphicsWidget):
             axis = AxisItem(edge, parent=self)
 
             axis.linkToView(self._vb)
-            self._axes[name] = {'item': axis, 'pos': pos}
+            self._axes[name] = axis
             self._layout.addItem(axis, *pos)
             axis.setZValue(-1000)
             axis.setFlag(axis.GraphicsItemFlag.ItemNegativeZStacksBehindParent)
 
-            self.showAxis(name, name in ['left', 'bottom'])
+            if name in ['top', 'right']:
+                axis.hide()
+
+        self._axes['left'].log_Scale_toggled_sgn.connect(
+            self.onLogYScaleToggled)
+        self._axes['bottom'].log_Scale_toggled_sgn.connect(
+            self.onLogXScaleToggled)
+        self._axes['right'].log_Scale_toggled_sgn.connect(
+            self.onLogY2ScaleToggled)
 
     def clearAllPlotItems(self):
         """Clear data on all the plot items."""
         for item in chain(self._plot_items, self._plot_items_y2):
             item.setData([], [])
 
-    @pyqtSlot(bool)
-    def _onShowCrossChanged(self, state):
-        self.showMeter(state)
-        self.cross_toggled_sgn.emit(state)
+    def onCrossCursorToggled(self, state: bool):
+        # scene is None at initialization
+        scene = self.scene()
+        if state:
+            self._cross_cursor_lb.setVisible(True)
+            self._cross_cursor_lb.setMaximumHeight(30)
+            self._layout.setRowFixedHeight(0, 30)
 
-    @pyqtSlot()
-    def _onShowGridChanged(self):
-        alpha = self._grid_opacity_sld.value()
-        x = alpha if self._show_x_grid_cb.isChecked() else False
-        y = alpha if self._show_y_grid_cb.isChecked() else False
-        self.getAxis('bottom').setGrid(x)
-        self.getAxis('left').setGrid(y)
+            self._v_line.show()
+            self._h_line.show()
 
-    @pyqtSlot(bool)
-    def _onLogXChanged(self, state):
+            if scene is not None:
+                scene.mouse_moved_sgn.connect(self.onCrossCursorMoved)
+        else:
+            self._cross_cursor_lb.setVisible(False)
+            self._cross_cursor_lb.setMaximumHeight(0)
+            self._layout.setRowFixedHeight(0, 0)
+
+            self._v_line.hide()
+            self._h_line.hide()
+
+            if scene is not None:
+                scene.mouse_moved_sgn.disconnect(self.onCrossCursorMoved)
+
+    def onCrossCursorMoved(self, pos):
+        m_pos = self._vb.mapSceneToView(pos)
+        x, y = m_pos.x(), m_pos.y()
+        self._v_line.setValue(x)
+        self._h_line.setValue(y)
+        self._cross_cursor_lb.setPlainText(f"x = {x}, y = {y}")
+
+    def onLogXScaleToggled(self, state: bool):
         for item in chain(self._plot_items, self._plot_items_y2):
             item.setLogX(state)
-        self.getAxis("bottom").setLogMode(state)
         self._vb.autoRange(disableAutoRange=False)
 
-    @pyqtSlot(bool)
-    def _onLogYChanged(self, state):
+    def onLogYScaleToggled(self, state: bool):
         for item in self._plot_items:
             item.setLogY(state)
-        self.getAxis("left").setLogMode(state)
         self._vb.autoRange(disableAutoRange=False)
+
+    def onLogY2ScaleToggled(self, state: bool):
+        for item in self._plot_items_y2:
+            item.setLogY(state)
+        self._vb_y2.autoRange(disableAutoRange=False)
 
     def _updateY2View(self):
         self._vb_y2.setGeometry(self._vb.sceneBoundingRect())
         # not sure this is required
-        # vb.linkedViewChanged(self._plot_area.vb, vb.XAxis)
+        # vb.linkedViewChanged(self._cw.vb, vb.XAxis)
 
     def addItem(self, item, *,
                 ignore_bounds: bool = False,
@@ -292,15 +199,15 @@ class PlotArea(GraphicsWidget):
 
         if isinstance(item, PlotItem):
             if y2:
-                if self._log_x_cb.isChecked():
+                if self.getAxis('bottom').log_scale:
                     item.setLogX(True)
 
                 self._plot_items_y2[item] = None
             else:
-                if self._log_x_cb.isChecked():
+                if self.getAxis('bottom').log_scale:
                     item.setLogX(True)
 
-                if self._log_y_cb.isChecked():
+                if self.getAxis('left').log_scale:
                     item.setLogY(True)
 
                 self._plot_items[item] = None
@@ -322,7 +229,7 @@ class PlotArea(GraphicsWidget):
         else:
             vb = self._vb
 
-        vb.addItem(item, ignoreBounds=ignore_bounds)
+        vb.addItem(item, ignore_bounds=ignore_bounds)
 
     def removeItem(self, item):
         """Add a graphics item to ViewBox."""
@@ -360,24 +267,26 @@ class PlotArea(GraphicsWidget):
         self._plot_items_y2.clear()
         self._items.clear()
 
-    def getAxis(self, axis: str):
+    def getAxis(self, axis: str) -> AxisItem:
         """Return the specified AxisItem.
 
         :param axis: one of 'left', 'bottom', 'right', or 'top'.
         """
-        return self._axes[axis]['item']
+        return self._axes[axis]
 
-    def showAxis(self, axis: str, show: bool = True) -> None:
-        """Show or hide the given axis.
+    def showAxis(self, axis: str) -> None:
+        """Show the given axis.
 
         :param axis: one of 'left', 'bottom', 'right', or 'top'.
-        :param show: whether to show the axis.
         """
-        s = self.getAxis(axis)
-        if show:
-            s.show()
-        else:
-            s.hide()
+        self.getAxis(axis).show()
+
+    def hideAxis(self, axis: str) -> None:
+        """Show the given axis.
+
+        :param axis: one of 'left', 'bottom', 'right', or 'top'.
+        """
+        self.getAxis(axis).hide()
 
     def addLegend(self, pos: Optional[QPointF] = None,
                   **kwargs):
@@ -405,13 +314,13 @@ class PlotArea(GraphicsWidget):
         else:
             self._legend.hide()
 
-    def setLabel(self, axis, text=None, units=None, **args) -> None:
+    def setLabel(self, axis: str, text=None) -> None:
         """Set the label for an axis. Basic HTML formatting is allowed.
 
         :param str axis: one of 'left', 'bottom', 'right', or 'top'.
         :param str text: text to display along the axis. HTML allowed.
         """
-        self.getAxis(axis).setLabel(text=text, units=units, **args)
+        self.getAxis(axis).setLabel(text=text)
         self.showAxis(axis)
 
     def showLabel(self, axis, show=True) -> None:
@@ -422,45 +331,16 @@ class PlotArea(GraphicsWidget):
         """
         self.getAxis(axis).showLabel(show)
 
-    def showMeter(self, show=True):
-        """Show or hide the meter bar.
-
-        :param bool show: whether to show the meter bar.
-        """
-        row = self._METER_ROW
-        if not show:
-            self._meter.setMaximumHeight(0)
-            self._layout.setRowFixedHeight(row, 0)
-            self._meter.setVisible(False)
-        else:
-            self._meter.setMaximumHeight(30)
-            self._layout.setRowFixedHeight(row, 30)
-            self._meter.setVisible(True)
-
-        self._show_meter = show
-
-    def setMeter(self, pos):
-        """Set the meter of the plot."""
-        if not self._show_meter:
-            return
-
-        if pos is None:
-            self._meter.setPlainText("")
-        else:
-            x, y = pos
-            self._meter.setPlainText(f"x = {x}, y = {y}")
-
     def setTitle(self, *args) -> None:
         """Set the title of the plot."""
-        row = self._TITLE_ROW
         title = None if len(args) == 0 else args[0]
         if title is None:
             self._title.setMaximumHeight(0)
-            self._layout.setRowFixedHeight(row, 0)
+            self._layout.setRowFixedHeight(1, 0)
             self._title.setVisible(False)
         else:
             self._title.setMaximumHeight(30)
-            self._layout.setRowFixedHeight(row, 30)
+            self._layout.setRowFixedHeight(1, 30)
             self._title.setPlainText(title)
             self._title.setVisible(True)
 
@@ -472,11 +352,3 @@ class PlotArea(GraphicsWidget):
 
     def autoRange(self, *args, **kwargs) -> None:
         self._vb.autoRange(*args, **kwargs)
-
-    def mapSceneToView(self, *args, **kwargs):
-        return self._vb.mapSceneToView(*args, **kwargs)
-
-    def mouseClickEvent(self, ev: MouseClickEvent):
-        if ev.button() == Qt.MouseButton.RightButton:
-            ev.accept()
-            self._menu.popup(ev.screenPos().toPoint())

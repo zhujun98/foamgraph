@@ -1,6 +1,6 @@
 import pytest
 
-from foamgraph import mkQApp, PlotWidgetF
+from foamgraph import mkQApp, GraphView
 from foamgraph.aesthetics import FColor
 from foamgraph.backend.QtCore import QPoint, Qt
 from foamgraph.backend.QtTest import QTest
@@ -11,7 +11,7 @@ app = mkQApp()
 
 @pytest.fixture(scope='function')
 def widget():
-    class FooPlotWidget(PlotWidgetF):
+    class FooPlotWidget(GraphView):
         def __init__(self):
             super().__init__()
             self.plot1 = self.addBarPlot(label="1")
@@ -31,7 +31,7 @@ class TestLegendItem:
     def test_initialization(self, widget, orientation):
         widget.addLegend(orientation=orientation)
 
-        legend = widget._plot_area._legend
+        legend = widget._cw._legend
 
         # test setLabelColor
         color = FColor.mkColor('r')
@@ -43,7 +43,7 @@ class TestLegendItem:
                              [Qt.Orientation.Vertical, Qt.Orientation.Horizontal])
     def test_plot_item_visible_change(self, widget, orientation):
         widget.addLegend(orientation=orientation)
-        legend = widget._plot_area._legend
+        legend = widget._cw._legend
 
         # setting a PlotItem invisible only changes the visibility of the
         # sample and label in the legend
@@ -61,7 +61,7 @@ class TestLegendItem:
                              [Qt.Orientation.Vertical, Qt.Orientation.Horizontal])
     def test_plot_item_removal(self, widget, orientation):
         widget.addLegend(orientation=orientation)
-        legend = widget._plot_area._legend
+        legend = widget._cw._legend
 
         # Note: An empty row or col in QGraphicsGridLayout will stay unless it is the
         #       last one.
@@ -92,7 +92,7 @@ class TestLegendItem:
                              [Qt.Orientation.Vertical, Qt.Orientation.Horizontal])
     def test_plot_item_set_label(self, widget, orientation):
         widget.addLegend(orientation=orientation)
-        legend = widget._plot_area._legend
+        legend = widget._cw._legend
 
         assert legend._items[widget.plot1][1].toPlainText() == "1"
         widget.plot1.setLabel("new 1")
