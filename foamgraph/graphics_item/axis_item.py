@@ -466,11 +466,11 @@ class AxisItem(GraphicsWidget):
 
         self._linkedView = weakref.ref(view)
         if self._orientation == Qt.Orientation.Vertical:
-            view.sigYRangeChanged.connect(self.linkedViewChanged)
+            view.y_range_changed_sgn.connect(self.linkedViewChanged)
         else:
-            view.sigXRangeChanged.connect(self.linkedViewChanged)
+            view.x_range_changed_sgn.connect(self.linkedViewChanged)
 
-        view.sigResized.connect(self.linkedViewChanged)
+        view.resized_sgn.connect(self.linkedViewChanged)
 
     def unlinkFromView(self):
         """Unlink this axis from a ViewBox."""
@@ -478,13 +478,13 @@ class AxisItem(GraphicsWidget):
         self._linkedView = None
         if self._orientation == Qt.Orientation.Vertical:
             if oldView is not None:
-                oldView.sigYRangeChanged.disconnect(self.linkedViewChanged)
+                oldView.y_range_changed_sgn.disconnect(self.linkedViewChanged)
         else:
             if oldView is not None:
-                oldView.sigXRangeChanged.disconnect(self.linkedViewChanged)
+                oldView.x_range_changed_sgn.disconnect(self.linkedViewChanged)
 
         if oldView is not None:
-            oldView.sigResized.disconnect(self.linkedViewChanged)
+            oldView.resized_sgn.disconnect(self.linkedViewChanged)
 
     def linkedViewChanged(self, view, newRange=None):
         if self._orientation == Qt.Orientation.Vertical:

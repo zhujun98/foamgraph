@@ -455,16 +455,15 @@ class GraphicsScene(QGraphicsScene):
     # Emitted when the mouse is clicked over the scene. Use ev.pos() to
     # get the click position relative to the item that was clicked on,
     # or ev.scenePos() to get the click position in scene coordinates.
-    # See :class:`pyqtgraph.GraphicsScene.MouseClickEvent`.
     mouse_clicked_sgn = pyqtSignal(object)
 
     # emitted immediately before the scene is about to be rendered
     prepare_for_paint_sgn = pyqtSignal()
 
-    def __init__(self, clickRadius=2, moveDistance=5, parent=None):
-        super().__init__(parent)
-        self.setClickRadius(clickRadius)
-        self.setMoveDistance(moveDistance)
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self._clickRadius = 2
+        self._moveDistance = 5
 
         self.clickEvents = []
         self.dragButtons = []
@@ -489,23 +488,6 @@ class GraphicsScene(QGraphicsScene):
         
         This allows items to delay expensive processing until they know a paint will be required."""
         self.prepare_for_paint_sgn.emit()
-
-    def setClickRadius(self, r):
-        """
-        Set the distance away from mouse clicks to search for interacting items.
-        When clicking, the scene searches first for items that directly intersect the click position
-        followed by any other items that are within a rectangle that extends r pixels away from the 
-        click position. 
-        """
-        self._clickRadius = r
-        
-    def setMoveDistance(self, d):
-        """
-        Set the distance the mouse must move after a press before mouseMoveEvents will be delivered.
-        This ensures that clicks with a small amount of movement are recognized as clicks instead of
-        drags.
-        """
-        self._moveDistance = d
 
     def mousePressEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
@@ -718,16 +700,13 @@ class GraphicsScene(QGraphicsScene):
         return ev.isAccepted()
         
     def items(self, *args):
-        items = QGraphicsScene.items(self, *args)
-        return self.translateGraphicsItems(items)
-    
+        return QGraphicsScene.items(self, *args)
+
     def selectedItems(self, *args):
-        items = QGraphicsScene.selectedItems(self, *args)
-        return self.translateGraphicsItems(items)
+        return QGraphicsScene.selectedItems(self, *args)
 
     def itemAt(self, *args):
-        item = super().itemAt(*args)
-        return self.translateGraphicsItem(item)
+        return super().itemAt(*args)
 
     def itemsNearEvent(self,
                        event,
@@ -773,9 +752,6 @@ class GraphicsScene(QGraphicsScene):
         items2.sort(key=absZValue, reverse=True)
         
         return items2
-        
-    def getViewWidget(self):
-        return self.views()[0]
 
     def addParentContextMenus(self, item, menu, event):
         """
@@ -835,19 +811,3 @@ class GraphicsScene(QGraphicsScene):
     def getContextMenus(self, event):
         self.contextMenuItem = event.acceptedItem
         return self.contextMenu
-
-    @staticmethod
-    def translateGraphicsItem(item):
-        # This function is intended as a workaround for a problem with older
-        # versions of PyQt (< 4.9?), where methods returning 'QGraphicsItem *'
-        # lose the type of the QGraphicsObject subclasses and instead return
-        # generic QGraphicsItem wrappers.
-        if isinstance(item, sip.wrapper):
-            obj = item.toGraphicsObject()
-            if obj is not None:
-                item = obj
-        return item
-
-    @staticmethod
-    def translateGraphicsItems(items):
-        return list(map(GraphicsScene.translateGraphicsItem, items))
