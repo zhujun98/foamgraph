@@ -72,7 +72,7 @@ class PlotWidget(GraphicsWidget):
         layout.addItem(self._cross_cursor_lb, 0, 1)
         layout.addItem(self._title, 1, 1,
                        alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addItem(self._vb, 3, 1)
+        layout.addItem(self._vb, 2, 1)
 
         for i in range(5):
             layout.setRowPreferredHeight(i, 0)
@@ -109,27 +109,27 @@ class PlotWidget(GraphicsWidget):
         self.onCrossCursorToggled(False)
 
     def _initAxisItems(self):
-        for name, edge, pos in (('top', Qt.Edge.TopEdge, (2, 1)),
-                                ('bottom', Qt.Edge.BottomEdge, (4, 1)),
-                                ('left', Qt.Edge.LeftEdge, (3, 0)),
-                                ('right', Qt.Edge.RightEdge, (3, 2))):
+        for name, edge, pos in (('bottom', Qt.Edge.BottomEdge, (3, 1)),
+                                ('left', Qt.Edge.LeftEdge, (2, 0)),
+                                ('right', Qt.Edge.RightEdge, (2, 2))):
             axis = AxisItem(edge, parent=self)
 
-            axis.linkToView(self._vb)
             self._axes[name] = axis
             self._layout.addItem(axis, *pos)
             axis.setZValue(-1000)
             axis.setFlag(axis.GraphicsItemFlag.ItemNegativeZStacksBehindParent)
 
-            if name in ['top', 'right']:
-                axis.hide()
+        x_axis = self._axes['bottom']
+        x_axis.linkToCanvas(self._vb)
+        x_axis.log_Scale_toggled_sgn.connect(self.onLogXScaleToggled)
 
-        self._axes['left'].log_Scale_toggled_sgn.connect(
-            self.onLogYScaleToggled)
-        self._axes['bottom'].log_Scale_toggled_sgn.connect(
-            self.onLogXScaleToggled)
-        self._axes['right'].log_Scale_toggled_sgn.connect(
-            self.onLogY2ScaleToggled)
+        y_axis = self._axes['left']
+        y_axis.linkToCanvas(self._vb)
+        y_axis.log_Scale_toggled_sgn.connect(self.onLogYScaleToggled)
+
+        y2_axis = self._axes['right']
+        y2_axis.hide()
+        y2_axis.log_Scale_toggled_sgn.connect(self.onLogY2ScaleToggled)
 
     def clearAllPlotItems(self):
         """Clear data on all the plot items."""
@@ -170,17 +170,17 @@ class PlotWidget(GraphicsWidget):
     def onLogXScaleToggled(self, state: bool):
         for item in chain(self._plot_items, self._plot_items_y2):
             item.setLogX(state)
-        self._vb.autoRange(disableAutoRange=False)
+        self._vb.viewAll()
 
     def onLogYScaleToggled(self, state: bool):
         for item in self._plot_items:
             item.setLogY(state)
-        self._vb.autoRange(disableAutoRange=False)
+        self._vb.viewAll()
 
     def onLogY2ScaleToggled(self, state: bool):
         for item in self._plot_items_y2:
             item.setLogY(state)
-        self._vb_y2.autoRange(disableAutoRange=False)
+        self._vb_y2.viewAll()
 
     def _updateY2View(self):
         self._vb_y2.setGeometry(self._vb.sceneBoundingRect())
@@ -220,9 +220,9 @@ class PlotWidget(GraphicsWidget):
             if vb is None:
                 vb = ViewBox()
                 self.scene().addItem(vb)
-                right_axis = self.getAxis('right')
-                right_axis.linkToView(vb)
-                right_axis.show()
+                y2_axis = self.getAxis('right')
+                y2_axis.linkToCanvas(vb)
+                y2_axis.show()
                 vb.setXLink(self._vb)
                 self._vb_y2 = vb
                 self._vb.resized_sgn.connect(self._updateY2View)
@@ -349,6 +349,3 @@ class PlotWidget(GraphicsWidget):
 
     def invertY(self, *args, **kwargs) -> None:
         self._vb.invertY(*args, **kwargs)
-
-    def autoRange(self, *args, **kwargs) -> None:
-        self._vb.autoRange(*args, **kwargs)

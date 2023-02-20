@@ -136,9 +136,6 @@ class GraphView(GraphicsView):
     def invertY(self, *args, **kargs):
         self._cw.invertY(*args, **kargs)
 
-    def autoRange(self, *args, **kwargs):
-        self._cw.autoRange(*args, **kwargs)
-
     def hideAxis(self):
         """Hide x and y axis."""
         # FIXME: hide also y2?

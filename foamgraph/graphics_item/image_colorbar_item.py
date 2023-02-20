@@ -54,7 +54,7 @@ class ImageColorbarWidget(GraphicsWidget):
         self._vb = vb
 
         self._axis = AxisItem(Qt.Edge.LeftEdge, parent=self)
-        self._axis.linkToView(vb)
+        self._axis.linkToCanvas(vb)
 
         self.initUI()
         self.initConnections()

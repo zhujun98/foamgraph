@@ -64,7 +64,7 @@ class TestGraphView:
 
     def test_forwarded_methods(self, graph_view1):
         for method in ["removeAllItems", "setLabel", "setTitle",
-                       "addLegend", "invertX", "invertY", "autoRange"]:
+                       "addLegend", "invertX", "invertY"]:
             with patch.object(graph_view1._cw, method) as mocked:
                 getattr(graph_view1, method)()
                 mocked.assert_called_once()

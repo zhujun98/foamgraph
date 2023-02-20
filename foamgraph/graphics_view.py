@@ -55,10 +55,6 @@ class GraphicsView(QGraphicsView):
         self.autoPixelRange = True  # the ImageColor bar disappears when it is False
         self.updateMatrix()
 
-    def render(self, *args, **kwds):
-        self.scene().prepareForPaint()
-        return QGraphicsView.render(self, *args, **kwds)
-
     def setCentralWidget(self, widget: QGraphicsWidget) -> None:
         self._central_widget = widget
         self.scene().addItem(widget)
@@ -96,8 +92,3 @@ class GraphicsView(QGraphicsView):
         self.updateMatrix()
         if scaleChanged:
             self.scale_changed_sgn.emit(self)
-
-    def paintEvent(self, ev: QPaintEvent) -> None:
-        """Override."""
-        self.scene().prepareForPaint()
-        QGraphicsView.paintEvent(self, ev)

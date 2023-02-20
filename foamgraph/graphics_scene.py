@@ -457,9 +457,6 @@ class GraphicsScene(QGraphicsScene):
     # or ev.scenePos() to get the click position in scene coordinates.
     mouse_clicked_sgn = pyqtSignal(object)
 
-    # emitted immediately before the scene is about to be rendered
-    prepare_for_paint_sgn = pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self._clickRadius = 2
@@ -475,19 +472,6 @@ class GraphicsScene(QGraphicsScene):
         self.minDragTime = 0.5  # drags shorter than 0.5 sec are interpreted as clicks
         
         self.contextMenu = []
-
-    def render(self, *args):
-        self.prepareForPaint()
-        return QGraphicsScene.render(self, *args)
-
-    def prepareForPaint(self):
-        """Called before every render.
-
-        This method will inform items that the scene is about to
-        be rendered by emitting prepare_for_paint_sgn.
-        
-        This allows items to delay expensive processing until they know a paint will be required."""
-        self.prepare_for_paint_sgn.emit()
 
     def mousePressEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""

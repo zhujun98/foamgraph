@@ -514,7 +514,7 @@ class GraphicsItem:
         """
         view = self.getViewBox()
         if view is not None:
-            view.itemBoundsChanged(self)  # inform view so it can update its range if it wants
+            view.itemBoundsChanged()
 
 
 class GraphicsObject(GraphicsItem, QGraphicsObject):

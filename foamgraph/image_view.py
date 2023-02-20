@@ -154,13 +154,10 @@ class ImageView(QWidget):
         """Interface method."""
         self._updateImageImp(*args, **kwargs)
 
-    def _updateImageImp(self, img, *, auto_range=False, auto_levels=False,
-                        scale=None, pos=None):
+    def _updateImageImp(self, img, *, auto_levels=False, scale=None, pos=None):
         """Update the current displayed image.
 
         :param np.ndarray img: the image to be displayed.
-        :param bool auto_range: whether to scale/pan the view to fit
-            the image. default = False
         :param bool auto_levels: whether to update the white/black levels
             to fit the image. default = False
         :param tuple/list pos: the origin of the displayed image in (x, y).
@@ -183,9 +180,6 @@ class ImageView(QWidget):
             self._image_item.scale(*scale)
         if pos is not None:
             self._image_item.setPos(*pos)
-
-        if auto_range:
-            self.autoRange()
 
     def clear(self):
         self._image = None

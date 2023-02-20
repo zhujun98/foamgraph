@@ -285,44 +285,44 @@ class AxisItem(GraphicsWidget):
         self._picture = None
         self.update()
 
-    def linkToView(self, view):
-        """Link this axis to a ViewBox, causing its displayed range to match the visible range of the view."""
-        self.unlinkFromView()
+    def linkToCanvas(self, view):
+        """Link the axis to a CanvasItem."""
+        if self._vb is not None:
+            raise RuntimeError(
+                "The axis has already been linked to a CanvasItem.")
 
         self._vb = view
         if self._orientation == Qt.Orientation.Vertical:
+            view.auto_range_y_toggled_sgn.connect(
+                self._auto_range_action.setChecked)
             view.y_range_changed_sgn.connect(self.onLinkedViewChanged)
             self._invert_action.triggered.connect(view.invertY)
-            self._auto_range_action.toggled.connect(
-                lambda x: view.enableAutoRange(view.YAxis, x))
+            self._auto_range_action.triggered.connect(
+                lambda s: view.enableAutoRange(view.Axis.Y, s))
         else:
             view.x_range_changed_sgn.connect(self.onLinkedViewChanged)
+            view.auto_range_x_toggled_sgn.connect(
+                self._auto_range_action.setChecked)
             self._invert_action.triggered.connect(view.invertX)
-            self._auto_range_action.toggled.connect(
-                lambda x: view.enableAutoRange(view.XAxis, x))
+            self._auto_range_action.triggered.connect(
+                lambda s: view.enableAutoRange(view.Axis.X, s))
 
         view.resized_sgn.connect(self.onLinkedViewChanged)
 
-    def unlinkFromView(self):
-        """Unlink this axis from a ViewBox."""
-        if self._vb is None:
-            return
-
-        if self._orientation == Qt.Orientation.Vertical:
-            self._vb.y_range_changed_sgn.disconnect(self.onLinkedViewChanged)
-        else:
-            self._vb.x_range_changed_sgn.disconnect(self.onLinkedViewChanged)
-
-        self._vb.resized_sgn.disconnect(self.onLinkedViewChanged)
-        self._vb = None
+        self._auto_range_action.setChecked(True)
+        self._auto_range_action.triggered.emit(True)
 
     def onLinkedViewChanged(self):
-        axis = 1 if self._orientation == Qt.Orientation.Vertical else 0
-        view_range = self._vb.viewRange()[axis]
-        if self._invert_action.isChecked():
-            self.setRange(*view_range[::-1])
+        rect = self._vb.viewRect()
+        if self._orientation == Qt.Orientation.Vertical:
+            vmin, vmax = rect.top(), rect.bottom()
         else:
-            self.setRange(*view_range)
+            vmin, vmax = rect.left(), rect.right()
+
+        if self._invert_action.isChecked():
+            self.setRange(vmax, vmin)
+        else:
+            self.setRange(vmin, vmax)
 
     def boundingRect(self) -> QRectF:
         """Override."""
@@ -346,8 +346,6 @@ class AxisItem(GraphicsWidget):
 
     def paint(self, p, *args) -> None:
         """Override."""
-        # p.drawRect(self.boundingRect())
-
         if self._picture is None:
             try:
                 picture = QPicture()
@@ -797,7 +795,14 @@ class AxisItem(GraphicsWidget):
         ev.accept()
 
     def mouseDragEvent(self, ev: MouseDragEvent) -> None:
-        ev.accept()
+        if self._vb is None:
+            return
+
+        delta = ev.lastPos() - ev.pos()
+        if self._orientation == Qt.Orientation.Vertical:
+            self._vb.translateYBy(delta.y())
+        else:
+            self._vb.translateXBy(delta.x())
 
     def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton:
