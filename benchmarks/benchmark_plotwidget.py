@@ -39,7 +39,7 @@ class BenchmarkPlotItemSpeed:
             elif plot_type == "scatter":
                 self._graph = pg.ScatterPlotItem()
             elif plot_type == "bar":
-                class BarPlotItem(pg.BarPlotItem):
+                class BarPlotItem(pg.BarGraphItem):
                     def setData(self, x, y):
                         self.setOpts(x=x, height=y)
                 self._graph = BarPlotItem(
