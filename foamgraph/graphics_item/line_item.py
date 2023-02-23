@@ -87,7 +87,7 @@ class InfiniteLineItem(GraphicsObject):
         self.position_changed_sgn.emit(self)
 
     def _computeBoundingRect(self):
-        vr = self.viewRect()  # bounds of containing ViewBox mapped to local coords.
+        vr = self.viewRect()  # bounds of containing CanvasItem mapped to local coords.
         if vr is None:
             self._bounding_rect = QRectF()
             return

@@ -74,7 +74,11 @@ class AnnotationItem(GraphicsObject):
 
         # TODO: improve
         vb = self.getViewBox()
-        offset = vb.mapSceneToView(self._offset) - vb.mapSceneToView(QPointF(0, 0))
+        try:
+            # FIXME
+            offset = vb.mapSceneToView(self._offset) - vb.mapSceneToView(QPointF(0, 0))
+        except TypeError:
+            return
         for i in range(n_pts):
             self._items[i].setPos(x[i] + offset.x(), y[i] - offset.y())
             self._items[i].setPlainText(str(values[i]))

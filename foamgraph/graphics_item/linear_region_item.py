@@ -111,7 +111,7 @@ class LinearRegionItem(GraphicsObject):
 
     def boundingRect(self) -> QRectF:
         """Override."""
-        br = self.viewRect()  # bounds of containing ViewBox mapped to local coords.
+        br = self.viewRect()  # bounds of containing CanvasItem mapped to local coords.
         
         rng = self.region()
         if self._orientation == Qt.Orientation.Vertical:

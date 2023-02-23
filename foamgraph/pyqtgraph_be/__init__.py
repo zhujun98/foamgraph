@@ -148,7 +148,7 @@ def cleanup():
             if isinstance(o, QtGui.QGraphicsItem) and isQObjectAlive(o) and o.scene() is None:
                 if getConfigOption('crashWarning'):
                     sys.stderr.write('Error: graphics item without scene. '
-                        'Make sure ViewBox.close() and GraphicsView.close() '
+                        'Make sure CanvasItem.close() and GraphicsView.close() '
                         'are properly called before app shutdown (%s)\n' % (o,))
                 
                 s.addItem(o)

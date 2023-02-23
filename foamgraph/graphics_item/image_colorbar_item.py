@@ -15,7 +15,7 @@ from foamgraph.pyqtgraph_be import Point
 
 from ..aesthetics import ColorMap, FColor
 from .axis_item import AxisItem
-from .canvas_item import ViewBox
+from .canvas_item import CanvasItem
 from .gradient_editor_item import GradientEditorItem
 from .graphics_item import GraphicsWidget
 from .linear_region_item import LinearRegionItem
@@ -45,12 +45,11 @@ class ImageColorbarWidget(GraphicsWidget):
         self._hist = CurvePlotItem(pen=FColor.mkPen('k'))
         self._hist.rotate(90)
 
-        vb = ViewBox(parent=self)
+        vb = CanvasItem(parent=self)
         vb.setMaximumWidth(152)
         vb.setMinimumWidth(45)
         vb.addItem(self._hist)
         vb.addItem(self._lri, ignore_bounds=True)
-        vb.enableAutoRange(ViewBox.Axis.XY)
         self._vb = vb
 
         self._axis = AxisItem(Qt.Edge.LeftEdge, parent=self)

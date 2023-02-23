@@ -285,35 +285,39 @@ class AxisItem(GraphicsWidget):
         self._picture = None
         self.update()
 
-    def linkToCanvas(self, view):
+    def linkToCanvas(self, canvas: "CanvasItem"):
         """Link the axis to a CanvasItem."""
         if self._vb is not None:
             raise RuntimeError(
                 "The axis has already been linked to a CanvasItem.")
 
-        self._vb = view
+        self._vb = canvas
         if self._orientation == Qt.Orientation.Vertical:
-            view.auto_range_y_toggled_sgn.connect(
-                self._auto_range_action.setChecked)
-            view.y_range_changed_sgn.connect(self.onLinkedViewChanged)
-            self._invert_action.triggered.connect(view.invertY)
             self._auto_range_action.triggered.connect(
-                lambda s: view.enableAutoRange(view.Axis.Y, s))
-        else:
-            view.x_range_changed_sgn.connect(self.onLinkedViewChanged)
-            view.auto_range_x_toggled_sgn.connect(
-                self._auto_range_action.setChecked)
-            self._invert_action.triggered.connect(view.invertX)
-            self._auto_range_action.triggered.connect(
-                lambda s: view.enableAutoRange(view.Axis.X, s))
+                lambda s: canvas.enableAutoRangeY(s))
+            self._invert_action.triggered.connect(canvas.invertY)
 
-        view.resized_sgn.connect(self.onLinkedViewChanged)
+            canvas.auto_range_y_toggled_sgn.connect(
+                self._auto_range_action.setChecked)
+            canvas.y_range_changed_sgn.connect(self.onCanvasChanged)
+            canvas.y_link_state_toggled_sgn.connect(
+                self._auto_range_action.setEnabled)
+        else:
+            self._auto_range_action.triggered.connect(
+                lambda s: canvas.enableAutoRangeX(s))
+            self._invert_action.triggered.connect(canvas.invertX)
+
+            canvas.auto_range_x_toggled_sgn.connect(
+                self._auto_range_action.setChecked)
+            canvas.x_range_changed_sgn.connect(self.onCanvasChanged)
+            canvas.x_link_state_toggled_sgn.connect(
+                self._auto_range_action.setEnabled)
 
         self._auto_range_action.setChecked(True)
         self._auto_range_action.triggered.emit(True)
 
-    def onLinkedViewChanged(self):
-        rect = self._vb.viewRect()
+    def onCanvasChanged(self) -> None:
+        rect = self._vb.graphRect()
         if self._orientation == Qt.Orientation.Vertical:
             vmin, vmax = rect.top(), rect.bottom()
         else:
@@ -326,23 +330,24 @@ class AxisItem(GraphicsWidget):
 
     def boundingRect(self) -> QRectF:
         """Override."""
-        linkedView = self._vb
-        if linkedView is None or not self._show_grid_action.isChecked():
+        canvas = self._vb
+        if canvas is None or not self._show_grid_action.isChecked():
             rect = self.mapRectFromParent(self.geometry())
             # extend rect if ticks go in negative direction
             # also extend to account for text that flows past the edges
             tl = self._tick_length
             if self._edge == Qt.Edge.LeftEdge:
-                rect = rect.adjusted(0, -15, -min(0, tl), 15)
-            elif self._edge == Qt.Edge.RightEdge:
-                rect = rect.adjusted(min(0, tl), -15, 0, 15)
-            elif self._edge == Qt.Edge.TopEdge:
-                rect = rect.adjusted(-15, 0, 15, -min(0, tl))
-            elif self._edge == Qt.Edge.BottomEdge:
-                rect = rect.adjusted(-15, min(0, tl), 15, 0)
+                return rect.adjusted(0, -15, -min(0, tl), 15)
+            if self._edge == Qt.Edge.RightEdge:
+                return rect.adjusted(min(0, tl), -15, 0, 15)
+            if self._edge == Qt.Edge.TopEdge:
+                return rect.adjusted(-15, 0, 15, -min(0, tl))
+            if self._edge == Qt.Edge.BottomEdge:
+                return rect.adjusted(-15, min(0, tl), 15, 0)
             return rect
 
-        return self.mapRectFromParent(self.geometry()) | linkedView.mapRectToItem(self, linkedView.boundingRect())
+        return self.mapRectFromParent(
+            self.geometry()) | canvas.mapRectToItem(self, canvas.boundingRect())
 
     def paint(self, p, *args) -> None:
         """Override."""
@@ -542,12 +547,11 @@ class AxisItem(GraphicsWidget):
             p.setFont(self._tick_font)
         bounds = self.mapRectFromParent(self.geometry())
 
-        linkedView = self._vb
-        if linkedView is None or not self._show_grid_action.isChecked():
+        canvas = self._vb
+        if canvas is None or not self._show_grid_action.isChecked():
             tickBounds = bounds
         else:
-            tickBounds = linkedView.mapRectToItem(
-                self, linkedView.boundingRect())
+            tickBounds = canvas.mapRectToItem(self, canvas.boundingRect())
 
         if self._edge == Qt.Edge.LeftEdge:
             span = (bounds.topRight(), bounds.bottomRight())

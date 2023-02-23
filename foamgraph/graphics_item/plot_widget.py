@@ -17,7 +17,7 @@ from ..backend.QtWidgets import (
 )
 
 from .axis_item import AxisItem
-from .canvas_item import ViewBox
+from .canvas_item import CanvasItem
 from .graphics_item import GraphicsWidget
 from .label_item import LabelItem
 from .legend_item import LegendItem
@@ -46,7 +46,7 @@ class PlotWidget(GraphicsWidget):
         self._plot_items = OrderedDict()  # PlotItem: None
         self._plot_items_y2 = OrderedDict()  # PlotItem: None
 
-        self._vb = ViewBox(parent=self, image=image)
+        self._vb = CanvasItem(parent=self, image=image)
         self._vb_y2 = None
 
         self._v_line = None
@@ -182,15 +182,10 @@ class PlotWidget(GraphicsWidget):
             item.setLogY(state)
         self._vb_y2.viewAll()
 
-    def _updateY2View(self):
-        self._vb_y2.setGeometry(self._vb.sceneBoundingRect())
-        # not sure this is required
-        # vb.linkedViewChanged(self._cw.vb, vb.XAxis)
-
     def addItem(self, item, *,
                 ignore_bounds: bool = False,
                 y2: bool = False) -> None:
-        """Add a graphics item to ViewBox."""
+        """Add a graphics item to CanvasItem."""
         if item in self._items:
             warnings.warn(f"Item {item} already added to PlotItem.")
             return
@@ -218,21 +213,22 @@ class PlotWidget(GraphicsWidget):
         if y2:
             vb = self._vb_y2
             if vb is None:
-                vb = ViewBox()
-                self.scene().addItem(vb)
+                vb = CanvasItem(parent=self)
                 y2_axis = self.getAxis('right')
                 y2_axis.linkToCanvas(vb)
                 y2_axis.show()
-                vb.setXLink(self._vb)
+                vb.linkXTo(self._vb)
                 self._vb_y2 = vb
-                self._vb.resized_sgn.connect(self._updateY2View)
+                # _vb_y2 is not added to the layout
+                self._vb.geometryChanged.connect(
+                    lambda: vb.setGeometry(self._vb.geometry()))
         else:
             vb = self._vb
 
         vb.addItem(item, ignore_bounds=ignore_bounds)
 
     def removeItem(self, item):
-        """Add a graphics item to ViewBox."""
+        """Add a graphics item to CanvasItem."""
         if item not in self._items:
             return
 
@@ -253,7 +249,7 @@ class PlotWidget(GraphicsWidget):
         self._vb.removeItem(item)
 
     def removeAllItems(self):
-        """Remove all graphics items from the ViewBox."""
+        """Remove all graphics items from the CanvasItem."""
         for item in self._items:
             if item in self._plot_items_y2:
                 self._vb_y2.removeItem(item)

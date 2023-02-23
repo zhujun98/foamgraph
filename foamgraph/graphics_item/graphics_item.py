@@ -160,12 +160,12 @@ class GraphicsItem:
 
     def getViewBox(self):
         """
-        Return the first ViewBox or GraphicsView which bounds this item's visible space.
-        If this item is not contained within a ViewBox, then the GraphicsView is returned.
-        If the item is contained inside nested ViewBoxes, then the inner-most ViewBox is returned.
+        Return the first CanvasItem or GraphicsView which bounds this item's visible space.
+        If this item is not contained within a CanvasItem, then the GraphicsView is returned.
+        If the item is contained inside nested ViewBoxes, then the inner-most CanvasItem is returned.
         The result is cached; clear the cache with forgetViewBox()
         """
-        from .canvas_item import ViewBox
+        from .canvas_item import CanvasItem
         if self._vb is None:
             parent = self
             while True:
@@ -177,7 +177,7 @@ class GraphicsItem:
                 if parent is None:
                     return
 
-                if isinstance(parent, ViewBox):
+                if isinstance(parent, CanvasItem):
                     self._vb = weakref.ref(parent)
                     break
         return self._vb()  # If we made it this far, _viewBox is definitely not None
@@ -199,12 +199,12 @@ class GraphicsItem:
         return dt
         
     def viewTransform(self):
-        """Return the transform that maps from local coordinates to the item's ViewBox coordinates
-        If there is no ViewBox, return the scene transform.
+        """Return the transform that maps from local coordinates to the item's CanvasItem coordinates
+        If there is no CanvasItem, return the scene transform.
         Returns None if the item does not have a view."""
         view = self.getViewBox()
         if view is None:
-            self.sceneTransform()
+            return
 
         tr = self.itemTransform(view.childGroup)
         if isinstance(tr, tuple):
@@ -224,12 +224,12 @@ class GraphicsItem:
         return parents
     
     def viewRect(self):
-        """Return the visible bounds of this item's ViewBox or GraphicsWidget,
+        """Return the visible bounds of this item's CanvasItem or GraphicsWidget,
         in the local coordinate system of the item."""
         view = self.getViewBox()
         if view is None:
             return
-        bounds = self.mapRectFromView(view.viewRect())
+        bounds = self.mapRectFromView(view.graphRect())
         if bounds is None:
             return
 
@@ -425,7 +425,7 @@ class GraphicsItem:
     def parentChanged(self):
         """Called when the item's parent has changed.
 
-        This method handles connecting / disconnecting from ViewBox signals
+        This method handles connecting / disconnecting from CanvasItem signals
         to make sure viewRangeChanged works properly. It should generally be 
         extended, not overridden."""
         self._updateView()
@@ -438,7 +438,7 @@ class GraphicsItem:
             # Happens when Python is shutting down.
             return
 
-        # It is possible this item has moved to a different ViewBox or widget;
+        # It is possible this item has moved to a different CanvasItem or widget;
         # clear out previously determined references to these.
         self._vb = None
         self._viewWidget = None
@@ -474,7 +474,7 @@ class GraphicsItem:
                 view.device_range_changed_sgn.connect(self.viewRangeChanged)
                 view.device_transform_changed_sgn.connect(self.viewTransformChanged)
             else:
-                # connect signals from ViewBox
+                # connect signals from CanvasItem
                 view.range_changed_sgn.connect(self.viewRangeChanged)
                 view.transform_changed_sgn.connect(self.viewTransformChanged)
             self._connectedView = weakref.ref(view)
@@ -496,7 +496,7 @@ class GraphicsItem:
 
     def viewRangeChanged(self):
         """
-        Called whenever the view coordinates of the ViewBox containing this item have changed.
+        Called whenever the view coordinates of the CanvasItem containing this item have changed.
         """
         ...
 
@@ -509,8 +509,8 @@ class GraphicsItem:
         
     def informViewBoundsChanged(self):
         """
-        Inform this item's container ViewBox that the bounds of this item have changed.
-        This is used by ViewBox to react if auto-range is enabled.
+        Inform this item's container CanvasItem that the bounds of this item have changed.
+        This is used by CanvasItem to react if auto-range is enabled.
         """
         view = self.getViewBox()
         if view is not None:

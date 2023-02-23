@@ -26,7 +26,7 @@ class TestPlotWidget(unittest.TestCase):
         self._area = PlotWidget()
         self._area.removeAllItems()  # axis items etc. should not be affected
 
-        # FIXME: need the following line because of the implementation of ViewBox
+        # FIXME: need the following line because of the implementation of CanvasItem
         self._view.setCentralWidget(self._area)
 
     def testAxes(self):

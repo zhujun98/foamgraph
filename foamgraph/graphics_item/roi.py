@@ -28,7 +28,7 @@ from .graphics_item import GraphicsObject
 
 
 class UIGraphicsItem(GraphicsObject):
-    """Base class for graphics items with boundaries relative to a GraphicsView or ViewBox.
+    """Base class for graphics items with boundaries relative to a GraphicsView or CanvasItem.
 
     The purpose of this class is to allow the creation of GraphicsItems which live inside
     a scalable view, but whose boundaries will always stay fixed relative to the view's boundaries.
