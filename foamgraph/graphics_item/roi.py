@@ -35,9 +35,6 @@ class UIGraphicsItem(GraphicsObject):
     For example: GridItem, InfiniteLine
 
     The view can be specified on initialization or it can be automatically detected when the item is painted.
-
-    NOTE: Only the item's boundingRect is affected; the item is not transformed in any way. Use viewRangeChanged
-    to respond to changes in the view.
     """
 
     # TODO: make parent the first argument
@@ -80,11 +77,6 @@ class UIGraphicsItem(GraphicsObject):
                 return QRectF()
             self._bounding_rect = br
         return QRectF(self._bounding_rect)
-
-    def viewRangeChanged(self):
-        """Called when the view widget/viewbox is resized/rescaled"""
-        self.setNewBounds()
-        self.update()
 
     def setNewBounds(self):
         """Update the item's bounding rect to match the viewport"""
@@ -178,10 +170,6 @@ class RoiHandle(UIGraphicsItem):
     def boundingRect(self) -> QRectF:
         """Override."""
         return self._path.boundingRect()
-
-    def viewTransformChanged(self):
-        # TODO: check whether this method is needed
-        self.update()
 
     def updatePosition(self):
         self.setPos(self._pos * self.parentItem().size())

@@ -543,11 +543,6 @@ class ScatterPlotItem(PlotItem):
             py *= pad
         return QRectF(xmn - px, ymn - py, 2*px + xmx - xmn, 2*py + ymx - ymn)
 
-    def viewTransformChanged(self):
-        # FIXME: I am not sure whether this is needed
-        self.prepareGeometryChange()
-        self._bounds = [None, None]
-
     def mapPointsToDevice(self, pts):
         tr = self.deviceTransform()
         if tr is None:

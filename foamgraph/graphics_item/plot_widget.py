@@ -218,6 +218,7 @@ class PlotWidget(GraphicsWidget):
                 y2_axis.linkToCanvas(vb)
                 y2_axis.show()
                 vb.linkXTo(self._vb)
+                vb.setZValue(self._vb.zValue() - 1)
                 self._vb_y2 = vb
                 # _vb_y2 is not added to the layout
                 self._vb.geometryChanged.connect(

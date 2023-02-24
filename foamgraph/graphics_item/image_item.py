@@ -310,22 +310,6 @@ class ImageItem(GraphicsObject):
             return QRectF(0., 0., 0., 0.)
         return QRectF(0., 0., float(self.width()), float(self.height()))
 
-    def viewTransformChanged(self):
-        """Override."""
-        o = self.mapToDevice(QPointF(0, 0))
-        x = self.mapToDevice(QPointF(1, 0))
-        y = self.mapToDevice(QPointF(0, 1))
-        w = Point(x-o).length()
-        h = Point(y-o).length()
-        if w == 0 or h == 0:
-            self._qimage = None
-            return
-        xds = max(1, int(1.0 / w))
-        yds = max(1, int(1.0 / h))
-        if (xds, yds) != self._ds_rate:
-            self._qimage = None
-            self.update()
-
     def hoverEvent(self, ev: HoverEvent) -> None:
         if ev.isExit():
             x = -1  # out of image

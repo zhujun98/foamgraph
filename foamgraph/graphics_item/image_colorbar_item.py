@@ -89,9 +89,9 @@ class ImageColorbarWidget(GraphicsWidget):
         """Override."""
         levels = self.levels()
         p1 = self._vb.mapFromViewToItem(
-            self, Point(self._vb.viewRect().center().x(), levels[0]))
+            self, Point(self._vb.graphRect().center().x(), levels[0]))
         p2 = self._vb.mapFromViewToItem(
-            self, Point(self._vb.viewRect().center().x(), levels[1]))
+            self, Point(self._vb.graphRect().center().x(), levels[1]))
         rect = self._gradient.mapRectToParent(
             self._gradient.gradientItem().rect())
 

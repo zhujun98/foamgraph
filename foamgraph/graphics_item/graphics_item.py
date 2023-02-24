@@ -210,18 +210,6 @@ class GraphicsItem:
         if isinstance(tr, tuple):
             tr = tr[0]   # difference between pyside and pyqt
         return tr
-
-    def getBoundingParents(self):
-        """Return a list of parents to this item that have child clipping enabled."""
-        p = self
-        parents = []
-        while True:
-            p = p.parentItem()
-            if p is None:
-                break
-            if p.flags() & self.GraphicsItemFlag.ItemClipsChildrenToShape:
-                parents.append(p)
-        return parents
     
     def viewRect(self):
         """Return the visible bounds of this item's CanvasItem or GraphicsWidget,
@@ -400,28 +388,6 @@ class GraphicsItem:
     def childItems(self):
         return self._qtBaseClass.childItems(self)
 
-    def sceneTransform(self):
-        # Qt bug: do no allow access to sceneTransform() until
-        # the item has a scene.
-        
-        if self.scene() is None:
-            return self.transform()
-        else:
-            return self._qtBaseClass.sceneTransform(self)
-
-    def transformAngle(self, relativeItem=None):
-        """Return the rotation produced by this item's transform (this assumes there is no shear in the transform)
-        If relativeItem is given, then the angle is determined relative to that item.
-        """
-        if relativeItem is None:
-            relativeItem = self.parentItem()
-
-        tr = self.itemTransform(relativeItem)
-        if isinstance(tr, tuple):  # difference between pyside and pyqt
-            tr = tr[0]
-        vec = tr.map(QLineF(0,0,1,0))
-        return vec.angleTo(QLineF(vec.p1(), vec.p1() + QPointF(1,0)))
-
     def parentChanged(self):
         """Called when the item's parent has changed.
 
@@ -453,34 +419,6 @@ class GraphicsItem:
         if view is oldView:
             return
 
-        # disconnect from previous view
-        if oldView is not None:
-            for signal, slot in [('range_changed_sgn', self.viewRangeChanged),
-                                 ('device_range_changed_sgn', self.viewRangeChanged),
-                                 ('transform_changed_sgn', self.viewTransformChanged),
-                                 ('device_transform_changed_sgn', self.viewTransformChanged)]:
-                try:
-                    getattr(oldView, signal).disconnect(slot)
-                except (TypeError, AttributeError, RuntimeError):
-                    # TypeError and RuntimeError are from pyqt and pyside, respectively
-                    pass
-            
-            self._connectedView = None
-
-        # connect to new view
-        if view is not None:
-            if hasattr(view, 'device_range_changed_sgn'):
-                # connect signals from GraphicsView
-                view.device_range_changed_sgn.connect(self.viewRangeChanged)
-                view.device_transform_changed_sgn.connect(self.viewTransformChanged)
-            else:
-                # connect signals from CanvasItem
-                view.range_changed_sgn.connect(self.viewRangeChanged)
-                view.transform_changed_sgn.connect(self.viewTransformChanged)
-            self._connectedView = weakref.ref(view)
-            self.viewRangeChanged()
-            self.viewTransformChanged()
-        
         # inform children that their view might have changed
         self._replaceView(oldView)
         
@@ -493,19 +431,6 @@ class GraphicsItem:
                     child._updateView()
             else:
                 self._replaceView(oldView, child)
-
-    def viewRangeChanged(self):
-        """
-        Called whenever the view coordinates of the CanvasItem containing this item have changed.
-        """
-        ...
-
-    def viewTransformChanged(self):
-        """
-        Called whenever the transformation matrix of the view has changed.
-        (eg, the view range has changed or the view was resized)
-        """
-        ...
         
     def informViewBoundsChanged(self):
         """

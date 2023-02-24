@@ -52,7 +52,7 @@ class ChildGroup(GraphicsObject):
         #         CanvasItem, but this causes crashes on PySide.
         # Note 2: We might also like to use a signal rather than this callback
         #         mechanism, but this causes a different PySide crash.
-        self.itemsChangedListeners = WeakList()
+        self._parent = parent
 
         # excempt from telling view when transform changes
         self._GraphicsObject__inform_view_on_change = False
@@ -66,20 +66,8 @@ class ChildGroup(GraphicsObject):
             self.GraphicsItemChange.ItemChildAddedChange,
             self.GraphicsItemChange.ItemChildRemovedChange,
         ]:
-            ...
-            # try:
-            #     itemsChangedListeners = self.itemsChangedListeners
-            # except AttributeError:
-            #     # It's possible that the attribute was already collected when the itemChange happened
-            #     # (if it was triggered during the gc of the object).
-            #     pass
-            # else:
-            #     for listener in itemsChangedListeners:
-            #         listener.updateAutoRange()
+            self._parent.updateGraphRange()
         return ret
-
-    def shape(self):
-        return self.mapFromParent(self.parentItem().shape())
 
     def boundingRect(self) -> QRectF:
         """Override."""
@@ -101,12 +89,13 @@ class CanvasItem(GraphicsWidget):
     * Item coordinate mapping methods
 
     """
+    # Change the range of the AxisItem
+    # Change the range of the linked CanvasItem
     x_range_changed_sgn = pyqtSignal()
     y_range_changed_sgn = pyqtSignal()
-    range_changed_sgn = pyqtSignal(object, object)
+    # Change the check state of the QAction in AxisItem
     auto_range_x_toggled_sgn = pyqtSignal(bool)
     auto_range_y_toggled_sgn = pyqtSignal(bool)
-    transform_changed_sgn = pyqtSignal(object)
 
     x_link_state_toggled_sgn = pyqtSignal(bool)
     y_link_state_toggled_sgn = pyqtSignal(bool)
@@ -120,7 +109,6 @@ class CanvasItem(GraphicsWidget):
     class Axis(IntEnum):
         X = 0
         Y = 1
-        XY = 2
 
     WHEEL_SCALE_FACTOR = 0.00125
 
@@ -138,6 +126,8 @@ class CanvasItem(GraphicsWidget):
         self._auto_range_y = True
 
         self._graph_rect = QRectF(0, 0, 1, 1)
+        self._graph_transform = QTransform()
+        self._inverted_graph_transform = None
         self._linked_x = None
         self._linked_y = None
         self._mouse_mode = self.MouseMode.Pan
@@ -149,7 +139,6 @@ class CanvasItem(GraphicsWidget):
         # this is a workaround for a Qt + OpenGL bug that causes improper clipping
         # https://bugreports.qt.nokia.com/browse/QTBUG-23723
         self.childGroup = ChildGroup(self)
-        self.childGroup.itemsChangedListeners.append(self)
 
         # region shown in MouseMode.Rect
         self._selected_rect = QGraphicsRectItem(0, 0, 1, 1)
@@ -175,7 +164,8 @@ class CanvasItem(GraphicsWidget):
         root = QMenu()
 
         action = root.addAction("View All")
-        action.triggered.connect(self.autoRange)
+        action.triggered.connect(lambda: self.setTargetRange(
+            self.childrenBoundingRect(), disable_auto_range=True))
 
         # ---
         menu = root.addMenu("Mouse Mode")
@@ -250,41 +240,41 @@ class CanvasItem(GraphicsWidget):
 
         return vmin, vmax
 
+    def _updateAll(self):
+        if self._border is not None:
+            # for debugging
+            self._border.setRect(
+                self.mapRectFromItem(self.childGroup, self._graph_rect))
+
+        self.updateViewRange()
+        self.updateMatrix()
+        self.update()
+
     def setTargetXRange(self, vmin: float, vmax: float, *,
-                        disable_auto_range: bool = True):
+                        disable_auto_range: bool = True,
+                        update: bool = True):
         vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.X)
         self._graph_rect.setLeft(vmin)
         self._graph_rect.setRight(vmax)
 
-        if self._border is not None:
-            # for debugging
-            self._border.setRect(
-                self.mapRectFromItem(self.childGroup, self._graph_rect))
-
         if disable_auto_range:
             self.enableAutoRangeX(False)
 
-        self.updateViewRange()
-        self.updateMatrix()
-        self.update()
+        if update:
+            self._updateAll()
 
     def setTargetYRange(self, vmin: float, vmax: float, *,
-                        disable_auto_range: bool = True):
+                        disable_auto_range: bool = True,
+                        update: bool = True):
         vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.Y)
         self._graph_rect.setTop(vmin)
         self._graph_rect.setBottom(vmax)
 
-        if self._border is not None:
-            # for debugging
-            self._border.setRect(
-                self.mapRectFromItem(self.childGroup, self._graph_rect))
-
         if disable_auto_range:
             self.enableAutoRangeY(False)
 
-        self.updateViewRange()
-        self.updateMatrix()
-        self.update()
+        if update:
+            self._updateAll()
 
     def setTargetRange(self, *args, disable_auto_range: bool = True):
         if len(args) == 1:
@@ -297,31 +287,12 @@ class CanvasItem(GraphicsWidget):
             xrange, yrange = args
 
         self.setTargetXRange(xrange[0], xrange[1],
-                             disable_auto_range=disable_auto_range)
+                             disable_auto_range=disable_auto_range,
+                             update=False)
         self.setTargetYRange(yrange[0], yrange[1],
-                             disable_auto_range=disable_auto_range)
-
-    def autoXRange(self, *,  disable_auto_range: bool = True) -> None:
-        rect = self.childrenBoundingRect()
-        self.setTargetXRange(rect.left(), rect.right(),
-                             disable_auto_range=disable_auto_range)
-
-    def autoYRange(self, *,  disable_auto_range: bool = True) -> None:
-        rect = self.childrenBoundingRect()
-        self.setTargetYRange(rect.top(), rect.bottom(),
-                             disable_auto_range=disable_auto_range)
-
-    def autoRange(self, *,  disable_auto_range: bool = True) -> None:
-        if self._auto_ranging:
-            return
-
-        self._auto_ranging = True
-        rect = self.childrenBoundingRect()
-        self.setTargetXRange(rect.left(), rect.right(),
-                             disable_auto_range=disable_auto_range)
-        self.setTargetYRange(rect.top(), rect.bottom(),
-                             disable_auto_range=disable_auto_range)
-        self._auto_ranging = False
+                             disable_auto_range=disable_auto_range,
+                             update=False)
+        self._updateAll()
 
     def suggestPadding(self, axis):
         l = self.geometry().width() if axis == self.Axis.X else self.geometry().height()
@@ -380,7 +351,7 @@ class CanvasItem(GraphicsWidget):
 
     def itemBoundsChanged(self) -> None:
         if self._auto_range_x or self._auto_range_y:
-            self.autoRange(disable_auto_range=False)
+            self.updateGraphRange()
 
     def invertX(self, state: bool = True):
         self._x_inverted = state
@@ -390,16 +361,18 @@ class CanvasItem(GraphicsWidget):
         self._y_inverted = state
         self.y_range_changed_sgn.emit()
 
-    def childTransform(self) -> QTransform:
-        return self.childGroup.transform()
+    def _invertedGraphTransform(self):
+        if self._inverted_graph_transform is None:
+            self._inverted_graph_transform = fn.invertQTransform(self._graph_transform)
+        return self._inverted_graph_transform
 
     def mapToCanvas(self, obj):
         """Maps from local coordinates to coordinates displayed inside CanvasItem."""
-        return fn.invertQTransform(self.childTransform()).map(obj)
+        return self._invertedGraphTransform().map(obj)
 
     def mapFromView(self, obj):
         """Maps from coordinates displayed inside CanvasItem to local coordinates."""
-        return self.childTransform().map(obj)
+        return self._graph_transform.map(obj)
 
     def mapSceneToView(self, obj):
         """Maps from scene coordinates to coordinates displayed inside CanvasItem"""
@@ -430,13 +403,17 @@ class CanvasItem(GraphicsWidget):
         self.setTargetYRange(y0, y1)
 
     def scaleBy(self, sx: float, sy: float, xc: float, yc: float) -> None:
-        self.setTargetXRange(sx, xc)
-        self.setTargetYRange(sy, yc)
+        rect = self._graph_rect
+        x0 = xc + (rect.left() - xc) * sx
+        x1 = xc + (rect.right() - xc) * sx
+        y0 = yc + (rect.top() - yc) * sy
+        y1 = yc + (rect.bottom() - yc) * sy
+        self.setTargetRange((x0, x1), (y0, y1))
 
     def wheelEvent(self, ev: QGraphicsSceneWheelEvent) -> None:
         """Override."""
         s = 1. + ev.delta() * self.WHEEL_SCALE_FACTOR
-        center = fn.invertQTransform(self.childGroup.transform()).map(ev.pos())
+        center = self._invertedGraphTransform().map(ev.pos())
 
         self.scaleBy(s, s, center.x(), center.y())
         ev.accept()
@@ -451,8 +428,7 @@ class CanvasItem(GraphicsWidget):
 
     def translateBy(self, dx: float, dy: float) -> None:
         rect = self._graph_rect
-        self.setTargetXRange(rect.left() + dx, rect.right() + dx)
-        self.setTargetYRange(rect.top() + dy, rect.bottom() + dy)
+        self.setTargetRange(rect.adjusted(dx, dy, dx, dy))
 
     def mouseDragEvent(self, ev: MouseDragEvent):
         pos = ev.pos()
@@ -476,7 +452,7 @@ class CanvasItem(GraphicsWidget):
                     if ev.entering():
                         self._selected_rect.show()
             else:
-                tr = fn.invertQTransform(self.childGroup.transform())
+                tr = self._invertedGraphTransform()
                 tr = tr.map(delta) - tr.map(QPointF(0, 0))
 
                 self.translateBy(tr.x(), tr.y())
@@ -501,10 +477,19 @@ class CanvasItem(GraphicsWidget):
 
         return bounding_rect
 
+    def updateGraphRange(self):
+        if self._auto_ranging:
+            return
+
+        self._auto_ranging = True
+
+        self.setTargetRange(self.childrenBoundingRect(), disable_auto_range=False)
+
+        self._auto_ranging = False
+
     def updateViewRange(self):
         self.x_range_changed_sgn.emit()
         self.y_range_changed_sgn.emit()
-        self.range_changed_sgn.emit(self, self._graph_rect)
 
     def updateMatrix(self):
         """Update the childGroup's transform matrix."""
@@ -536,7 +521,8 @@ class CanvasItem(GraphicsWidget):
         m.translate(-center.x(), -center.y())
 
         self.childGroup.setTransform(m)
-        self.transform_changed_sgn.emit(self)
+        self._graph_transform = m
+        self._inverted_graph_transform = None
 
     def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton:
@@ -545,10 +531,7 @@ class CanvasItem(GraphicsWidget):
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""
-        self.x_range_changed_sgn.emit()
-        self.y_range_changed_sgn.emit()
-
-        self.autoRange(disable_auto_range=False)
+        self.updateGraphRange()
         self.updateViewRange()
         self.updateMatrix()
         self.update()
