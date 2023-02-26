@@ -94,11 +94,7 @@ class InfiniteLineItem(GraphicsObject):
         
         # add a 4-pixel radius around the line for mouse interaction.
 
-        # get pixel length orthogonal to the line
-        px = self.pixelLength(direction=Point(1,0), ortho=True)
-        if px is None:
-            px = 0
-        w = 5 * px
+        w = 5.0
         br = QRectF(vr)
         br.setBottom(-w)
         br.setTop(w)
@@ -110,7 +106,7 @@ class InfiniteLineItem(GraphicsObject):
         br.setRight(right)
         br = br.normalized()
         
-        vs = self.getViewBox().size()
+        vs = self.canvasItem().size()
         
         if self._bounding_rect != br or self._lastViewSize != vs:
             self._bounding_rect = br

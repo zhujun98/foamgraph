@@ -650,21 +650,3 @@ def _pinv_fallback(tr):
     arr.shape = (3, 3)
     pinv = np.linalg.pinv(arr)
     return QtGui.QTransform(*pinv.ravel().tolist())
-
-
-def invertQTransform(tr):
-    """Return a QTransform that is the inverse of *tr*.
-    A pseudo-inverse is returned if tr is not invertible.
-
-    Note that this function is preferred over QTransform.inverted() due to
-    bugs in that method. (specifically, Qt has floating-point precision issues
-    when determining whether a matrix is invertible)
-    """
-    try:
-        det = tr.determinant()
-        detr = 1.0 / det  # let singular matrices raise ZeroDivisionError
-        inv = tr.adjoint()
-        inv *= detr
-        return inv
-    except ZeroDivisionError:
-        return _pinv_fallback(tr)

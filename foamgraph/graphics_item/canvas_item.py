@@ -12,11 +12,11 @@ from foamgraph.backend.QtGui import (
     QGraphicsSceneWheelEvent, QSizePolicy, QTransform
 )
 
-from foamgraph.pyqtgraph_be import functions as fn
-
 from foamgraph.aesthetics import FColor
 from foamgraph.graphics_scene import MouseClickEvent, MouseDragEvent
-from foamgraph.graphics_item.graphics_item import GraphicsObject, GraphicsWidget
+from foamgraph.graphics_item.graphics_item import (
+    GraphicsItem, GraphicsObject, GraphicsWidget, QGraphicsWidget
+)
 
 
 class WeakList(object):
@@ -78,7 +78,7 @@ class ChildGroup(GraphicsObject):
         ...
 
 
-class CanvasItem(GraphicsWidget):
+class CanvasItem(QGraphicsWidget):
     """Box that allows internal scaling/panning of children by mouse drag.
 
     Features:
@@ -126,8 +126,6 @@ class CanvasItem(GraphicsWidget):
         self._auto_range_y = True
 
         self._graph_rect = QRectF(0, 0, 1, 1)
-        self._graph_transform = QTransform()
-        self._inverted_graph_transform = None
         self._linked_x = None
         self._linked_y = None
         self._mouse_mode = self.MouseMode.Pan
@@ -208,6 +206,9 @@ class CanvasItem(GraphicsWidget):
             self._items.append(item)
         else:
             item.setParentItem(self)
+
+        if isinstance(item, GraphicsItem):
+            item.setCanvasItem(self)
 
     def removeItem(self, item):
         """Remove an item from this view."""
@@ -361,30 +362,37 @@ class CanvasItem(GraphicsWidget):
         self._y_inverted = state
         self.y_range_changed_sgn.emit()
 
-    def _invertedGraphTransform(self):
-        if self._inverted_graph_transform is None:
-            self._inverted_graph_transform = fn.invertQTransform(self._graph_transform)
-        return self._inverted_graph_transform
+    def graphTransform(self) -> QTransform:
+        return self.childGroup.transform()
 
-    def mapToCanvas(self, obj):
-        """Maps from local coordinates to coordinates displayed inside CanvasItem."""
-        return self._invertedGraphTransform().map(obj)
+    def invertedGraphTransform(self) -> QTransform:
+        return self.itemTransform(self.childGroup)[0]
 
-    def mapFromView(self, obj):
-        """Maps from coordinates displayed inside CanvasItem to local coordinates."""
-        return self._graph_transform.map(obj)
+    def mapRectToDevice(self, rect):
+        """
+        Return *rect* mapped from local coordinates to device coordinates (pixels).
+        If there is no device mapping available, return None.
+        """
+        scene = self.scene()
+        if scene is None:
+            return
+
+        views = scene.views()
+        if not views:
+            return
+
+        view = self.scene().views()[0]
+
+        dt = super().deviceTransform(view.viewportTransform())
+
+        if dt.determinant() == 0:  # occurs when deviceTransform is invalid because widget has not been displayed
+            return None
+
+        return dt.mapRect(rect)
 
     def mapSceneToView(self, obj):
-        """Maps from scene coordinates to coordinates displayed inside CanvasItem"""
-        return self.mapToView(self.mapFromScene(obj))
-
-    def mapViewToScene(self, obj):
-        """Maps from coordinates displayed inside CanvasItem to scene coordinates"""
-        return self.mapToScene(self.mapFromView(obj))
-
-    def mapFromItemToView(self, item, obj):
-        """Maps *obj* from the local coordinate system of *item* to the view coordinates"""
-        return self.childGroup.mapFromItem(item, obj)
+        """Maps from scene coordinates to coordinates displayed inside CanvasItem."""
+        return self.invertedGraphTransform().map(self.mapFromScene(obj))
 
     def mapFromViewToItem(self, item, obj):
         """Maps *obj* from view coordinates to the local coordinate system of *item*."""
@@ -413,7 +421,7 @@ class CanvasItem(GraphicsWidget):
     def wheelEvent(self, ev: QGraphicsSceneWheelEvent) -> None:
         """Override."""
         s = 1. + ev.delta() * self.WHEEL_SCALE_FACTOR
-        center = self._invertedGraphTransform().map(ev.pos())
+        center = self.invertedGraphTransform().map(ev.pos())
 
         self.scaleBy(s, s, center.x(), center.y())
         ev.accept()
@@ -452,7 +460,7 @@ class CanvasItem(GraphicsWidget):
                     if ev.entering():
                         self._selected_rect.show()
             else:
-                tr = self._invertedGraphTransform()
+                tr = self.invertedGraphTransform()
                 tr = tr.map(delta) - tr.map(QPointF(0, 0))
 
                 self.translateBy(tr.x(), tr.y())
@@ -468,12 +476,8 @@ class CanvasItem(GraphicsWidget):
             if not item.isVisible():
                 continue
 
-            rect = item.boundingRect()
-            if rect.isNull():
-                continue
-
             bounding_rect = bounding_rect.united(
-                self.mapFromItemToView(item, rect).boundingRect())
+                self.childGroup.mapRectFromItem(item, item.boundingRect()))
 
         return bounding_rect
 
@@ -521,8 +525,6 @@ class CanvasItem(GraphicsWidget):
         m.translate(-center.x(), -center.y())
 
         self.childGroup.setTransform(m)
-        self._graph_transform = m
-        self._inverted_graph_transform = None
 
     def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton:

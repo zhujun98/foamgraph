@@ -8,10 +8,8 @@ Author: Jun Zhu
 import numpy as np
 
 from foamgraph.backend.QtGui import QPainter
-from foamgraph.backend.QtCore import pyqtSignal, Qt
+from foamgraph.backend.QtCore import pyqtSignal, QPointF, Qt
 from foamgraph.backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
-
-from foamgraph.pyqtgraph_be import Point
 
 from ..aesthetics import ColorMap, FColor
 from .axis_item import AxisItem
@@ -89,9 +87,9 @@ class ImageColorbarWidget(GraphicsWidget):
         """Override."""
         levels = self.levels()
         p1 = self._vb.mapFromViewToItem(
-            self, Point(self._vb.graphRect().center().x(), levels[0]))
+            self, QPointF(self._vb.graphRect().center().x(), levels[0]))
         p2 = self._vb.mapFromViewToItem(
-            self, Point(self._vb.graphRect().center().x(), levels[1]))
+            self, QPointF(self._vb.graphRect().center().x(), levels[1]))
         rect = self._gradient.mapRectToParent(
             self._gradient.gradientItem().rect())
 

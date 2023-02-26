@@ -524,23 +524,8 @@ class ScatterPlotItem(PlotItem):
             ymn = 0
             ymx = 0
 
-        px = py = 0.0
         pad = self.pixelPadding()
-        if pad > 0:
-            # determine length of pixel in local x, y directions
-            px, py = self.pixelVectors()
-            try:
-                px = 0 if px is None else px.length()
-            except OverflowError:
-                px = 0
-            try:
-                py = 0 if py is None else py.length()
-            except OverflowError:
-                py = 0
-
-            # return bounds expanded by pixel size
-            px *= pad
-            py *= pad
+        px = py = pad if pad > 0 else 0
         return QRectF(xmn - px, ymn - py, 2*px + xmx - xmn, 2*py + ymx - ymn)
 
     def mapPointsToDevice(self, pts):
@@ -556,7 +541,7 @@ class ScatterPlotItem(PlotItem):
         return pts
 
     def getViewMask(self, pts):
-        vb = self.getViewBox()
+        vb = self.canvasItem()
         if vb is None:
             return
 
@@ -581,10 +566,9 @@ class ScatterPlotItem(PlotItem):
         if pts is None:
             return
 
-        masked_pts = pts[:, self.getViewMask(pts)]
         width = self._symbol_width
         source_rect = QRectF(self._symbol_fragment.rect())
-        for px, py in zip(masked_pts[0, :], masked_pts[1, :]):
+        for px, py in zip(pts[0, :], pts[1, :]):
             p.drawPixmap(QRectF(px, py, width, width),
                          self._symbol_fragment,
                          source_rect)

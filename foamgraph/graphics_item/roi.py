@@ -55,7 +55,6 @@ class UIGraphicsItem(GraphicsObject):
             self._bounds = bounds
 
         self._bounding_rect = None
-        self._updateView()
 
     def itemChange(self, change, value):
         ret = super().itemChange(change, value)
