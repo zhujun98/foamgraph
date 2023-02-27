@@ -484,8 +484,8 @@ class ScatterPlotItem(PlotItem):
         """Override."""
         return self._x, self._y
 
-    def _dataBounds(self, ax, orthoRange=None):
-        if orthoRange is None and self._bounds[ax] is not None:
+    def _dataBounds(self, ax):
+        if self._bounds[ax] is not None:
             return self._bounds[ax]
 
         if len(self._y) == 0:
@@ -494,18 +494,8 @@ class ScatterPlotItem(PlotItem):
         x, y = self.transformedData()
         if ax == 0:
             d = x
-            d2 = y
         elif ax == 1:
             d = y
-            d2 = x
-
-        if orthoRange is not None:
-            mask = (d2 >= orthoRange[0]) * (d2 <= orthoRange[1])
-            d = d[mask]
-            d2 = d2[mask]
-
-            if d.size == 0:
-                return None, None
 
         self._bounds[ax] = (np.nanmin(d), np.nanmax(d))
         return self._bounds[ax]
@@ -539,21 +529,6 @@ class ScatterPlotItem(PlotItem):
         pts = np.clip(pts, -2**30, 2**30)
 
         return pts
-
-    def getViewMask(self, pts):
-        vb = self.canvasItem()
-        if vb is None:
-            return
-
-        rect = vb.mapRectToDevice(vb.boundingRect())
-        w = 0.5 * self._symbol_width
-
-        mask = ((pts[0] + w > rect.left()) &
-                (pts[0] - w < rect.right()) &
-                (pts[1] + w > rect.top()) &
-                (pts[1] - w < rect.bottom()))
-
-        return mask
 
     def paint(self, p, *args):
         """Override."""
