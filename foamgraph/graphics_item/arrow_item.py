@@ -119,7 +119,7 @@ class ArrowItem(QGraphicsPathItem):
     def shape(self):
         return self.path
     
-    # # dataBounds and pixelPadding methods are provided to ensure CanvasItem can
+    # # dataBounds and pixelPadding methods are provided to ensure Canvas can
     # # properly auto-range
     # def dataBounds(self, ax, orthoRange=None):
     #     pw = 0

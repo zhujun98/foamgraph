@@ -17,7 +17,7 @@ from ..backend.QtWidgets import (
 )
 
 from .axis_item import AxisItem
-from .canvas_item import CanvasItem
+from .canvas import Canvas
 from .graphics_item import GraphicsWidget
 from .label_item import LabelItem
 from .legend_item import LegendItem
@@ -46,7 +46,7 @@ class PlotWidget(GraphicsWidget):
         self._plot_items = OrderedDict()  # PlotItem: None
         self._plot_items_y2 = OrderedDict()  # PlotItem: None
 
-        self._vb = CanvasItem(parent=self, image=image)
+        self._vb = Canvas(parent=self, image=image)
         self._vb_y2 = None
 
         self._v_line = None
@@ -185,7 +185,7 @@ class PlotWidget(GraphicsWidget):
     def addItem(self, item, *,
                 ignore_bounds: bool = False,
                 y2: bool = False) -> None:
-        """Add a graphics item to CanvasItem."""
+        """Add a graphics item to Canvas."""
         if item in self._items:
             warnings.warn(f"Item {item} already added to PlotItem.")
             return
@@ -213,7 +213,7 @@ class PlotWidget(GraphicsWidget):
         if y2:
             vb = self._vb_y2
             if vb is None:
-                vb = CanvasItem(parent=self)
+                vb = Canvas(parent=self)
                 y2_axis = self.getAxis('right')
                 y2_axis.linkToCanvas(vb)
                 y2_axis.show()
@@ -229,7 +229,7 @@ class PlotWidget(GraphicsWidget):
         vb.addItem(item, ignore_bounds=ignore_bounds)
 
     def removeItem(self, item):
-        """Add a graphics item to CanvasItem."""
+        """Add a graphics item to Canvas."""
         if item not in self._items:
             return
 
@@ -250,7 +250,7 @@ class PlotWidget(GraphicsWidget):
         self._vb.removeItem(item)
 
     def removeAllItems(self):
-        """Remove all graphics items from the CanvasItem."""
+        """Remove all graphics items from the Canvas."""
         for item in self._items:
             if item in self._plot_items_y2:
                 self._vb_y2.removeItem(item)

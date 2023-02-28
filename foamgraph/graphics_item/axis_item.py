@@ -285,11 +285,11 @@ class AxisItem(GraphicsWidget):
         self._picture = None
         self.update()
 
-    def linkToCanvas(self, canvas: "CanvasItem"):
-        """Link the axis to a CanvasItem."""
+    def linkToCanvas(self, canvas: "Canvas"):
+        """Link the axis to a Canvas."""
         if self._vb is not None:
             raise RuntimeError(
-                "The axis has already been linked to a CanvasItem.")
+                "The axis has already been linked to a Canvas.")
 
         self._vb = canvas
         if self._orientation == Qt.Orientation.Vertical:

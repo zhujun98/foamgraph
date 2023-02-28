@@ -13,7 +13,7 @@ from foamgraph.backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
 
 from ..aesthetics import ColorMap, FColor
 from .axis_item import AxisItem
-from .canvas_item import CanvasItem
+from .canvas import Canvas
 from .gradient_editor_item import GradientEditorItem
 from .graphics_item import GraphicsWidget
 from .linear_region_item import LinearRegionItem
@@ -43,7 +43,7 @@ class ImageColorbarWidget(GraphicsWidget):
         self._hist = CurvePlotItem(pen=FColor.mkPen('k'))
         self._hist.rotate(90)
 
-        vb = CanvasItem(parent=self)
+        vb = Canvas(parent=self)
         vb.setMaximumWidth(152)
         vb.setMinimumWidth(45)
         vb.addItem(self._hist)

@@ -18,12 +18,12 @@ from foamgraph.graphics_item.graphics_item import (
 )
 
 
-class CanvasItem(QGraphicsWidget):
-    """CanvasItem."""
+class Canvas(QGraphicsWidget):
+    """Canvas."""
 
     class CanvasProxy(QGraphicsObject):
 
-        def __init__(self, parent: "CanvasItem"):
+        def __init__(self, parent: "Canvas"):
             super().__init__(parent=parent)
 
             self._items = []
@@ -65,7 +65,7 @@ class CanvasItem(QGraphicsWidget):
             ...
 
     # Change the range of the AxisItem
-    # Change the range of the linked CanvasItem
+    # Change the range of the linked Canvas
     x_range_changed_sgn = pyqtSignal()
     y_range_changed_sgn = pyqtSignal()
     # Change the check state of the QAction in AxisItem
@@ -159,7 +159,7 @@ class CanvasItem(QGraphicsWidget):
 
         return root
 
-    def setMouseMode(self, mode: "CanvasItem.MouseMode"):
+    def setMouseMode(self, mode: "Canvas.MouseMode"):
         self._mouse_mode = mode
 
     def addItem(self, item: GraphicsObject, ignore_bounds: bool = False):
@@ -188,7 +188,7 @@ class CanvasItem(QGraphicsWidget):
     def graphRect(self) -> QRectF:
         return self._graph_rect
 
-    def _regularizeRange(self, vmin, vmax, axis: "CanvasItem.Axis"):
+    def _regularizeRange(self, vmin, vmax, axis: "Canvas.Axis"):
         # If we requested 0 range, try to preserve previous scale.
         # Otherwise just pick an arbitrary scale.
         if vmin == vmax:
@@ -275,7 +275,7 @@ class CanvasItem(QGraphicsWidget):
             self._auto_range_y = state
             self.auto_range_y_toggled_sgn.emit(state)
 
-    def linkXTo(self, canvas: "CanvasItem"):
+    def linkXTo(self, canvas: "Canvas"):
         """Make X-axis change as X-axis of the given canvas changes."""
         if self._linked_x is not None:
             self._linked_x.x_range_changed_sgn.disconnect(self.xLinkChanged)
@@ -285,7 +285,7 @@ class CanvasItem(QGraphicsWidget):
         self.enableAutoRangeX(False)
         canvas.x_range_changed_sgn.emit()
 
-    def linkYTo(self, canvas: "CanvasItem"):
+    def linkYTo(self, canvas: "Canvas"):
         """Link the Y-axis of this canvas to the x-axis of another one."""
         if self._linked_y is not None:
             self._linked_y.y_range_changed_sgn.disconnect(self.linkedYChanged)
@@ -366,7 +366,7 @@ class CanvasItem(QGraphicsWidget):
         return dt.mapRect(rect)
 
     def mapSceneToView(self, obj):
-        """Maps from scene coordinates to coordinates displayed inside CanvasItem."""
+        """Maps from scene coordinates to coordinates displayed inside Canvas."""
         return self.invertedGraphTransform().map(self.mapFromScene(obj))
 
     def mapFromView(self, obj):

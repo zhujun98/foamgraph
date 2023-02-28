@@ -155,13 +155,13 @@ class GraphicsItem:
         return v
 
     def canvas(self):
-        from .canvas_item import CanvasItem
+        from .canvas import Canvas
 
         if self._vb is None:
             parent = self
             while parent is not None:
                 parent = parent.parentItem()
-                if isinstance(parent, CanvasItem):
+                if isinstance(parent, Canvas):
                     self._vb = parent
                     break
 
@@ -183,8 +183,8 @@ class GraphicsItem:
         return dt
         
     def viewTransform(self):
-        """Return the transform that maps from local coordinates to the item's CanvasItem coordinates
-        If there is no CanvasItem, return the scene transform.
+        """Return the transform that maps from local coordinates to the item's Canvas coordinates
+        If there is no Canvas, return the scene transform.
         Returns None if the item does not have a view."""
         canvas = self.canvas()
         if canvas is None:
@@ -196,7 +196,7 @@ class GraphicsItem:
         return tr
     
     def viewRect(self):
-        """Return the visible bounds of this item's CanvasItem or GraphicsWidget,
+        """Return the visible bounds of this item's Canvas or GraphicsWidget,
         in the local coordinate system of the item."""
         canvas = self.canvas()
         if canvas is None:
@@ -242,8 +242,8 @@ class GraphicsItem:
         
     def informViewBoundsChanged(self):
         """
-        Inform this item's container CanvasItem that the bounds of this item have changed.
-        This is used by CanvasItem to react if auto-range is enabled.
+        Inform this item's container Canvas that the bounds of this item have changed.
+        This is used by Canvas to react if auto-range is enabled.
         """
         canvas = self.canvas()
         if canvas is not None:

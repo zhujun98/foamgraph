@@ -23,8 +23,10 @@ class AnnotationItem(GraphicsObject):
         super().__init__(**kwargs)
 
         self._items = []
-
-        self._offset = QPointF(-10, 20)
+        self._x_span = 0
+        self._y_span = 0
+        self._x_offset = 0
+        self._y_offset = 0
 
         self._font = None
         # self.setFont(self._font)
@@ -33,8 +35,9 @@ class AnnotationItem(GraphicsObject):
         self.setColor(FColor.mkColor('b'))
 
     def setOffset(self, x: float, y: float) -> None:
-        """Set the offset of the text items with respect to the annotated points."""
-        self._offset = QPointF(x, y)
+        """Set offset of text items with respect to annotated points."""
+        self._x_offset = x
+        self._y_offset = y
 
     def setFont(self, font: QFont) -> None:
         """Set the font of the text items."""
@@ -73,16 +76,18 @@ class AnnotationItem(GraphicsObject):
             self.__addItem()
 
         # TODO: improve
-        vb = self.canvasItem()
-        try:
-            # FIXME
-            offset = vb.mapSceneToView(self._offset) - vb.mapSceneToView(QPointF(0, 0))
-        except TypeError:
-            return
+        vb = self.canvas()
 
         for i in range(n_pts):
-            self._items[i].setPos(x[i] + offset.x(), y[i] - offset.y())
+            # p = vb.mapFromView(QPointF(x[i], y[i]))
+            # if p is None:
+            #     continue
+            self._items[i].setPos(x[i], y[i])
             self._items[i].setPlainText(str(values[i]))
+
+        import numpy as np
+        self._x_span = np.max(x) - np.min(x)
+        self._y_span = np.max(y) - np.min(y)
 
         self.prepareGeometryChange()
         self.informViewBoundsChanged()
@@ -90,7 +95,7 @@ class AnnotationItem(GraphicsObject):
 
     def boundingRect(self) -> QRectF:
         """Override."""
-        return QRectF()
+        return QRectF(0, 0, self._x_span, self._y_span)
 
     def paint(self, p, *args) -> None:
         """Override."""
