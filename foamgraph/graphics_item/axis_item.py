@@ -796,17 +796,20 @@ class AxisItem(GraphicsWidget):
 
     def wheelEvent(self, ev: QGraphicsSceneWheelEvent) -> None:
         """Override."""
+        s = self._vb.wheelMovementToScaleFactor(ev.delta())
+        if self._orientation == Qt.Orientation.Vertical:
+            self._vb.scaleYBy(s, ev.pos().y())
+        else:
+            self._vb.scaleXBy(s, ev.pos().x())
         ev.accept()
 
     def mouseDragEvent(self, ev: MouseDragEvent) -> None:
-        if self._vb is None:
-            return
-
         delta = ev.lastPos() - ev.pos()
         if self._orientation == Qt.Orientation.Vertical:
             self._vb.translateYBy(delta.y())
         else:
             self._vb.translateXBy(delta.x())
+        ev.accept()
 
     def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton:

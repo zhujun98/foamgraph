@@ -170,17 +170,17 @@ class PlotWidget(GraphicsWidget):
     def onLogXScaleToggled(self, state: bool):
         for item in chain(self._plot_items, self._plot_items_y2):
             item.setLogX(state)
-        self._vb.viewAll()
+        self._vb.updateAutoRange()
 
     def onLogYScaleToggled(self, state: bool):
         for item in self._plot_items:
             item.setLogY(state)
-        self._vb.viewAll()
+        self._vb.updateAutoRange()
 
     def onLogY2ScaleToggled(self, state: bool):
         for item in self._plot_items_y2:
             item.setLogY(state)
-        self._vb_y2.viewAll()
+        self._vb_y2.updateAutoRange()
 
     def addItem(self, item, *,
                 ignore_bounds: bool = False,

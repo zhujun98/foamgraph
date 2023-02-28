@@ -6,7 +6,7 @@ import numpy as np
 from foamgraph.backend.QtWidgets import (
     QGraphicsRectItem, QHBoxLayout, QLabel, QMenu, QWidget, QWidgetAction
 )
-from foamgraph.backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
+from foamgraph.backend.QtCore import pyqtSignal, QLineF, QPointF, QRectF, Qt
 from foamgraph.backend.QtGui import (
     QAction, QActionGroup, QDoubleValidator, QGraphicsSceneResizeEvent,
     QGraphicsSceneWheelEvent, QSizePolicy, QTransform
@@ -15,7 +15,7 @@ from foamgraph.backend.QtGui import (
 from foamgraph.aesthetics import FColor
 from foamgraph.graphics_scene import MouseClickEvent, MouseDragEvent
 from foamgraph.graphics_item.graphics_item import (
-    GraphicsItem, GraphicsObject, GraphicsWidget, QGraphicsWidget
+    GraphicsItem, GraphicsObject, QGraphicsWidget
 )
 
 
@@ -66,7 +66,7 @@ class ChildGroup(GraphicsObject):
             self.GraphicsItemChange.ItemChildAddedChange,
             self.GraphicsItemChange.ItemChildRemovedChange,
         ]:
-            self._parent.updateGraphRange()
+            self._parent.updateAutoRange()
         return ret
 
     def boundingRect(self) -> QRectF:
@@ -117,7 +117,6 @@ class CanvasItem(QGraphicsWidget):
         super().__init__(parent)
 
         self._items = []
-        self._auto_ranging = False
 
         self._x_inverted = False
         self._y_inverted = False
@@ -247,7 +246,8 @@ class CanvasItem(QGraphicsWidget):
             self._border.setRect(
                 self.mapRectFromItem(self.childGroup, self._graph_rect))
 
-        self.updateViewRange()
+        self.x_range_changed_sgn.emit()
+        self.y_range_changed_sgn.emit()
         self.updateMatrix()
         self.update()
 
@@ -350,9 +350,20 @@ class CanvasItem(QGraphicsWidget):
         wr.adjust(pos.x(), pos.y(), pos.x(), pos.y())
         return wr
 
-    def itemBoundsChanged(self) -> None:
-        if self._auto_range_x or self._auto_range_y:
-            self.updateGraphRange()
+    def updateAutoRange(self) -> None:
+        rect = self.childrenBoundingRect()
+
+        if self._auto_range_x:
+            self.setTargetXRange(rect.left(), rect.right(),
+                                 disable_auto_range=False,
+                                 update=False)
+
+        if self._auto_range_y:
+            self.setTargetYRange(rect.top(), rect.bottom(),
+                                 disable_auto_range=False,
+                                 update=False)
+
+        self._updateAll()
 
     def invertX(self, state: bool = True):
         self._x_inverted = state
@@ -400,43 +411,57 @@ class CanvasItem(QGraphicsWidget):
 
     def scaleXBy(self, sx: float, xc: float) -> None:
         rect = self._graph_rect
+        center = self.invertedGraphTransform().map(QPointF(xc, 0))
+        xc = center.x()
         x0 = xc + (rect.left() - xc) * sx
         x1 = xc + (rect.right() - xc) * sx
         self.setTargetXRange(x0, x1)
 
     def scaleYBy(self, sy: float, yc: float) -> None:
         rect = self._graph_rect
+        center = self.invertedGraphTransform().map(QPointF(0, yc))
+        yc = center.y()
         y0 = yc + (rect.top() - yc) * sy
         y1 = yc + (rect.bottom() - yc) * sy
         self.setTargetYRange(y0, y1)
 
     def scaleBy(self, sx: float, sy: float, xc: float, yc: float) -> None:
         rect = self._graph_rect
+        center = self.invertedGraphTransform().map(QPointF(xc, yc))
+        xc, yc = center.x(), center.y()
         x0 = xc + (rect.left() - xc) * sx
         x1 = xc + (rect.right() - xc) * sx
         y0 = yc + (rect.top() - yc) * sy
         y1 = yc + (rect.bottom() - yc) * sy
         self.setTargetRange((x0, x1), (y0, y1))
 
+    def wheelMovementToScaleFactor(self, delta: float) -> float:
+        return 1 + delta * self.WHEEL_SCALE_FACTOR
+
     def wheelEvent(self, ev: QGraphicsSceneWheelEvent) -> None:
         """Override."""
-        s = 1. + ev.delta() * self.WHEEL_SCALE_FACTOR
-        center = self.invertedGraphTransform().map(ev.pos())
-
-        self.scaleBy(s, s, center.x(), center.y())
+        s = self.wheelMovementToScaleFactor(ev.delta())
+        pos = ev.pos()
+        self.scaleBy(s, s, pos.x(), pos.y())
         ev.accept()
 
     def translateXBy(self, dx: float) -> None:
         rect = self._graph_rect
-        self.setTargetXRange(rect.left() + dx, rect.right() + dx)
+        tr = self.invertedGraphTransform()
+        l = tr.map(QLineF(0, 0, dx, 0))
+        self.setTargetXRange(rect.left() + l.dx(), rect.right() + l.dx())
 
     def translateYBy(self, dy: float) -> None:
         rect = self._graph_rect
-        self.setTargetYRange(rect.top() + dy, rect.bottom() + dy)
+        tr = self.invertedGraphTransform()
+        l = tr.map(QLineF(0, 0, 0, dy))
+        self.setTargetYRange(rect.top() + l.dy(), rect.bottom() + l.dy())
 
     def translateBy(self, dx: float, dy: float) -> None:
         rect = self._graph_rect
-        self.setTargetRange(rect.adjusted(dx, dy, dx, dy))
+        tr = self.invertedGraphTransform()
+        l = tr.map(QLineF(0, 0, dx, dy))
+        self.setTargetRange(rect.adjusted(l.dx(), l.dy(), l.dx(), l.dy()))
 
     def mouseDragEvent(self, ev: MouseDragEvent):
         pos = ev.pos()
@@ -460,10 +485,7 @@ class CanvasItem(QGraphicsWidget):
                     if ev.entering():
                         self._selected_rect.show()
             else:
-                tr = self.invertedGraphTransform()
-                tr = tr.map(delta) - tr.map(QPointF(0, 0))
-
-                self.translateBy(tr.x(), tr.y())
+                self.translateBy(delta.x(), delta.y())
 
             ev.accept()
 
@@ -480,20 +502,6 @@ class CanvasItem(QGraphicsWidget):
                 self.childGroup.mapRectFromItem(item, item.boundingRect()))
 
         return bounding_rect
-
-    def updateGraphRange(self):
-        if self._auto_ranging:
-            return
-
-        self._auto_ranging = True
-
-        self.setTargetRange(self.childrenBoundingRect(), disable_auto_range=False)
-
-        self._auto_ranging = False
-
-    def updateViewRange(self):
-        self.x_range_changed_sgn.emit()
-        self.y_range_changed_sgn.emit()
 
     def updateMatrix(self):
         """Update the childGroup's transform matrix."""
@@ -533,11 +541,7 @@ class CanvasItem(QGraphicsWidget):
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""
-        self.updateGraphRange()
-        self.updateViewRange()
-        self.updateMatrix()
-        self.update()
-
+        self._updateAll()
         self.childGroup.prepareGeometryChange()
 
     def close(self) -> None:

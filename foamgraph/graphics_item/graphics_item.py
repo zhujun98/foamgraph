@@ -242,7 +242,7 @@ class GraphicsItem:
         """
         view = self.canvasItem()
         if view is not None:
-            view.itemBoundsChanged()
+            view.updateAutoRange()
 
     def itemChange(self, change, value):
         ret = QGraphicsObject.itemChange(self, change, value)
