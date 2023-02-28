@@ -103,7 +103,7 @@ class GraphView(GraphicsView):
 
     def addAnnotation(self, **kwargs):
         item = AnnotationItem(**kwargs)
-        self._cw.addItem(item, ignore_bounds=True)
+        self._cw.addItem(item)
         return item
 
     def setLabel(self, *args, **kwargs):

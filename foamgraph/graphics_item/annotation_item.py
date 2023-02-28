@@ -5,6 +5,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+import numpy as np
+
 from ..backend.QtCore import QPointF, QRectF
 from ..backend.QtGui import QColor, QFont
 from ..backend.QtWidgets import (
@@ -23,10 +25,10 @@ class AnnotationItem(GraphicsObject):
         super().__init__(**kwargs)
 
         self._items = []
-        self._x_span = 0
-        self._y_span = 0
-        self._x_offset = 0
-        self._y_offset = 0
+        self._rect = QRectF()
+
+        self._offset_x = 0
+        self._offset_y = 20
 
         self._font = None
         # self.setFont(self._font)
@@ -34,10 +36,13 @@ class AnnotationItem(GraphicsObject):
         self._color = None
         self.setColor(FColor.mkColor('b'))
 
-    def setOffset(self, x: float, y: float) -> None:
-        """Set offset of text items with respect to annotated points."""
-        self._x_offset = x
-        self._y_offset = y
+    def setOffsetX(self, x: float) -> None:
+        """Set x offset of text items with respect to annotated points."""
+        self._offset_x = x
+
+    def setOffsetY(self, y: float) -> None:
+        """Set y offset of text items with respect to annotated points."""
+        self._offset_y = y
 
     def setFont(self, font: QFont) -> None:
         """Set the font of the text items."""
@@ -53,51 +58,65 @@ class AnnotationItem(GraphicsObject):
             item.setDefaultTextColor(self._color)
         self.update()
 
-    def __addItem(self):
+    def setData(self, x, y, annotations) -> None:
+        """Set the positions and texts of the annotation.
+
+        :param x: x coordinates of the annotated points.
+        :param y: y coordinates of the annotated points.
+        :param annotations: displayed texts of the annotations.
+        """
+        num_annotations = len(annotations)
+        if not len(x) == len(y) == num_annotations:
+            raise ValueError("data have different lengths!")
+
+        self._updateTextItems(num_annotations)
+
+        offset_x, offset_y = self._mapOffsetToView()
+        for i in range(len(self._items)):
+            self._items[i].setPos(x[i] + offset_x, y[i] + offset_y)
+            self._items[i].setPlainText(str(annotations[i]))
+
+        self._updateRect(x, y, offset_x, offset_y)
+        self.prepareGeometryChange()
+        self.informViewBoundsChanged()
+
+    def _addItem(self):
         item = QGraphicsTextItem(parent=self)
         item.setDefaultTextColor(self._color)
         item.setFlag(item.GraphicsItemFlag.ItemIgnoresTransformations)
         item.show()
         self._items.append(item)
 
-    def setData(self, x, y, values) -> None:
-        """Set the positions and texts of the annotation.
+    def _updateTextItems(self, num_annotations):
+        for i in range(len(self._items), num_annotations):
+            self._addItem()
 
-        :param list-like x: x coordinates of the annotated point.
-        :param list-like y: y coordinates of the annotated point.
-        :param list-like values: displayed texts of the annotations.
-        """
-        if not len(x) == len(y) == len(values):
-            raise ValueError("data have different lengths!")
+    def _mapOffsetToView(self):
+        rect = self.canvas().mapSceneToView(
+            QRectF(0, 0, self._offset_x, self._offset_y)).boundingRect()
+        return (rect.width() if self._offset_x > 0 else -rect.width(),
+                rect.height() if self._offset_y > 0 else -rect.height())
 
-        n_pts = len(values)
-        n_items = len(self._items)
-        for i in range(n_pts - n_items):
-            self.__addItem()
+    def _computePaddings(self, x, y):
+        padding_x = self._items[np.argmax(x)].boundingRect().width()
+        padding_y = self._items[np.argmax(y)].boundingRect().height()
+        rect = self.canvas().mapSceneToView(
+            QRectF(0, 0, padding_x, padding_y)).boundingRect()
+        return rect.width(), rect.height()
 
-        # TODO: improve
-        vb = self.canvas()
-
-        for i in range(n_pts):
-            # p = vb.mapFromView(QPointF(x[i], y[i]))
-            # if p is None:
-            #     continue
-            self._items[i].setPos(x[i], y[i])
-            self._items[i].setPlainText(str(values[i]))
-
-        import numpy as np
-        self._x_span = np.max(x) - np.min(x)
-        self._y_span = np.max(y) - np.min(y)
-
-        self.prepareGeometryChange()
-        self.informViewBoundsChanged()
-        self.update()
+    def _updateRect(self, x, y, offset_x, offset_y):
+        padding_x, padding_y = self._computePaddings(x, y)
+        x_min, x_max = np.min(x), np.max(x)
+        y_min, y_max = np.min(y), np.max(y)
+        self._rect.setRect(x_min + offset_x,
+                           y_min + offset_y,
+                           x_max - x_min + padding_x,
+                           y_max - y_min + padding_y)
 
     def boundingRect(self) -> QRectF:
         """Override."""
-        return QRectF(0, 0, self._x_span, self._y_span)
+        return self._rect
 
     def paint(self, p, *args) -> None:
         """Override."""
-        for item in self._items:
-            item.paint(p, *args)
+        ...

@@ -10,32 +10,32 @@ from typing import final
 
 import numpy as np
 
-from .backend.QtCore import pyqtSlot, Qt, QTimer
+from .backend.QtCore import Qt, QTimer
 from .backend.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from .aesthetics import ColorMap
 from .config import config
 from .graphics_view import GraphicsView
-from .graphics_item import ImageColorbarWidget, ImageItem, PlotWidget, RectROI
+from .graphics_item import ImageColorbarWidget, ImageItem, RectROI
 from .graph_view import GraphView
-
-
-class HistogramLUTWidget(GraphicsView):
-    def __init__(self, image_item: ImageItem, *, parent=None):
-        super().__init__(parent=parent)
-
-        self._item = ImageColorbarWidget(image_item)
-        self.setCentralWidget(self._item)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred,
-                           QSizePolicy.Policy.Expanding)
-        self.setMinimumWidth(95)
-
-    def setColorMap(self, cm: ColorMap):
-        self._item.setColorMap(cm)
 
 
 class ImageView(QWidget):
     """QWidget for displaying an image."""
+
+    class ColorbarView(GraphicsView):
+        def __init__(self, image_item: ImageItem, *, parent=None):
+            super().__init__(parent=parent)
+
+            self._item = ImageColorbarWidget(image_item)
+            self.setCentralWidget(self._item)
+            self.setSizePolicy(QSizePolicy.Policy.Preferred,
+                               QSizePolicy.Policy.Expanding)
+            self.setMinimumWidth(95)
+
+        def setColorMap(self, cm: ColorMap):
+            self._item.setColorMap(cm)
+
     def __init__(self, *,
                  color_map=None,
                  n_rois: int = 0,
@@ -75,7 +75,7 @@ class ImageView(QWidget):
 
         self.invertY(True)  # y-axis points from top to bottom
 
-        self._hist_widget = HistogramLUTWidget(self._image_item)
+        self._colorbar_view = self.ColorbarView(self._image_item)
 
         if color_map is None:
             self.setColorMap(ColorMap.fromName(config["COLOR_MAP"]))
@@ -93,7 +93,7 @@ class ImageView(QWidget):
     def initUI(self):
         layout = QHBoxLayout()
         layout.addWidget(self._graph_view, 4)
-        layout.addWidget(self._hist_widget, 1)
+        layout.addWidget(self._colorbar_view, 1)
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
@@ -183,7 +183,6 @@ class ImageView(QWidget):
         # FIXME: there is a bug in ImageItem.setImage if the input is None
         self._image_item.clear()
 
-    @pyqtSlot()
     def _onAutoLevel(self):
         if self.isVisible():
             self.updateImage(auto_levels=True)
@@ -197,28 +196,20 @@ class ImageView(QWidget):
     def setMouseHoverValueRoundingDecimals(self, v):
         self._mouse_hover_v_rounding_decimals = v
 
-    @pyqtSlot(int, int, float)
-    def onMouseMoved(self, x, y, v):
+    def setColorMap(self, cm: ColorMap):
+        """Set colormap for the displayed image.
+
+        :param cm: color map.
+        """
+        self._colorbar_view.setColorMap(cm)
+
+    def onMouseMoved(self, x: int, y: int, v: float):
         if x < 0 or y < 0:
             self._graph_view.setTitle(self._cached_title)
         else:
             self._graph_view.setTitle(
                 f'x={x}, y={y}, '
                 f'value={round(v, self._mouse_hover_v_rounding_decimals)}')
-
-    def setLevels(self, *args, **kwargs):
-        """Set the min/max (bright and dark) levels.
-
-        See ImageColorbarWidget.setLevels.
-        """
-        self._hist_widget.setLevels(*args, **kwargs)
-
-    def setColorMap(self, cm: ColorMap):
-        """Set colormap for the displayed image.
-
-        :param cm: a ColorMap object.
-        """
-        self._hist_widget.setColorMap(cm)
 
     def setLabel(self, *args, **kwargs):
         self._graph_view.setLabel(*args, **kwargs)

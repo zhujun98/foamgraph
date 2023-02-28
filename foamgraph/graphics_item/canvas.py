@@ -376,6 +376,9 @@ class Canvas(QGraphicsWidget):
         """Maps *obj* from view coordinates to the local coordinate system of *item*."""
         return self._proxy.mapToItem(item, obj)
 
+    def mapFromItemToView(self, item, obj):
+        return self._proxy.mapFromItem()
+
     def scaleXBy(self, sx: float, xc: float) -> None:
         rect = self._graph_rect
         center = self.invertedGraphTransform().map(QPointF(xc, 0))
