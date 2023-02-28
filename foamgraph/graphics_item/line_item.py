@@ -106,7 +106,7 @@ class InfiniteLineItem(GraphicsObject):
         br.setRight(right)
         br = br.normalized()
         
-        vs = self.canvasItem().size()
+        vs = self.canvas().size()
         
         if self._bounding_rect != br or self._lastViewSize != vs:
             self._bounding_rect = br

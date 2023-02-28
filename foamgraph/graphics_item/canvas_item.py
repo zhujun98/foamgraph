@@ -1,5 +1,4 @@
 from enum import Enum, IntEnum
-import weakref
 
 import numpy as np
 
@@ -15,80 +14,56 @@ from foamgraph.backend.QtGui import (
 from foamgraph.aesthetics import FColor
 from foamgraph.graphics_scene import MouseClickEvent, MouseDragEvent
 from foamgraph.graphics_item.graphics_item import (
-    GraphicsItem, GraphicsObject, QGraphicsWidget
+    GraphicsObject, QGraphicsItem, QGraphicsObject, QGraphicsWidget
 )
 
 
-class WeakList(object):
-
-    def __init__(self):
-        self._items = []
-
-    def append(self, obj):
-        # Add backwards to iterate backwards (to make iterating more efficient on removal).
-        self._items.insert(0, weakref.ref(obj))
-
-    def __iter__(self):
-        i = len(self._items)-1
-        while i >= 0:
-            ref = self._items[i]
-            d = ref()
-            if d is None:
-                del self._items[i]
-            else:
-                yield d
-            i -= 1
-
-
-class ChildGroup(GraphicsObject):
-
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
-
-        # Used as callback to inform CanvasItem when items are added/removed from
-        # the group.
-        # Note 1: We would prefer to override itemChange directly on the
-        #         CanvasItem, but this causes crashes on PySide.
-        # Note 2: We might also like to use a signal rather than this callback
-        #         mechanism, but this causes a different PySide crash.
-        self._parent = parent
-
-        # excempt from telling view when transform changes
-        self._GraphicsObject__inform_view_on_change = False
-
-    def addItem(self, item):
-        item.setParentItem(self)
-
-    def itemChange(self, change, value):
-        ret = super().itemChange(change, value)
-        if change in [
-            self.GraphicsItemChange.ItemChildAddedChange,
-            self.GraphicsItemChange.ItemChildRemovedChange,
-        ]:
-            self._parent.updateAutoRange()
-        return ret
-
-    def boundingRect(self) -> QRectF:
-        """Override."""
-        return self.mapRectFromParent(self.parentItem().boundingRect())
-
-    def paint(self, p, *args):
-        """Override."""
-        ...
-
-
 class CanvasItem(QGraphicsWidget):
-    """Box that allows internal scaling/panning of children by mouse drag.
+    """CanvasItem."""
 
-    Features:
+    class CanvasProxy(QGraphicsObject):
 
-    * Scaling contents by mouse or auto-scale when contents change
-    * View linking--multiple views display the same data ranges
-    * Configurable by context menu
-    * Item coordinate mapping methods
+        def __init__(self, parent: "CanvasItem"):
+            super().__init__(parent=parent)
 
-    """
+            self._items = []
+
+        def addItem(self, item: GraphicsObject):
+            self._items.append(item)
+            item.setParentItem(self)
+
+        def removeItem(self, item: GraphicsObject):
+            if item in self._items:
+                self._items.remove(item)
+
+        def itemChange(self, change, value):
+            ret = super().itemChange(change, value)
+            if change in [
+                self.GraphicsItemChange.ItemChildAddedChange,
+                self.GraphicsItemChange.ItemChildRemovedChange,
+            ]:
+                self.parentItem().updateAutoRange()
+            return ret
+
+        def viewRect(self) -> QRectF:
+            bounding_rect = QRectF()
+            for item in self._items:
+                if not item.isVisible():
+                    continue
+
+                bounding_rect = bounding_rect.united(
+                    self.mapRectFromItem(item, item.boundingRect()))
+
+            return bounding_rect
+
+        def boundingRect(self) -> QRectF:
+            """Override."""
+            return QRectF()
+
+        def paint(self, p, *args):
+            """Override."""
+            ...
+
     # Change the range of the AxisItem
     # Change the range of the linked CanvasItem
     x_range_changed_sgn = pyqtSignal()
@@ -116,8 +91,6 @@ class CanvasItem(QGraphicsWidget):
         """Initialization."""
         super().__init__(parent)
 
-        self._items = []
-
         self._x_inverted = False
         self._y_inverted = False
 
@@ -132,19 +105,6 @@ class CanvasItem(QGraphicsWidget):
         # clips the painting of all its descendants to its own shape
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
-        # childGroup is required so that CanvasItem has local coordinates similar to device coordinates.
-        # this is a workaround for a Qt + OpenGL bug that causes improper clipping
-        # https://bugreports.qt.nokia.com/browse/QTBUG-23723
-        self.childGroup = ChildGroup(self)
-
-        # region shown in MouseMode.Rect
-        self._selected_rect = QGraphicsRectItem(0, 0, 1, 1)
-        self._selected_rect.setPen(FColor.mkPen('Gold'))
-        self._selected_rect.setBrush(FColor.mkBrush('Gold', alpha=100))
-        self._selected_rect.setZValue(1e9)
-        self._selected_rect.hide()
-        self.addItem(self._selected_rect, ignore_bounds=True)
-
         if debug:
             self._border = QGraphicsRectItem(0, 0, 1, 1, parent=self)
             self._border.setPen(FColor.mkPen('r', width=2))
@@ -157,12 +117,22 @@ class CanvasItem(QGraphicsWidget):
 
         self._menu = self.createContextMenu(image=image)
 
+        self._proxy = self.CanvasProxy(self)
+
+        # region shown in MouseMode.Rect
+        self._selected_rect = QGraphicsRectItem(0, 0, 1, 1)
+        self._selected_rect.setPen(FColor.mkPen('Gold'))
+        self._selected_rect.setBrush(FColor.mkBrush('Gold', alpha=100))
+        self._selected_rect.setZValue(1e9)
+        self._selected_rect.hide()
+        self.addItem(self._selected_rect, ignore_bounds=True)
+
     def createContextMenu(self, image: bool):
         root = QMenu()
 
         action = root.addAction("View All")
         action.triggered.connect(lambda: self.setTargetRange(
-            self.childrenBoundingRect(), disable_auto_range=True))
+            self._proxy.viewRect(), disable_auto_range=True))
 
         # ---
         menu = root.addMenu("Mouse Mode")
@@ -192,7 +162,7 @@ class CanvasItem(QGraphicsWidget):
     def setMouseMode(self, mode: "CanvasItem.MouseMode"):
         self._mouse_mode = mode
 
-    def addItem(self, item, ignore_bounds: bool = False):
+    def addItem(self, item: GraphicsObject, ignore_bounds: bool = False):
         """Add a QGraphicsItem to this view.
 
         :param ignore_bounds:
@@ -200,19 +170,13 @@ class CanvasItem(QGraphicsWidget):
         if item.zValue() < self.zValue():
             item.setZValue(self.zValue() + 1)
 
-        if not ignore_bounds:
-            item.setParentItem(self.childGroup)
-            self._items.append(item)
-        else:
+        if ignore_bounds:
             item.setParentItem(self)
+        else:
+            self._proxy.addItem(item)
 
-        if isinstance(item, GraphicsItem):
-            item.setCanvasItem(self)
-
-    def removeItem(self, item):
-        """Remove an item from this view."""
-        if item in self._items:
-            self._items.remove(item)
+    def removeItem(self, item: GraphicsObject) -> None:
+        self._proxy.removeItem(item)
 
         scene = self.scene()
         if scene is not None:
@@ -244,7 +208,7 @@ class CanvasItem(QGraphicsWidget):
         if self._border is not None:
             # for debugging
             self._border.setRect(
-                self.mapRectFromItem(self.childGroup, self._graph_rect))
+                self.mapRectFromItem(self._proxy, self._graph_rect))
 
         self.x_range_changed_sgn.emit()
         self.y_range_changed_sgn.emit()
@@ -351,7 +315,7 @@ class CanvasItem(QGraphicsWidget):
         return wr
 
     def updateAutoRange(self) -> None:
-        rect = self.childrenBoundingRect()
+        rect = self._proxy.viewRect()
 
         if self._auto_range_x:
             self.setTargetXRange(rect.left(), rect.right(),
@@ -374,10 +338,10 @@ class CanvasItem(QGraphicsWidget):
         self.y_range_changed_sgn.emit()
 
     def graphTransform(self) -> QTransform:
-        return self.childGroup.transform()
+        return self._proxy.transform()
 
     def invertedGraphTransform(self) -> QTransform:
-        return self.itemTransform(self.childGroup)[0]
+        return self.itemTransform(self._proxy)[0]
 
     def mapRectToDevice(self, rect):
         """
@@ -405,9 +369,12 @@ class CanvasItem(QGraphicsWidget):
         """Maps from scene coordinates to coordinates displayed inside CanvasItem."""
         return self.invertedGraphTransform().map(self.mapFromScene(obj))
 
+    def mapFromView(self, obj):
+        self.graphTransform().map(obj)
+
     def mapFromViewToItem(self, item, obj):
         """Maps *obj* from view coordinates to the local coordinate system of *item*."""
-        return self.childGroup.mapToItem(item, obj)
+        return self._proxy.mapToItem(item, obj)
 
     def scaleXBy(self, sx: float, xc: float) -> None:
         rect = self._graph_rect
@@ -472,12 +439,12 @@ class CanvasItem(QGraphicsWidget):
             if self._mouse_mode == self.MouseMode.Rect:
                 if ev.exiting():
                     self._selected_rect.hide()
-                    rect = self.childGroup.mapRectFromParent(QRectF(
+                    rect = self._proxy.mapRectFromParent(QRectF(
                         ev.buttonDownPos(ev.button()), pos))
                     self.setTargetRange(rect.normalized())
                     self.update()
                 else:
-                    rect = self.childGroup.mapRectFromParent(
+                    rect = self._proxy.mapRectFromParent(
                         QRectF(ev.buttonDownPos(), ev.pos()))
                     self._selected_rect.setPos(rect.topLeft())
                     self._selected_rect.resetTransform()
@@ -489,22 +456,8 @@ class CanvasItem(QGraphicsWidget):
 
             ev.accept()
 
-    def childrenBoundingRect(self) -> QRectF:
-        """Return the bounding rectangle of all children."""
-        items = self._items
-
-        bounding_rect = QRectF()
-        for item in items:
-            if not item.isVisible():
-                continue
-
-            bounding_rect = bounding_rect.united(
-                self.childGroup.mapRectFromItem(item, item.boundingRect()))
-
-        return bounding_rect
-
     def updateMatrix(self):
-        """Update the childGroup's transform matrix."""
+        """Update the proxy's transform matrix."""
         rect = self.rect()
         graph_rect = self._graph_rect
 
@@ -532,7 +485,7 @@ class CanvasItem(QGraphicsWidget):
         center = graph_rect.center()
         m.translate(-center.x(), -center.y())
 
-        self.childGroup.setTransform(m)
+        self._proxy.setTransform(m)
 
     def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton:
@@ -542,15 +495,7 @@ class CanvasItem(QGraphicsWidget):
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""
         self._updateAll()
-        self.childGroup.prepareGeometryChange()
-
-    def close(self) -> None:
-        """Override."""
-        for i in self._items:
-            self.removeItem(i)
-        for ch in self.childGroup.childItems():
-            ch.setParentItem(None)
-        super().close()
+        self._proxy.prepareGeometryChange()
 
     def onCrossToggled(self, state: bool):
         if state:

@@ -47,7 +47,7 @@ class ImageColorbarWidget(GraphicsWidget):
         vb.setMaximumWidth(152)
         vb.setMinimumWidth(45)
         vb.addItem(self._hist)
-        vb.addItem(self._lri, ignore_bounds=True)
+        vb.addItem(self._lri)
         self._vb = vb
 
         self._axis = AxisItem(Qt.Edge.LeftEdge, parent=self)
@@ -81,7 +81,7 @@ class ImageColorbarWidget(GraphicsWidget):
 
         self._gradient.gradient_changed_sgn.connect(self.gradientChanged)
 
-        # self._vb.x_range_changed_sgn.connect(self.update)
+        self._vb.x_range_changed_sgn.connect(self.update)
 
     def paint(self, p, *args) -> None:
         """Override."""

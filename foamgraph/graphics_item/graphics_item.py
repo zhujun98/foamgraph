@@ -2,13 +2,11 @@ import itertools
 import operator
 import weakref
 
-from ..backend.QtCore import QLineF, QPoint, QPointF
 from ..backend.QtWidgets import (
     QGraphicsItem, QGraphicsObject, QGraphicsWidget
 )
 
 from ..pyqtgraph_be import isQObjectAlive
-from ..pyqtgraph_be import functions as fn
 from ..pyqtgraph_be.Point import Point
 
 
@@ -156,10 +154,17 @@ class GraphicsItem:
             
         return v
 
-    def setCanvasItem(self, item):
-        self._vb = item
+    def canvas(self):
+        from .canvas_item import CanvasItem
 
-    def canvasItem(self):
+        if self._vb is None:
+            parent = self
+            while parent is not None:
+                parent = parent.parentItem()
+                if isinstance(parent, CanvasItem):
+                    self._vb = parent
+                    break
+
         return self._vb
 
     def deviceTransform(self):
@@ -181,11 +186,11 @@ class GraphicsItem:
         """Return the transform that maps from local coordinates to the item's CanvasItem coordinates
         If there is no CanvasItem, return the scene transform.
         Returns None if the item does not have a view."""
-        view = self.canvasItem()
-        if view is None:
+        canvas = self.canvas()
+        if canvas is None:
             return
 
-        tr = self.itemTransform(view.childGroup)
+        tr = self.itemTransform(canvas._proxy)
         if isinstance(tr, tuple):
             tr = tr[0]   # difference between pyside and pyqt
         return tr
@@ -193,10 +198,10 @@ class GraphicsItem:
     def viewRect(self):
         """Return the visible bounds of this item's CanvasItem or GraphicsWidget,
         in the local coordinate system of the item."""
-        view = self.canvasItem()
-        if view is None:
+        canvas = self.canvas()
+        if canvas is None:
             return
-        bounds = self.mapRectFromView(view.graphRect())
+        bounds = self.mapRectFromView(canvas.graphRect())
         if bounds is None:
             return
 
@@ -240,9 +245,9 @@ class GraphicsItem:
         Inform this item's container CanvasItem that the bounds of this item have changed.
         This is used by CanvasItem to react if auto-range is enabled.
         """
-        view = self.canvasItem()
-        if view is not None:
-            view.updateAutoRange()
+        canvas = self.canvas()
+        if canvas is not None:
+            canvas.updateAutoRange()
 
     def itemChange(self, change, value):
         ret = QGraphicsObject.itemChange(self, change, value)

@@ -21,11 +21,8 @@ from .graph_view import GraphView
 
 
 class HistogramLUTWidget(GraphicsView):
-    def __init__(self, image_item, parent=None):
-        super().__init__(parent)
-
-        if not isinstance(image_item, ImageItem):
-            raise TypeError
+    def __init__(self, image_item: ImageItem, *, parent=None):
+        super().__init__(parent=parent)
 
         self._item = ImageColorbarWidget(image_item)
         self.setCentralWidget(self._item)
