@@ -146,7 +146,7 @@ class LinePlotWithAnnotation(GraphView):
         data = data['multi-peak']
         x, y, peaks = data['x'], data['y'], data['peaks']
         self._plot.setData(x, y)
-        self._annotation.setData(x[peaks], y[peaks], x[peaks])
+        self._annotation.setData(x[peaks], y[peaks], annotations=x[peaks])
 
 
 class PlotGalleryScene(AbstractScene):

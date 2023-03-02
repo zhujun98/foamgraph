@@ -93,6 +93,9 @@ class LegendItem(GraphicsWidget):
 
         :param item: plot item to be added.
         """
+        if not item.label() or not item.drawSample():
+            return
+
         label = LabelItem(item.label())
         label.setColor(self._label_color)
         sample = self.SampleWidget(item)
@@ -115,7 +118,7 @@ class LegendItem(GraphicsWidget):
         :param item: PlotItem instance.
         """
         if item not in self._items:
-            raise KeyError(f"Item {item} not found")
+            return
 
         sample, label = self._items[item]
         self._layout.removeItem(sample)

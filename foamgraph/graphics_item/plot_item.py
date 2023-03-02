@@ -12,10 +12,15 @@ from typing import Optional
 import numpy as np
 
 from ..backend.QtGui import (
-    QImage, QPainter, QPainterPath, QPicture, QPixmap, QPolygonF, QTransform
+    QColor, QFont, QImage, QPainter, QPainterPath, QPicture, QPixmap,
+    QPolygonF, QTransform
 )
 from ..backend.QtCore import (
     pyqtSignal, QByteArray, QDataStream, QPointF, QRectF, Qt
+)
+from ..backend.QtWidgets import (
+    QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout,
+    QGraphicsTextItem
 )
 
 from ..pyqtgraph_be import functions as fn
@@ -123,9 +128,12 @@ class PlotItem(GraphicsObject):
         self._label = label
         self.label_changed_sgn.emit(label)
 
-    def drawSample(self, p):
+    def hasSample(self) -> bool:
+        return self._has_sample
+
+    def drawSample(self, p: Optional[QPainter] = None) -> bool:
         """Draw a sample used in LegendItem."""
-        pass
+        return False
 
 
 class CurvePlotItem(PlotItem):
@@ -195,11 +203,13 @@ class CurvePlotItem(PlotItem):
         path.addPolygon(polyline)
         return path
 
-    def drawSample(self, p):
+    def drawSample(self, p=None) -> bool:
         """Override."""
-        p.setPen(self._pen)
-        # Legend sample has a bounding box of (0, 0, 20, 20)
-        p.drawLine(0, 11, 20, 11)
+        if p is not None:
+            p.setPen(self._pen)
+            # Legend sample has a bounding box of (0, 0, 20, 20)
+            p.drawLine(0, 11, 20, 11)
+        return True
 
 
 class BarPlotItem(PlotItem):
@@ -264,12 +274,14 @@ class BarPlotItem(PlotItem):
         """Override."""
         return QRectF(super().boundingRect())
 
-    def drawSample(self, p):
+    def drawSample(self, p=None) -> bool:
         """Override."""
-        p.setBrush(self._brush)
-        p.setPen(self._pen)
-        # Legend sample has a bounding box of (0, 0, 20, 20)
-        p.drawRect(QRectF(2, 2, 18, 18))
+        if p is not None:
+            p.setBrush(self._brush)
+            p.setPen(self._pen)
+            # Legend sample has a bounding box of (0, 0, 20, 20)
+            p.drawRect(QRectF(2, 2, 18, 18))
+        return True
 
 
 class ErrorbarPlotItem(PlotItem):
@@ -372,14 +384,15 @@ class ErrorbarPlotItem(PlotItem):
 
         self._graph = p
 
-    def drawSample(self, p):
+    def drawSample(self, p=None) -> bool:
         """Override."""
-        p.setPen(self._pen)
-
-        # Legend sample has a bounding box of (0, 0, 20, 20)
-        p.drawLine(2, 2, 8, 2)  # lower horizontal line
-        p.drawLine(5, 2, 5, 18)  # vertical line
-        p.drawLine(2, 18, 8, 18)  # upper horizontal line
+        if p is not None:
+            p.setPen(self._pen)
+            # Legend sample has a bounding box of (0, 0, 20, 20)
+            p.drawLine(2, 2, 8, 2)  # lower horizontal line
+            p.drawLine(5, 2, 5, 18)  # vertical line
+            p.drawLine(2, 18, 8, 18)  # upper horizontal line
+        return True
 
     def transformedData(self):
         """Override."""
@@ -548,10 +561,12 @@ class ScatterPlotItem(PlotItem):
                          self._symbol_fragment,
                          source_rect)
 
-    def drawSample(self, p):
+    def drawSample(self, p=None):
         """Override."""
-        p.translate(10, 10)
-        self.drawSymbol(p)
+        if p is not None:
+            p.translate(10, 10)
+            self.drawSymbol(p)
+        return True
 
     def drawSymbol(self, p):
         p.scale(self._size, self._size)
@@ -576,3 +591,126 @@ class ScatterPlotItem(PlotItem):
 
         self._symbol_fragment = QPixmap(image)
         self._symbol_width = self._symbol_fragment.width()
+
+
+class AnnotationItem(PlotItem):
+    """Add annotation to a plot."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self._x = None
+        self._y = None
+        self._annotations = None
+
+        self._items = []
+
+        self._offset_x = 0
+        self._offset_y = 20
+
+        self._font = None
+        # self.setFont(self._font)
+
+        self._color = None
+        self.setColor(FColor.mkColor('b'))
+
+    def setOffsetX(self, x: float) -> None:
+        """Set x offset of text items with respect to annotated points."""
+        self._offset_x = x
+
+    def setOffsetY(self, y: float) -> None:
+        """Set y offset of text items with respect to annotated points."""
+        self._offset_y = y
+
+    def setFont(self, font: QFont) -> None:
+        """Set the font of the text items."""
+        self._font = font
+        for item in self._items:
+            item.setFont(self._font)
+        self.update()
+
+    def setColor(self, color: QColor) -> None:
+        """Set the color of the text items."""
+        self._color = color
+        for item in self._items:
+            item.setDefaultTextColor(self._color)
+        self.update()
+
+    def setData(self, x, y, *, annotations) -> None:
+        """Override.
+
+        :param x: x coordinates of the annotated points.
+        :param y: y coordinates of the annotated points.
+        :param annotations: displayed texts of the annotations.
+        """
+        self._parseInputData(x, y, annotations=annotations)
+        self._updateTextItems(annotations)
+        self.updateGraph()
+
+    def data(self):
+        """Override."""
+        return self._x, self._y
+
+    def _parseInputData(self, x, y, **kwargs):
+        """Override."""
+        super()._parseInputData(x, y)
+
+        annotations = kwargs.get("annotations")
+        if len(self._x) != len(kwargs.get("annotations")):
+            raise ValueError("Annotations have different lengths!")
+        self._annotations = annotations
+
+    def _updateTextItems(self, annotations):
+        for i in range(len(self._items), len(self._x)):
+            self._addItem()
+
+    def _addItem(self):
+        item = QGraphicsTextItem(parent=self)
+        item.setDefaultTextColor(self._color)
+        item.setFlag(item.GraphicsItemFlag.ItemIgnoresTransformations)
+        item.show()
+        self._items.append(item)
+
+    def _mapOffsetToView(self):
+        rect = self.canvas().mapSceneToView(
+            QRectF(0, 0, self._offset_x, self._offset_y)).boundingRect()
+        return (rect.width() if self._offset_x > 0 else -rect.width(),
+                rect.height() if self._offset_y > 0 else -rect.height())
+
+    def _computePaddings(self):
+        padding_x = self._items[np.argmax(self._x)].boundingRect().width()
+        padding_y = self._items[np.argmax(self._y)].boundingRect().height()
+        rect = self.canvas().mapSceneToView(
+            QRectF(0, 0, padding_x, padding_y)).boundingRect()
+        return rect.width(), rect.height()
+
+    def _prepareGraph(self) -> None:
+        self._graph = QRectF()
+        if self._x is None:
+            return
+
+        x, y = self.transformedData()
+
+        offset_x, offset_y = self._mapOffsetToView()
+        for i in range(len(self._items)):
+            self._items[i].setPos(x[i] + offset_x, y[i] + offset_y)
+            self._items[i].setPlainText(str(self._annotations[i]))
+
+        padding_x, padding_y = self._computePaddings()
+        x_min, x_max = np.min(x), np.max(x)
+        y_min, y_max = np.min(y), np.max(y)
+
+        self._graph.setRect(x_min,
+                            y_min,
+                            x_max - x_min + padding_x,
+                            y_max - y_min + padding_y)
+
+    def boundingRect(self) -> QRectF:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        return self._graph
+
+    def paint(self, p, *args) -> None:
+        """Override."""
+        ...
