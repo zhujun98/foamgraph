@@ -12,7 +12,7 @@ from typing import Optional
 
 from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, Qt
 from ..backend.QtWidgets import (
-    QAction, QActionGroup, QCheckBox, QGraphicsGridLayout, QGraphicsItem,
+    QCheckBox, QGraphicsGridLayout, QGraphicsItem,
     QGridLayout, QHBoxLayout, QLabel, QMenu, QSizePolicy, QSlider, QWidget,
     QWidgetAction
 )
