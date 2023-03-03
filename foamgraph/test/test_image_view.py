@@ -16,13 +16,13 @@ app = mkQApp()
 class TestImageView:
     def testComponents(self):
         widget = ImageView(n_rois=4)
-        items = widget._plot_widget._cw._vb._items
+        items = widget._graph_view._cw._vb._proxy._items
         assert isinstance(items[0], ImageItem)
         for i in range(1, 5):
             assert isinstance(items[i], RectROI)
 
         widget = ImageView()
-        assert len(widget._plot_widget._cw._items) == 1
+        assert len(widget._graph_view._cw._items) == 1
 
         with pytest.raises(TypeError, match="numpy array"):
             widget.setImage([[1, 2, 3], [4, 5, 6]])
@@ -31,8 +31,8 @@ class TestImageView:
         widget = ImageView(n_rois=4)
 
         for method in ["setLabel", "setTitle", "addItem",
-                       "removeItem", "invertX", "invertY", "autoRange"]:
-            with patch.object(widget._plot_widget, method) as mocked:
+                       "removeItem", "invertX", "invertY"]:
+            with patch.object(widget._graph_view, method) as mocked:
                 getattr(widget, method)()
                 mocked.assert_called_once()
 
@@ -47,10 +47,10 @@ class TestImageView:
 
         # test setImage
         img = np.arange(64).reshape(8, 8).astype(dtype)
-        widget.setImage(img, auto_range=False, auto_levels=False)
+        widget.setImage(img, auto_levels=False)
         _display()
 
-        widget.setImage(img, auto_range=True, auto_levels=True)
+        widget.setImage(img, auto_levels=True)
         _display()
 
         # test setting image to None

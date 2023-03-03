@@ -1,4 +1,4 @@
-from .image_colorbar_item import ImageColorbarWidget
+from .image_colorbar_item import ImageColorbarItem
 from .image_item import ImageItem
 from .line_item import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
 from .plot_widget import PlotWidget

@@ -59,8 +59,8 @@ def add_plot_items2(graph_view2):
 class TestGraphView:
 
     def test_plots(self, graph_view1, graph_view2, add_plot_items1, add_plot_items2):
-        assert len(graph_view1._cw._items) == 7
-        assert len(graph_view2._cw._items) == 6
+        assert len(graph_view1._cw._items) == 5
+        assert len(graph_view2._cw._items) == 4
 
     def test_forwarded_methods(self, graph_view1):
         for method in ["removeAllItems", "setLabel", "setTitle",
@@ -99,9 +99,9 @@ class TestGraphView:
                 plot.setData(x, y)
             _display()
 
-        view._cw._onLogXChanged(True)
+        view._cw._onLogXScaleToggled(True)
         _display()
-        view._cw._onLogYChanged(True)
+        view._cw._onLogYScaleToggled(True)
         _display()
 
         for plot in plot_items:
@@ -121,25 +121,14 @@ class TestGraphView:
                 plot.setData(x, y)
             _display()
 
-        view._cw._onLogXChanged(True)
+        view._cw._onLogXScaleToggled(True)
         _display()
-        view._cw._onLogYChanged(True)
+        view._cw._onLogYScaleToggled(True)
         _display()
 
         for plot in plot_items:
             plot.setData([], [])
             _display()
-
-    def test_cross_cursor(self, graph_view1):
-        view = graph_view1
-
-        assert not view._v_line.isVisible()
-        assert not view._h_line.isVisible()
-        view._cw._show_cross_cb.setChecked(True)
-        assert view._v_line.isVisible()
-        assert view._h_line.isVisible()
-
-        # TODO: test mouse move
 
 
 class TestTimedPlotWidgetF:

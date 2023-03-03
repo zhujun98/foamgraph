@@ -123,7 +123,7 @@ class Canvas(QGraphicsWidget):
         self._selected_rect = QGraphicsRectItem(0, 0, 1, 1)
         self._selected_rect.setPen(FColor.mkPen('Gold'))
         self._selected_rect.setBrush(FColor.mkBrush('Gold', alpha=100))
-        self._selected_rect.setZValue(1e9)
+        self._selected_rect.setZValue(-100)
         self._selected_rect.hide()
         self.addItem(self._selected_rect, ignore_bounds=True)
 

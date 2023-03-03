@@ -16,7 +16,7 @@ from .backend.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 from .aesthetics import ColorMap
 from .config import config
 from .graphics_view import GraphicsView
-from .graphics_item import ImageColorbarWidget, ImageItem, RectROI
+from .graphics_item import ImageColorbarItem, ImageItem, RectROI
 from .graph_view import GraphView
 
 
@@ -27,7 +27,7 @@ class ImageView(QWidget):
         def __init__(self, image_item: ImageItem, *, parent=None):
             super().__init__(parent=parent)
 
-            self._item = ImageColorbarWidget(image_item)
+            self._item = ImageColorbarItem(image_item)
             self.setCentralWidget(self._item)
             self.setSizePolicy(QSizePolicy.Policy.Preferred,
                                QSizePolicy.Policy.Expanding)

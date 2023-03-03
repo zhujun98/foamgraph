@@ -122,15 +122,15 @@ class PlotWidget(GraphicsWidget):
 
         x_axis = self._axes['bottom']
         x_axis.linkToCanvas(self._vb)
-        x_axis.log_Scale_toggled_sgn.connect(self.onLogXScaleToggled)
+        x_axis.log_Scale_toggled_sgn.connect(self._onLogXScaleToggled)
 
         y_axis = self._axes['left']
         y_axis.linkToCanvas(self._vb)
-        y_axis.log_Scale_toggled_sgn.connect(self.onLogYScaleToggled)
+        y_axis.log_Scale_toggled_sgn.connect(self._onLogYScaleToggled)
 
         y2_axis = self._axes['right']
         y2_axis.hide()
-        y2_axis.log_Scale_toggled_sgn.connect(self.onLogY2ScaleToggled)
+        y2_axis.log_Scale_toggled_sgn.connect(self._onLogY2ScaleToggled)
 
     def clearAllPlotItems(self):
         """Clear data on all the plot items."""
@@ -168,17 +168,17 @@ class PlotWidget(GraphicsWidget):
         self._h_line.setValue(y)
         self._cross_cursor_lb.setPlainText(f"x = {x}, y = {y}")
 
-    def onLogXScaleToggled(self, state: bool):
+    def _onLogXScaleToggled(self, state: bool):
         for item in chain(self._plot_items, self._plot_items_y2):
             item.setLogX(state)
         self._vb.updateAutoRange()
 
-    def onLogYScaleToggled(self, state: bool):
+    def _onLogYScaleToggled(self, state: bool):
         for item in self._plot_items:
             item.setLogY(state)
         self._vb.updateAutoRange()
 
-    def onLogY2ScaleToggled(self, state: bool):
+    def _onLogY2ScaleToggled(self, state: bool):
         for item in self._plot_items_y2:
             item.setLogY(state)
         self._vb_y2.updateAutoRange()

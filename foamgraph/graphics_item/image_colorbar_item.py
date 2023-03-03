@@ -20,7 +20,7 @@ from .linear_region_item import LinearRegionItem
 from .plot_item import CurvePlotItem
 
 
-class ImageColorbarWidget(GraphicsWidget):
+class ImageColorbarItem(GraphicsWidget):
     """GraphicsWidget for adjusting the display of an image."""
 
     lut_changed_sgn = pyqtSignal(object)

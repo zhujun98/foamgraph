@@ -165,7 +165,10 @@ class LegendItem(GraphicsWidget):
 
     def onItemLabelChanged(self, label: str) -> None:
         item = self.sender()
-        self._items[item][1].setPlainText(label)
+        if item in self._items:
+            self._items[item][1].setPlainText(label)
+        else:
+            self.addItem(item)
 
     def onItemVisibleChanged(self) -> None:
         item = self.sender()
