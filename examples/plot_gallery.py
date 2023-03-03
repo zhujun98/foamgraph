@@ -39,13 +39,22 @@ class ScatterPlot(GraphView):
         self.setTitle('Scatter plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.addScatterPlot(
-            brush=FColor.mkBrush('Purple', alpha=150))
+        self._plot1 = self.addScatterPlot(label="Data1", symbol="d", size=9)
+        self._plot2 = self.addScatterPlot(
+            label="Data2", brush=FColor.mkBrush('Purple', alpha=150), size=7)
+        self._plot3 = self.addScatterPlot(
+            label="Data3", brush=None, pen=FColor.mkPen('y'), symbol="s")
+        self._plot4 = self.addScatterPlot(
+            label="Data4", pen=FColor.mkPen('k'), symbol="+")
+        self.addLegend()
 
     def updateF(self, data):
         """Override."""
         data = data['scatter']
-        self._plot.setData(data['x'], data['y'])
+        self._plot1.setData(data['x1'], data['y1'])
+        self._plot2.setData(data['x2'], data['y2'])
+        self._plot3.setData(data['x3'], data['y3'])
+        self._plot4.setData(data['x4'], data['y4'])
 
 
 class BarPlot(GraphView):

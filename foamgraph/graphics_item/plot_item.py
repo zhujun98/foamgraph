@@ -490,6 +490,7 @@ class ScatterPlotItem(PlotItem):
         return True
 
     def drawSymbol(self, p: QPainter):
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.scale(self._size, self._size)
         p.setPen(self._pen)
         p.setBrush(self._brush)
@@ -500,7 +501,6 @@ class ScatterPlotItem(PlotItem):
         symbol = QPixmap(size, size)
         symbol.fill(FColor.mkColor('w', alpha=0))
         p = QPainter(symbol)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         center = 0.5 * size
         p.translate(center, center)
         self.drawSymbol(p)
