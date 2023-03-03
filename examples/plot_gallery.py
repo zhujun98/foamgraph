@@ -112,14 +112,13 @@ class DoubleYPlot(GraphView):
         super().__init__(parent=parent)
 
         self.setTitle('Double-y plot')
-        self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arg. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.addCurvePlot(
-            label="Data", pen=FColor.mkPen('Brown'))
+        self._plot = self.addCurvePlot(pen=FColor.mkPen('Brown'))
         self._plot1 = self.addScatterPlot(
-            symbol='x', pen=FColor.mkPen('Brown'))
-        # self._plot2 = self.addBarPlot(
-        #     label="Count", y2=True, brush=FColor.mkBrush('Silver', alpha=150))
+            label="Data", symbol='o', pen=FColor.mkPen('Brown'))
+        self._plot2 = self.addBarPlot(
+            label="Count", y2=True, brush=FColor.mkBrush('Silver', alpha=150))
         self.addLegend()
 
     def updateF(self, data):
@@ -127,7 +126,7 @@ class DoubleYPlot(GraphView):
         data = data['double-y']
         self._plot.setData(data['x'], data['y'])
         self._plot1.setData(data['x'], data['y'])
-        # self._plot2.setData(data['x'], data['y2'])
+        self._plot2.setData(data['x'], data['y2'])
 
 
 class LinePlotWithAnnotation(GraphView):

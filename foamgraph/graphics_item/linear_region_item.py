@@ -102,13 +102,6 @@ class LinearRegionItem(GraphicsObject):
         self.lineMoved(1)
         self.lineMoveFinished()
 
-    # def dataBounds(self, axis, orthoRange=None):
-    #     if self._orientation == Qt.Orientation.Vertical and axis == 0:
-    #         return self.region()
-    #     if self._orientation == Qt.Orientation.Horizontal and axis == 1:
-    #         return self.region()
-    #     return None
-
     def boundingRect(self) -> QRectF:
         """Override."""
         br = self.viewRect()  # bounds of containing Canvas mapped to local coords.

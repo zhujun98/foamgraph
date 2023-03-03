@@ -5,8 +5,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-import abc
-from collections import OrderedDict
+from abc import ABCMeta, abstractmethod
 from typing import Optional
 
 import numpy as np
@@ -23,13 +22,15 @@ from ..backend.QtWidgets import (
     QGraphicsTextItem
 )
 
-from ..pyqtgraph_be import functions as fn
-
-from ..aesthetics import FColor
+from ..aesthetics import FColor, FSymbol
 from .graphics_item import GraphicsObject
 
 
-class PlotItem(GraphicsObject):
+class _PlotItemMeta(type(GraphicsObject), ABCMeta):
+    ...
+
+
+class PlotItem(GraphicsObject, metaclass=_PlotItemMeta):
 
     label_changed_sgn = pyqtSignal(str)
 
@@ -43,7 +44,7 @@ class PlotItem(GraphicsObject):
         self._log_x_mode = False
         self._log_y_mode = False
 
-    @abc.abstractmethod
+    @abstractmethod
     def setData(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -65,7 +66,7 @@ class PlotItem(GraphicsObject):
         # do not set data unless they pass the sanity check!
         self._x, self._y = x, y
 
-    @abc.abstractmethod
+    @abstractmethod
     def data(self):
         raise NotImplementedError
 
@@ -74,7 +75,7 @@ class PlotItem(GraphicsObject):
         self.prepareGeometryChange()
         self.informViewBoundsChanged()
 
-    @abc.abstractmethod
+    @abstractmethod
     def _prepareGraph(self) -> None:
         raise NotImplementedError
 
@@ -406,55 +407,6 @@ class ScatterPlotItem(PlotItem):
 
     Implemented based on pyqtgraph.ScatterPlotItem.
     """
-    @staticmethod
-    def createSymbols():
-        _names = ['o', 's', 't', 't1', 't2', 't3',
-                  'd', '+', 'x', 'p', 'h', 'star',
-                  'arrow_up', 'arrow_right', 'arrow_down', 'arrow_left']
-        symbols = OrderedDict([(name, QPainterPath()) for name in _names])
-        symbols['o'].addEllipse(QRectF(-0.5, -0.5, 1., 1.))
-        symbols['s'].addRect(QRectF(-0.5, -0.5, 1., 1.))
-        _coords = {
-            't': [(-0.5, -0.5), (0, 0.5), (0.5, -0.5)],
-            't1': [(-0.5, 0.5), (0, -0.5), (0.5, 0.5)],
-            't2': [(-0.5, -0.5), (-0.5, 0.5), (0.5, 0)],
-            't3': [(0.5, 0.5), (0.5, -0.5), (-0.5, 0)],
-            'd': [(0., -0.5), (-0.4, 0.), (0, 0.5), (0.4, 0)],
-            '+': [(-0.5, -0.05), (-0.5, 0.05), (-0.05, 0.05), (-0.05, 0.5),
-                  (0.05, 0.5), (0.05, 0.05), (0.5, 0.05), (0.5, -0.05),
-                  (0.05, -0.05), (0.05, -0.5), (-0.05, -0.5), (-0.05, -0.05)],
-            'p': [(0, -0.5), (-0.4755, -0.1545), (-0.2939, 0.4045),
-                  (0.2939, 0.4045), (0.4755, -0.1545)],
-            'h': [(0.433, 0.25), (0., 0.5), (-0.433, 0.25), (-0.433, -0.25),
-                  (0, -0.5), (0.433, -0.25)],
-            'star': [(0, -0.5), (-0.1123, -0.1545), (-0.4755, -0.1545),
-                     (-0.1816, 0.059), (-0.2939, 0.4045), (0, 0.1910),
-                     (0.2939, 0.4045), (0.1816, 0.059), (0.4755, -0.1545),
-                     (0.1123, -0.1545)],
-            'arrow_down': [
-                (-0.125, 0.125), (0, 0), (0.125, 0.125),
-                (0.05, 0.125), (0.05, 0.5), (-0.05, 0.5), (-0.05, 0.125)
-            ]
-        }
-
-        for k, c in _coords.items():
-            symbols[k].moveTo(*c[0])
-            for x, y in c[1:]:
-                symbols[k].lineTo(x, y)
-            symbols[k].closeSubpath()
-
-        del _coords
-
-        tr = QTransform()
-        tr.rotate(45)
-        symbols['x'] = tr.map(symbols['+'])
-        tr.rotate(45)
-        symbols['arrow_right'] = tr.map(symbols['arrow_down'])
-        symbols['arrow_up'] = tr.map(symbols['arrow_right'])
-        symbols['arrow_left'] = tr.map(symbols['arrow_up'])
-        return symbols
-
-    _symbol_map = createSymbols.__func__()
 
     def __init__(self, x=None, y=None, *, symbol='o', size=8,
                  pen=None, brush=None, label=None, parent=None):
@@ -463,8 +415,6 @@ class ScatterPlotItem(PlotItem):
 
         self._x = None
         self._y = None
-
-        self._bounds = [None, None]
 
         if pen is None and brush is None:
             self._pen = FColor.mkPen()
@@ -475,18 +425,13 @@ class ScatterPlotItem(PlotItem):
 
         self._size = size
 
-        self._symbol_path = self._symbol_map[symbol]
-        self._symbol_fragment = None
-        self._symbol_width = None
+        self._symbol_path = FSymbol.mkSymbol(symbol)
+        self._fragment = None
         self._buildFragment()
 
-        self.setData(x, y)
+        self._graph = None
 
-    def updateGraph(self):
-        """Override."""
-        self.prepareGeometryChange()
-        self.informViewBoundsChanged()
-        self._bounds = [None, None]
+        self.setData(x, y)
 
     def setData(self, x, y):
         """Override."""
@@ -497,51 +442,26 @@ class ScatterPlotItem(PlotItem):
         """Override."""
         return self._x, self._y
 
-    def _dataBounds(self, ax):
-        if self._bounds[ax] is not None:
-            return self._bounds[ax]
-
-        if len(self._y) == 0:
-            return None, None
-
-        x, y = self.transformedData()
-        if ax == 0:
-            d = x
-        elif ax == 1:
-            d = y
-
-        self._bounds[ax] = (np.nanmin(d), np.nanmax(d))
-        return self._bounds[ax]
-
-    def pixelPadding(self):
-        return 0.7072 * self._symbol_width
-
-    def boundingRect(self) -> QRectF:
+    def _prepareGraph(self) -> None:
         """Override."""
-        xmn, xmx = self._dataBounds(ax=0)
-        ymn, ymx = self._dataBounds(ax=1)
-        if xmn is None or xmx is None:
-            xmn = 0
-            xmx = 0
-        if ymn is None or ymx is None:
-            ymn = 0
-            ymx = 0
-
-        pad = self.pixelPadding()
-        px = py = pad if pad > 0 else 0
-        return QRectF(xmn - px, ymn - py, 2*px + xmx - xmn, 2*py + ymx - ymn)
-
-    def mapPointsToDevice(self, pts):
-        tr = self.deviceTransform()
-        if tr is None:
+        self._graph = QRectF()
+        if len(self._x) == 0:
             return
 
-        pts = fn.transformCoordinates(tr, pts)
-        pts -= 0.5 * self._symbol_width
-        # prevent sluggish GUI and possibly Qt segmentation fault.
-        pts = np.clip(pts, -2**30, 2**30)
+        x, y = self.transformedData()
+        x_min, x_max = np.min(x), np.max(x)
+        y_min, y_max = np.min(y), np.max(y)
 
-        return pts
+        # TODO: add padding
+        self._graph.setRect(x_min, y_min, x_max - x_min, y_max - y_min)
+
+    @staticmethod
+    def transformCoordinates(matrix: QTransform, x: np.array, y: np.array,
+                             dx: float = 0, dy: float = 0):
+        # TODO: do it inplace?
+        x = matrix.m11() * x + matrix.m21() * y + matrix.m31() + dx
+        y = matrix.m12() * x + matrix.m22() * y + matrix.m32() + dy
+        return x, y
 
     def paint(self, p, *args):
         """Override."""
@@ -549,17 +469,18 @@ class ScatterPlotItem(PlotItem):
 
         x, y = self.transformedData()
 
-        pts = np.vstack([x, y])
-        pts = self.mapPointsToDevice(pts)
-        if pts is None:
-            return
+        w, h = self._fragment.width(), self._fragment.height()
+        x, y = self.transformCoordinates(
+            self.deviceTransform(), x, y, -w / 2., -h / 2.)
+        src_rect = QRectF(self._fragment.rect())
+        for px, py in zip(x, y):
+            p.drawPixmap(QRectF(px, py, w, h), self._fragment, src_rect)
 
-        width = self._symbol_width
-        source_rect = QRectF(self._symbol_fragment.rect())
-        for px, py in zip(pts[0, :], pts[1, :]):
-            p.drawPixmap(QRectF(px, py, width, width),
-                         self._symbol_fragment,
-                         source_rect)
+    def boundingRect(self) -> QRectF:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        return self._graph
 
     def drawSample(self, p=None):
         """Override."""
@@ -568,29 +489,24 @@ class ScatterPlotItem(PlotItem):
             self.drawSymbol(p)
         return True
 
-    def drawSymbol(self, p):
+    def drawSymbol(self, p: QPainter):
         p.scale(self._size, self._size)
         p.setPen(self._pen)
         p.setBrush(self._brush)
         p.drawPath(self._symbol_path)
 
     def _buildFragment(self):
-        pen = self._pen
-        size = int(self._size + max(np.ceil(pen.widthF()), 1))
-        image = QImage(size, size, QImage.Format.Format_ARGB32)
-        image.fill(0)
-        p = QPainter(image)
-        try:
-            # default is QPainter.TextAntialiasing
-            p.setRenderHint(QPainter.RenderHint.Antialiasing)
-            center = 0.5 * size
-            p.translate(center, center)
-            self.drawSymbol(p)
-        finally:
-            p.end()
+        size = int(self._size + max(np.ceil(self._pen.widthF()), 1))
+        symbol = QPixmap(size, size)
+        symbol.fill(FColor.mkColor('w', alpha=0))
+        p = QPainter(symbol)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        center = 0.5 * size
+        p.translate(center, center)
+        self.drawSymbol(p)
+        p.end()
 
-        self._symbol_fragment = QPixmap(image)
-        self._symbol_width = self._symbol_fragment.width()
+        self._fragment = symbol
 
 
 class AnnotationItem(PlotItem):
@@ -705,12 +621,12 @@ class AnnotationItem(PlotItem):
                             x_max - x_min + padding_x,
                             y_max - y_min + padding_y)
 
+    def paint(self, p, *args) -> None:
+        """Override."""
+        ...
+
     def boundingRect(self) -> QRectF:
         """Override."""
         if self._graph is None:
             self._prepareGraph()
         return self._graph
-
-    def paint(self, p, *args) -> None:
-        """Override."""
-        ...
