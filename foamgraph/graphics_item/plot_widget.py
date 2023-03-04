@@ -182,6 +182,22 @@ class PlotWidget(GraphicsWidget):
 
         self._items.add(item)
 
+        if y2:
+            vb = self._vb_y2
+            if vb is None:
+                vb = Canvas(parent=self)
+                y2_axis = self.getAxis('right')
+                y2_axis.linkToCanvas(vb)
+                y2_axis.show()
+                vb.linkXTo(self._vb)
+                vb.setZValue(self._vb.zValue() - 1)
+                self._vb_y2 = vb
+                # _vb_y2 is not added to the layout
+                self._vb.geometryChanged.connect(
+                    lambda: vb.setGeometry(self._vb.geometry()))
+        else:
+            vb = self._vb
+
         if isinstance(item, PlotItem):
             if y2:
                 if self.getAxis('bottom').log_scale:
@@ -200,21 +216,7 @@ class PlotWidget(GraphicsWidget):
             if self._legend is not None:
                 self._legend.addItem(item)
 
-        if y2:
-            vb = self._vb_y2
-            if vb is None:
-                vb = Canvas(parent=self)
-                y2_axis = self.getAxis('right')
-                y2_axis.linkToCanvas(vb)
-                y2_axis.show()
-                vb.linkXTo(self._vb)
-                vb.setZValue(self._vb.zValue() - 1)
-                self._vb_y2 = vb
-                # _vb_y2 is not added to the layout
-                self._vb.geometryChanged.connect(
-                    lambda: vb.setGeometry(self._vb.geometry()))
-        else:
-            vb = self._vb
+            item.setCanvas(vb)
 
         vb.addItem(item, ignore_bounds=ignore_bounds)
 

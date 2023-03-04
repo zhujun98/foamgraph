@@ -31,11 +31,11 @@ class Canvas(QGraphicsWidget):
 
             self._items = []
 
-        def addItem(self, item: GraphicsObject):
+        def addItem(self, item: QGraphicsItem):
             self._items.append(item)
             item.setParentItem(self)
 
-        def removeItem(self, item: GraphicsObject):
+        def removeItem(self, item: QGraphicsItem):
             if item in self._items:
                 self._items.remove(item)
 
@@ -165,9 +165,10 @@ class Canvas(QGraphicsWidget):
     def setMouseMode(self, mode: "Canvas.MouseMode"):
         self._mouse_mode = mode
 
-    def addItem(self, item: GraphicsObject, ignore_bounds: bool = False):
+    def addItem(self, item: QGraphicsItem, ignore_bounds: bool = False):
         """Add a QGraphicsItem to this view.
 
+        :param item:
         :param ignore_bounds:
         """
         if item.zValue() < self.zValue():
@@ -178,7 +179,7 @@ class Canvas(QGraphicsWidget):
         else:
             self._proxy.addItem(item)
 
-    def removeItem(self, item: GraphicsObject) -> None:
+    def removeItem(self, item: QGraphicsItem) -> None:
         self._proxy.removeItem(item)
 
         scene = self.scene()

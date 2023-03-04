@@ -133,8 +133,8 @@ class GraphicsItem:
 
     def getViewWidget(self):
         """
-        Return the view widget for this item. 
-        
+        Return the view widget for this item.
+
         If the scene has multiple views, only the first view is returned.
         The return value is cached; clear the cached value with forgetViewWidget().
         If the view has been deleted by Qt, return None.
@@ -151,7 +151,7 @@ class GraphicsItem:
         v = self._viewWidget()
         if v is not None and not isQObjectAlive(v):
             return
-            
+
         return v
 
     def canvas(self):
@@ -181,7 +181,7 @@ class GraphicsItem:
         if dt.determinant() == 0:  # occurs when deviceTransform is invalid because widget has not been displayed
             return None
         return dt
-        
+
     def viewTransform(self):
         """Return the transform that maps from local coordinates to the item's Canvas coordinates
         If there is no Canvas, return the scene transform.
@@ -250,7 +250,7 @@ class GraphicsItem:
             canvas.updateAutoRange()
 
     def itemChange(self, change, value):
-        ret = QGraphicsObject.itemChange(self, change, value)
+        ret = super().itemChange(change, value)
 
         if change in [self.GraphicsItemChange.ItemPositionHasChanged,
                       self.GraphicsItemChange.ItemTransformHasChanged]:

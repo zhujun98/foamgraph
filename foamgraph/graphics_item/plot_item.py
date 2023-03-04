@@ -7,6 +7,7 @@ Author: Jun Zhu
 """
 from abc import ABCMeta, abstractmethod
 from typing import Optional
+import weakref
 
 import numpy as np
 
@@ -14,30 +15,30 @@ from ..backend.QtGui import (
     QColor, QFont, QImage, QPainter, QPainterPath, QPicture, QPixmap,
     QPolygonF, QTransform
 )
-from ..backend.QtCore import (
-    pyqtSignal, QByteArray, QDataStream, QPointF, QRectF, Qt
-)
+from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 from ..backend.QtWidgets import (
-    QGraphicsItem, QGraphicsLinearLayout, QGraphicsGridLayout,
-    QGraphicsTextItem
+    QGraphicsObject, QGraphicsTextItem, QGraphicsView
 )
 
 from ..aesthetics import FColor, FSymbol
-from .graphics_item import GraphicsObject
+from .canvas import Canvas
 
 
-class _PlotItemMeta(type(GraphicsObject), ABCMeta):
+class _PlotItemMeta(type(QGraphicsObject), ABCMeta):
     ...
 
 
-class PlotItem(GraphicsObject, metaclass=_PlotItemMeta):
+class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
 
     label_changed_sgn = pyqtSignal(str)
 
-    def __init__(self, *args, label: Optional[str] = None, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, label: Optional[str] = None):
+        super().__init__()
 
         self._graph = None
+
+        self._canvas = None
+        self._view = None
 
         self._label = "" if label is None else label
 
@@ -70,14 +71,49 @@ class PlotItem(GraphicsObject, metaclass=_PlotItemMeta):
     def data(self):
         raise NotImplementedError
 
-    def updateGraph(self):
-        self._graph = None
-        self.prepareGeometryChange()
-        self.informViewBoundsChanged()
-
     @abstractmethod
     def _prepareGraph(self) -> None:
         raise NotImplementedError
+
+    def setCanvas(self, canvas: Canvas) -> None:
+        self._canvas = weakref.ref(canvas)
+
+    def canvas(self) -> Optional[Canvas]:
+        return None if self._canvas is None else self._canvas()
+
+    def view(self) -> Optional[QGraphicsView]:
+        """Return the GraphicsView for this item.
+
+        If the scene has multiple views, only the first view is returned.
+        """
+        if self._view is None:
+            scene = self.scene()
+            if scene is None:
+                return
+            views = scene.views()
+            if len(views) == 0:
+                return
+            self._view = weakref.ref(views[0])
+
+        return self._view()
+
+    def deviceTransform(self) -> QTransform:
+        view = self.view()
+        if view is None:
+            return QTransform()
+
+        dt = super().deviceTransform(view.viewportTransform())
+        return dt
+
+    def informBoundsChanged(self) -> None:
+        canvas = self.canvas()
+        if canvas is not None:
+            canvas.updateAutoRange()
+
+    def updateGraph(self):
+        self._graph = None
+        self.prepareGeometryChange()
+        self.informBoundsChanged()
 
     def paint(self, p, *args) -> None:
         """Override."""
@@ -90,7 +126,7 @@ class PlotItem(GraphicsObject, metaclass=_PlotItemMeta):
         """Override."""
         if self._graph is None:
             self._prepareGraph()
-        return self._graph.boundingRect()
+        return QRectF(self._graph.boundingRect())
 
     def setLogX(self, state):
         """Set log mode for x axis."""
@@ -141,9 +177,9 @@ class CurvePlotItem(PlotItem):
     """CurvePlotItem."""
 
     def __init__(self, x=None, y=None, *,
-                 pen=None, label=None, check_finite=True, parent=None):
+                 pen=None, label=None, check_finite=True):
         """Initialization."""
-        super().__init__(label=label, parent=parent)
+        super().__init__(label=label)
 
         self._x = None
         self._y = None
@@ -215,10 +251,10 @@ class CurvePlotItem(PlotItem):
 
 class BarPlotItem(PlotItem):
     """BarPlotItem"""
-    def __init__(self, x=None, y=None, *, width=1.0, pen=None, brush=None,
-                 label=None, parent=None):
+    def __init__(self, x=None, y=None, *,
+                 width=1.0, pen=None, brush=None, label=None):
         """Initialization."""
-        super().__init__(label=label, parent=parent)
+        super().__init__(label=label)
 
         self._x = None
         self._y = None
@@ -273,7 +309,7 @@ class BarPlotItem(PlotItem):
 
     def boundingRect(self) -> QRectF:
         """Override."""
-        return QRectF(super().boundingRect())
+        return QRectF(PlotItem.boundingRect(self))
 
     def drawSample(self, p=None) -> bool:
         """Override."""
@@ -289,13 +325,12 @@ class ErrorbarPlotItem(PlotItem):
     """ErrorbarPlotItem."""
 
     def __init__(self, x=None, y=None, *, y_min=None, y_max=None, beam=None,
-                 line=False, pen=None,
-                 label=None, parent=None):
+                 line=False, pen=None, label=None):
         """Initialization.
 
         Note: y is not used for now.
         """
-        super().__init__(label=label, parent=parent)
+        super().__init__(label=label)
 
         self._x = None
         self._y = None
@@ -409,9 +444,9 @@ class ScatterPlotItem(PlotItem):
     """
 
     def __init__(self, x=None, y=None, *, symbol='o', size=8,
-                 pen=None, brush=None, label=None, parent=None):
+                 pen=None, brush=None, label=None):
         """Initialization."""
-        super().__init__(label=label, parent=parent)
+        super().__init__(label=label)
 
         self._x = None
         self._y = None
@@ -442,9 +477,12 @@ class ScatterPlotItem(PlotItem):
         """Override."""
         return self._x, self._y
 
-    def _computePaddings(self):
+    def _computePaddings(self) -> tuple[float, float]:
         w, h = self._fragment.width(), self._fragment.height()
-        rect = self.canvas().mapSceneToView(QRectF(0, 0, w, h)).boundingRect()
+        canvas = self.canvas()
+        if canvas is None:
+            return 0, 0
+        rect = canvas.mapSceneToView(QRectF(0, 0, w, h)).boundingRect()
         return rect.width(), rect.height()
 
     def _prepareGraph(self) -> None:
@@ -477,7 +515,6 @@ class ScatterPlotItem(PlotItem):
         p.resetTransform()
 
         x, y = self.transformedData()
-
         w, h = self._fragment.width(), self._fragment.height()
         x, y = self.transformCoordinates(
             self.deviceTransform(), x, y, -w / 2., -h / 2.)
@@ -521,8 +558,8 @@ class ScatterPlotItem(PlotItem):
 class AnnotationItem(PlotItem):
     """Add annotation to a plot."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
+        super().__init__()
 
         self._x = None
         self._y = None
