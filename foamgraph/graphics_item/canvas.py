@@ -18,6 +18,9 @@ from foamgraph.graphics_item.graphics_item import (
 )
 
 
+_DEBUG_CANVAS = False
+
+
 class Canvas(QGraphicsWidget):
     """Canvas."""
 
@@ -105,7 +108,7 @@ class Canvas(QGraphicsWidget):
         # clips the painting of all its descendants to its own shape
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
-        if debug:
+        if _DEBUG_CANVAS:
             self._border = QGraphicsRectItem(0, 0, 1, 1, parent=self)
             self._border.setPen(FColor.mkPen('r', width=2))
         else:
@@ -206,7 +209,6 @@ class Canvas(QGraphicsWidget):
 
     def _updateAll(self):
         if self._border is not None:
-            # for debugging
             self._border.setRect(
                 self.mapRectFromItem(self._proxy, self._graph_rect))
 
