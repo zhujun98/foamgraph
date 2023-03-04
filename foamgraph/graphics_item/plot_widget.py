@@ -19,10 +19,10 @@ from ..backend.QtWidgets import (
 
 from .axis_item import AxisItem
 from .canvas import Canvas
+from .cross_cursor_item import CrossCursorItem
 from .graphics_item import GraphicsWidget
 from .label_item import LabelItem
 from .legend_item import LegendItem
-from .line_item import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
 from .plot_item import PlotItem
 
 
@@ -50,8 +50,7 @@ class PlotWidget(GraphicsWidget):
         self._vb = Canvas(parent=self, image=image)
         self._vb_y2 = None
 
-        self._v_line = None
-        self._h_line = None
+        self._cross_cursor = None
         self._cross_cursor_lb = LabelItem('')
 
         self._legend = None
@@ -100,11 +99,7 @@ class PlotWidget(GraphicsWidget):
         self._vb.cross_cursor_toggled_sgn.connect(self.onCrossCursorToggled)
 
     def _initCrossCursor(self):
-        self._v_line = InfiniteVerticalLineItem(0., parent=self._vb)
-        self._v_line.setDraggable(False)
-        self._h_line = InfiniteHorizontalLineItem(0., parent=self._vb)
-        self._h_line.setDraggable(False)
-
+        self._cross_cursor = CrossCursorItem(parent=self._vb)
         self.onCrossCursorToggled(False)
 
     def _initAxisItems(self):
@@ -143,8 +138,7 @@ class PlotWidget(GraphicsWidget):
             self._cross_cursor_lb.setMaximumHeight(30)
             self._layout.setRowFixedHeight(0, 30)
 
-            self._v_line.show()
-            self._h_line.show()
+            self._cross_cursor.show()
 
             scene.mouse_moved_sgn.connect(self.onCrossCursorMoved)
         else:
@@ -152,8 +146,7 @@ class PlotWidget(GraphicsWidget):
             self._cross_cursor_lb.setMaximumHeight(0)
             self._layout.setRowFixedHeight(0, 0)
 
-            self._v_line.hide()
-            self._h_line.hide()
+            self._cross_cursor.hide()
 
             if scene is not None:
                 scene.mouse_moved_sgn.disconnect(self.onCrossCursorMoved)
@@ -161,8 +154,7 @@ class PlotWidget(GraphicsWidget):
     def onCrossCursorMoved(self, pos: QPointF):
         pos = self._vb.mapFromScene(pos)
         v = self._vb.mapFromItemToView(self, pos)
-        self._v_line.setValue(pos.x())
-        self._h_line.setValue(pos.y())
+        self._cross_cursor.setPos(pos.x(), pos.y())
         self._cross_cursor_lb.setPlainText(f"x = {v.x()}, y = {v.y()}")
 
     def _onLogXScaleToggled(self, state: bool):
