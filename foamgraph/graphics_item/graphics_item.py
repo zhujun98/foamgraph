@@ -1,7 +1,9 @@
 import itertools
 import operator
+from typing import Optional
 import weakref
 
+from ..backend.QtCore import QRectF
 from ..backend.QtWidgets import (
     QGraphicsItem, QGraphicsObject, QGraphicsWidget
 )
@@ -195,17 +197,15 @@ class GraphicsItem:
             tr = tr[0]   # difference between pyside and pyqt
         return tr
     
-    def viewRect(self):
-        """Return the visible bounds of this item's Canvas or GraphicsWidget,
+    def viewRect(self) -> Optional[QRectF]:
+        """Return the visible bounds of this item's Canvas,
         in the local coordinate system of the item."""
         canvas = self.canvas()
         if canvas is None:
-            return
-        bounds = self.mapRectFromView(canvas.graphRect())
-        if bounds is None:
-            return
+            return QRectF()
 
-        return bounds.normalized()
+        rect = self.mapRectFromView(canvas.graphRect())
+        return rect.normalized()
 
     def mapToDevice(self, obj):
         """
@@ -217,10 +217,10 @@ class GraphicsItem:
             return None
         return vt.map(obj)
 
-    def mapRectFromView(self, obj):
+    def mapRectFromView(self, obj) -> QRectF:
         vt = self.viewTransform()
         if vt is None:
-            return None
+            return QRectF
 
         cache = self._mapRectFromViewGlobalCache
         k = (

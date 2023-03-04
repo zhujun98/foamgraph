@@ -14,7 +14,7 @@ from foamgraph.backend.QtGui import (
 from foamgraph.aesthetics import FColor
 from foamgraph.graphics_scene import MouseClickEvent, MouseDragEvent
 from foamgraph.graphics_item.graphics_item import (
-    GraphicsObject, QGraphicsItem, QGraphicsObject, QGraphicsWidget
+    QGraphicsItem, QGraphicsObject, QGraphicsWidget
 )
 
 
@@ -23,6 +23,8 @@ _DEBUG_CANVAS = False
 
 class Canvas(QGraphicsWidget):
     """Canvas."""
+
+    _Z_SELECTION_RECT = 100
 
     class CanvasProxy(QGraphicsObject):
 
@@ -61,7 +63,7 @@ class Canvas(QGraphicsWidget):
 
         def boundingRect(self) -> QRectF:
             """Override."""
-            return QRectF()
+            return self.parentItem().graphRect()
 
         def paint(self, p, *args):
             """Override."""
@@ -90,7 +92,10 @@ class Canvas(QGraphicsWidget):
 
     WHEEL_SCALE_FACTOR = 0.00125
 
-    def __init__(self, parent=None, *, image: bool = False, debug: bool = True):
+    def __init__(self, parent=None, *,
+                 has_cross_cursor: bool = True,
+                 draggable: bool = True,
+                 scalable: bool = True):
         """Initialization."""
         super().__init__(parent)
 
@@ -105,6 +110,10 @@ class Canvas(QGraphicsWidget):
         self._linked_y = None
         self._mouse_mode = self.MouseMode.Pan
 
+        self._draggable = draggable
+        self._scalable = scalable
+        self._has_cross_cursor = has_cross_cursor
+
         # clips the painting of all its descendants to its own shape
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
@@ -114,23 +123,18 @@ class Canvas(QGraphicsWidget):
         else:
             self._border = None
 
-        self.setZValue(-100)
         self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding,
                                        QSizePolicy.Policy.Expanding))
 
-        self._menu = self.createContextMenu(image=image)
+        self._menu = self._createContextMenu()
 
         self._proxy = self.CanvasProxy(self)
 
         # region shown in MouseMode.Rect
-        self._selected_rect = QGraphicsRectItem(0, 0, 1, 1)
-        self._selected_rect.setPen(FColor.mkPen('Gold'))
-        self._selected_rect.setBrush(FColor.mkBrush('Gold', alpha=100))
-        self._selected_rect.setZValue(-100)
-        self._selected_rect.hide()
-        self.addItem(self._selected_rect, ignore_bounds=True)
+        self._selection_rect = self._createSelectionRect()
+        self.addItem(self._selection_rect)
 
-    def createContextMenu(self, image: bool):
+    def _createContextMenu(self):
         root = QMenu()
 
         action = root.addAction("View All")
@@ -138,23 +142,24 @@ class Canvas(QGraphicsWidget):
             self._proxy.viewRect(), disable_auto_range=True))
 
         # ---
-        menu = root.addMenu("Mouse Mode")
-        group = QActionGroup(menu)
+        if self._draggable:
+            menu = root.addMenu("Mouse Mode")
+            group = QActionGroup(menu)
 
-        action = menu.addAction("Pan")
-        action.setActionGroup(group)
-        action.setCheckable(True)
-        action.triggered.connect(
-            lambda: self.setMouseMode(self.MouseMode.Pan))
-        action.setChecked(True)
+            action = menu.addAction("Pan")
+            action.setActionGroup(group)
+            action.setCheckable(True)
+            action.triggered.connect(
+                lambda: self.setMouseMode(self.MouseMode.Pan))
+            action.setChecked(True)
 
-        action = menu.addAction("Zoom")
-        action.setActionGroup(group)
-        action.setCheckable(True)
-        action.triggered.connect(
-            lambda: self.setMouseMode(self.MouseMode.Rect))
+            action = menu.addAction("Zoom")
+            action.setActionGroup(group)
+            action.setCheckable(True)
+            action.triggered.connect(
+                lambda: self.setMouseMode(self.MouseMode.Rect))
 
-        if not image:
+        if self._has_cross_cursor:
             # ---
             action = root.addAction("Cross Cursor")
             action.setCheckable(True)
@@ -162,22 +167,26 @@ class Canvas(QGraphicsWidget):
 
         return root
 
+    def _createSelectionRect(self):
+        rect = QGraphicsRectItem(0, 0, 1, 1)
+        rect.setPen(FColor.mkPen('Gold'))
+        rect.setBrush(FColor.mkBrush('Gold', alpha=100))
+        rect.setZValue(self._Z_SELECTION_RECT)
+        rect.hide()
+        return rect
+
     def setMouseMode(self, mode: "Canvas.MouseMode"):
         self._mouse_mode = mode
 
-    def addItem(self, item: QGraphicsItem, ignore_bounds: bool = False):
-        """Add a QGraphicsItem to this view.
-
-        :param item:
-        :param ignore_bounds:
-        """
+    def addItem(self, item: QGraphicsItem):
+        """Add a QGraphicsItem to this view."""
         if item.zValue() < self.zValue():
             item.setZValue(self.zValue() + 1)
 
-        if ignore_bounds:
-            item.setParentItem(self)
-        else:
-            self._proxy.addItem(item)
+        self._proxy.addItem(item)
+
+        if hasattr(item, "setCanvas"):
+            item.setCanvas(self)
 
     def removeItem(self, item: QGraphicsItem) -> None:
         self._proxy.removeItem(item)
@@ -372,8 +381,11 @@ class Canvas(QGraphicsWidget):
         """Maps from scene coordinates to coordinates displayed inside Canvas."""
         return self.invertedGraphTransform().map(self.mapFromScene(obj))
 
+    def mapToView(self, obj):
+        return self.invertedGraphTransform().map(obj)
+
     def mapFromView(self, obj):
-        self.graphTransform().map(obj)
+        return self.graphTransform().map(obj)
 
     def mapFromViewToItem(self, item, obj):
         """Maps *obj* from view coordinates to the local coordinate system of *item*."""
@@ -413,6 +425,9 @@ class Canvas(QGraphicsWidget):
 
     def wheelEvent(self, ev: QGraphicsSceneWheelEvent) -> None:
         """Override."""
+        if not self._scalable:
+            return
+
         s = self.wheelMovementToScaleFactor(ev.delta())
         pos = ev.pos()
         self.scaleBy(s, s, pos.x(), pos.y())
@@ -437,6 +452,9 @@ class Canvas(QGraphicsWidget):
         self.setTargetRange(rect.adjusted(l.dx(), l.dy(), l.dx(), l.dy()))
 
     def mouseDragEvent(self, ev: MouseDragEvent):
+        if not self._draggable:
+            return
+
         pos = ev.pos()
         delta = ev.lastPos() - pos
 
@@ -444,19 +462,18 @@ class Canvas(QGraphicsWidget):
         if ev.button() == Qt.MouseButton.LeftButton:
             if self._mouse_mode == self.MouseMode.Rect:
                 if ev.exiting():
-                    self._selected_rect.hide()
+                    self._selection_rect.hide()
                     rect = self._proxy.mapRectFromParent(QRectF(
                         ev.buttonDownPos(ev.button()), pos))
                     self.setTargetRange(rect.normalized())
-                    self.update()
                 else:
                     rect = self._proxy.mapRectFromParent(
                         QRectF(ev.buttonDownPos(), ev.pos()))
-                    self._selected_rect.setPos(rect.topLeft())
-                    self._selected_rect.resetTransform()
-                    self._selected_rect.scale(rect.width(), rect.height())
+                    self._selection_rect.setPos(rect.topLeft())
+                    self._selection_rect.resetTransform()
+                    self._selection_rect.scale(rect.width(), rect.height())
                     if ev.entering():
-                        self._selected_rect.show()
+                        self._selection_rect.show()
             else:
                 self.translateBy(delta.x(), delta.y())
 

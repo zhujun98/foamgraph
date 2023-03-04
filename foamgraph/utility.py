@@ -205,3 +205,12 @@ def invert_dict(mapping):
     for k, v in mapping.items():
         ret[v] = k
     return ret
+
+
+def normalize_angle(angle: float) -> float:
+    """Normalize angle to [-179, 180]."""
+    while angle <= -180:
+        angle += 360
+    while angle > 180:
+        angle -= 360
+    return angle

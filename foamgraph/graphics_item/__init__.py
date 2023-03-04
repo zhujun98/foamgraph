@@ -1,6 +1,6 @@
-from .image_colorbar_item import ImageColorbarItem
+from .image_colorbar_widget import ImageColorbarWidget
 from .image_item import ImageItem
-from .line_item import InfiniteHorizontalLineItem, InfiniteVerticalLineItem
+from .line_item import InfiniteLineItem
 from .plot_widget import PlotWidget
 from .plot_item import (
     AnnotationItem, BarPlotItem, CurvePlotItem, ErrorbarPlotItem,

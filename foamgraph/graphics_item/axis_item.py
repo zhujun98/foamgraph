@@ -299,9 +299,10 @@ class AxisItem(GraphicsWidget):
 
             canvas.auto_range_y_toggled_sgn.connect(
                 self._auto_range_action.setChecked)
-            canvas.y_range_changed_sgn.connect(self.onCanvasChanged)
             canvas.y_link_state_toggled_sgn.connect(
                 self._auto_range_action.setEnabled)
+            canvas.y_range_changed_sgn.connect(self.onCanvasChanged)
+
         else:
             self._auto_range_action.triggered.connect(
                 lambda s: canvas.enableAutoRangeX(s))
@@ -309,9 +310,9 @@ class AxisItem(GraphicsWidget):
 
             canvas.auto_range_x_toggled_sgn.connect(
                 self._auto_range_action.setChecked)
-            canvas.x_range_changed_sgn.connect(self.onCanvasChanged)
             canvas.x_link_state_toggled_sgn.connect(
                 self._auto_range_action.setEnabled)
+            canvas.x_range_changed_sgn.connect(self.onCanvasChanged)
 
         self._auto_range_action.setChecked(True)
         self._auto_range_action.triggered.emit(True)

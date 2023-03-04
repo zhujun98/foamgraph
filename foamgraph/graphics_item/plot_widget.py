@@ -17,6 +17,7 @@ from ..backend.QtWidgets import (
     QWidgetAction
 )
 
+from ..aesthetics import FColor
 from .axis_item import AxisItem
 from .canvas import Canvas
 from .cross_cursor_item import CrossCursorItem
@@ -47,10 +48,11 @@ class PlotWidget(GraphicsWidget):
         self._plot_items = OrderedDict()  # PlotItem: None
         self._plot_items_y2 = OrderedDict()  # PlotItem: None
 
-        self._vb = Canvas(parent=self, image=image)
+        self._vb = Canvas(parent=self, has_cross_cursor=False)
         self._vb_y2 = None
 
-        self._cross_cursor = None
+        self._cross_cursor = CrossCursorItem(parent=self._vb)
+        self._cross_cursor.setPen(FColor.mkPen("Magenta"))
         self._cross_cursor_lb = LabelItem('')
 
         self._legend = None
@@ -91,15 +93,11 @@ class PlotWidget(GraphicsWidget):
 
         self.setLayout(layout)
 
-        self._initCrossCursor()
         self._initAxisItems()
         self.setTitle()
 
     def initConnections(self):
         self._vb.cross_cursor_toggled_sgn.connect(self.onCrossCursorToggled)
-
-    def _initCrossCursor(self):
-        self._cross_cursor = CrossCursorItem(parent=self._vb)
         self.onCrossCursorToggled(False)
 
     def _initAxisItems(self):
@@ -110,7 +108,6 @@ class PlotWidget(GraphicsWidget):
 
             self._axes[name] = axis
             self._layout.addItem(axis, *pos)
-            axis.setZValue(-1000)
             axis.setFlag(axis.GraphicsItemFlag.ItemNegativeZStacksBehindParent)
 
         x_axis = self._axes['bottom']
@@ -153,8 +150,8 @@ class PlotWidget(GraphicsWidget):
 
     def onCrossCursorMoved(self, pos: QPointF):
         pos = self._vb.mapFromScene(pos)
-        v = self._vb.mapFromItemToView(self, pos)
-        self._cross_cursor.setPos(pos.x(), pos.y())
+        self._cross_cursor.setPos(pos)
+        v = self._vb.mapToView(pos)
         self._cross_cursor_lb.setPlainText(f"x = {v.x()}, y = {v.y()}")
 
     def _onLogXScaleToggled(self, state: bool):
@@ -172,9 +169,7 @@ class PlotWidget(GraphicsWidget):
             item.setLogY(state)
         self._vb_y2.updateAutoRange()
 
-    def addItem(self, item, *,
-                ignore_bounds: bool = False,
-                y2: bool = False) -> None:
+    def addItem(self, item, *, y2: bool = False) -> None:
         """Add a graphics item to Canvas."""
         if item in self._items:
             warnings.warn(f"Item {item} already added to PlotItem.")
@@ -216,9 +211,7 @@ class PlotWidget(GraphicsWidget):
             if self._legend is not None:
                 self._legend.addItem(item)
 
-            item.setCanvas(vb)
-
-        vb.addItem(item, ignore_bounds=ignore_bounds)
+        vb.addItem(item)
 
     def removeItem(self, item):
         """Add a graphics item to Canvas."""

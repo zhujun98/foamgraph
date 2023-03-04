@@ -7,7 +7,6 @@ Author: Jun Zhu
 """
 import numpy as np
 
-from foamgraph.backend.QtGui import QPainter
 from foamgraph.backend.QtCore import pyqtSignal, QPointF, Qt
 from foamgraph.backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
 
@@ -16,11 +15,11 @@ from .axis_item import AxisItem
 from .canvas import Canvas
 from .gradient_editor_item import GradientEditorItem
 from .graphics_item import GraphicsWidget
-from .linear_region_item import LinearRegionItem
+from .linear_region_item import LinearVRegionItem
 from .plot_item import CurvePlotItem
 
 
-class ImageColorbarItem(GraphicsWidget):
+class ImageColorbarWidget(GraphicsWidget):
     """GraphicsWidget for adjusting the display of an image."""
 
     lut_changed_sgn = pyqtSignal(object)
@@ -32,26 +31,15 @@ class ImageColorbarItem(GraphicsWidget):
         self._gradient = GradientEditorItem()
         self._gradient.show()
 
-        self._lri = LinearRegionItem(
-            (0, 1), orientation=Qt.Orientation.Horizontal)
-        self._lri.setZValue(1000)
-
-        self._pen = FColor.mkPen("Gray", alpha=100)
-        self._lri.setLinePen(FColor.mkPen("Gray"))
-        self._lri.setLineHoverPen(FColor.mkPen("Gray", alpha=50))
+        self._lri = LinearVRegionItem(0, 1)
 
         self._hist = CurvePlotItem(pen=FColor.mkPen('k'))
         self._hist.rotate(90)
 
-        vb = Canvas(parent=self)
-        vb.setMaximumWidth(152)
-        vb.setMinimumWidth(45)
-        vb.addItem(self._hist)
-        vb.addItem(self._lri)
-        self._vb = vb
+        self._canvas = self._createCanvas()
 
         self._axis = AxisItem(Qt.Edge.LeftEdge, parent=self)
-        self._axis.linkToCanvas(vb)
+        self._axis.linkToCanvas(self._canvas)
 
         self.initUI()
         self.initConnections()
@@ -64,39 +52,29 @@ class ImageColorbarItem(GraphicsWidget):
         # image_item._levels
         self.onImageChanged(auto_levels=True)
         # synchronize levels
-        image_item.setLevels(self.levels())
+        image_item.setLevels(self._lri.region())
+
+    def _createCanvas(self):
+        canvas = Canvas(draggable=False, scalable=False,
+                        has_cross_cursor=False, parent=self)
+        canvas.setMaximumWidth(152)
+        canvas.setMinimumWidth(45)
+        canvas.addItem(self._hist)
+        canvas.addItem(self._lri)
+        return canvas
 
     def initUI(self):
         layout = QGraphicsGridLayout()
         layout.setContentsMargins(*self.CONTENT_MARGIN)
         layout.setSpacing(0)
         layout.addItem(self._axis, 0, 0)
-        layout.addItem(self._vb, 0, 1)
+        layout.addItem(self._canvas, 0, 1)
         layout.addItem(self._gradient, 0, 2)
         self.setLayout(layout)
 
     def initConnections(self):
-        self._lri.region_changed_sgn.connect(self.regionChanging)
-        self._lri.region_change_finished_sgn.connect(self.regionChanged)
-
+        self._lri.region_changed_sgn.connect(self.onRegionChanged)
         self._gradient.gradient_changed_sgn.connect(self.gradientChanged)
-
-        self._vb.x_range_changed_sgn.connect(self.update)
-
-    def paint(self, p, *args) -> None:
-        """Override."""
-        levels = self.levels()
-        p1 = self._vb.mapFromViewToItem(
-            self, QPointF(self._vb.graphRect().center().x(), levels[0]))
-        p2 = self._vb.mapFromViewToItem(
-            self, QPointF(self._vb.graphRect().center().x(), levels[1]))
-        rect = self._gradient.mapRectToParent(
-            self._gradient.gradientItem().rect())
-
-        p.setPen(self._pen)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        p.drawLine(p1, rect.bottomLeft())
-        p.drawLine(p2, rect.topLeft())
 
     def gradientChanged(self):
         self._image_item.setLookupTable(self.getLookupTable)
@@ -111,14 +89,9 @@ class ImageColorbarItem(GraphicsWidget):
             self._lut = self._gradient.getLookupTable(n)
         return self._lut
 
-    def regionChanging(self):
-        """One line of the region is being dragged."""
-        self._image_item.setLevels(self.levels())
+    def onRegionChanged(self):
+        self._image_item.setLevels(self._lri.region())
         self.update()
-
-    def regionChanged(self):
-        """Line dragging has finished."""
-        self._image_item.setLevels(self.levels())
 
     def onImageChanged(self, auto_levels=False):
         hist, bin_centers = self._image_item.histogram()
@@ -128,18 +101,15 @@ class ImageColorbarItem(GraphicsWidget):
             return
 
         self._hist.setData(bin_centers, hist)
+
         if auto_levels:
-            self._lri.setRegion((bin_centers[0], bin_centers[-1]))
+            lower, upper = bin_centers[0], bin_centers[-1]
         else:
             # synchronize levels if ImageItem updated its image with
             # auto_levels = True
-            self._lri.setRegion(self._image_item.levels())
+            lower, upper = self._image_item.levels()
+
+        self._lri.setRegion(lower, upper)
 
     def setColorMap(self, cm: ColorMap) -> None:
         self._gradient.setColorMap(cm)
-
-    def levels(self) -> tuple:
-        return self._lri.region()
-
-    def setLevels(self, levels: tuple) -> None:
-        self._lri.setRegion(levels)

@@ -5,14 +5,12 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from typing import Union
-
+from abc import abstractmethod
 from ..backend.QtGui import QPainterPath, QPen, QPolygonF, QTransform
 from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 
-from ..pyqtgraph_be import Point
-
 from ..aesthetics import FColor
+from ..utility import normalize_angle
 from ..graphics_scene import HoverEvent, MouseDragEvent
 from .graphics_item import GraphicsObject
 
@@ -20,30 +18,25 @@ from .graphics_item import GraphicsObject
 class InfiniteLineItem(GraphicsObject):
     """A line of infinite length."""
 
-    position_change_finished_sgn = pyqtSignal(object)
-    position_changed_sgn = pyqtSignal(object)
+    position_changed_sgn = pyqtSignal()
 
-    def __init__(self, pos: Union[tuple, list, Point, QPointF], *,
-                 angle: float = 0., parent=None):
+    def __init__(self, pos: QPointF = QPointF(0, 0), *, parent=None):
         """Initialization.
 
         :param pos: (x, y) position of the line.
-        :param angle: Rotation angle of the line. 0 for a horizontal line
-            and 90 for a vertical one.
         """
-        self._bounding_rect = None
-
         super().__init__(parent=parent)
+
+        self._p1 = None
+        self._p2 = None
+        self._bounding_rect = None
+        self._selection_radius = 0
 
         self._moving = False
         self._cursor_offset = 0
         self._mouse_hovering = False
 
-        self._pos = None
         self.setPos(pos)
-
-        self._angle = None
-        self.__setAngle(angle)
 
         self.setDraggable(True)
 
@@ -52,11 +45,17 @@ class InfiniteLineItem(GraphicsObject):
         self._hover_pen = None
         self.setHoverPen(FColor.mkPen('w'))
 
-        # Cache variables for managing bounds
-        self._endPoints = [0, 1]
-        self._lastViewSize = None
+    def p1(self) -> QPointF:
+        if self._p1 is None:
+            self._prepareGraph()
+        return self._p1
 
-    def setDraggable(self, state: bool):
+    def p2(self) -> QPointF:
+        if self._p2 is None:
+            self._prepareGraph()
+        return self._p2
+
+    def setDraggable(self, state: bool) -> None:
         self.setAcceptHoverEvents(state)
 
     def setPen(self, pen: QPen) -> None:
@@ -69,71 +68,38 @@ class InfiniteLineItem(GraphicsObject):
         self._hover_pen = pen
         self.update()
 
-    def setAngle(self, angle: float) -> None:
-        self._angle = angle  # TODO: normalize
-        self.resetTransform()
-        self.setRotation(self._angle)
-        self.update()
+    @abstractmethod
+    def _prepareGraph(self):
+        raise NotImplementedError
 
-    __setAngle = setAngle
-
-    def pos(self) -> Point:
-        return self._pos
-
-    def setPos(self, pos: Union[tuple, list, Point, QPointF]) -> None:
-        self._pos = Point(pos)
+    def updateGraph(self) -> None:
         self._bounding_rect = None
-        super().setPos(self._pos)
-        self.position_changed_sgn.emit(self)
+        self._p1 = None
+        self._p2 = None
+        self.prepareGeometryChange()
 
-    def _computeBoundingRect(self):
-        vr = self.viewRect()  # bounds of containing Canvas mapped to local coords.
-        if vr is None:
-            self._bounding_rect = QRectF()
-            return
-        
-        # add a 4-pixel radius around the line for mouse interaction.
-
-        w = 5.0
-        br = QRectF(vr)
-        br.setBottom(-w)
-        br.setTop(w)
-
-        length = br.width()
-        left = br.left()
-        right = br.left() + length
-        br.setLeft(left)
-        br.setRight(right)
-        br = br.normalized()
-        
-        vs = self.canvas().size()
-        
-        if self._bounding_rect != br or self._lastViewSize != vs:
-            self._bounding_rect = br
-            self._lastViewSize = vs
-            self.prepareGeometryChange()
-        
-        self._endPoints = (left, right)
-        self._lastViewRect = vr
+    def setPos(self, pos: QPointF) -> None:
+        """Override."""
+        super().setPos(pos)
+        self.updateGraph()
+        self.position_changed_sgn.emit()
 
     def boundingRect(self) -> QRectF:
         """Override."""
         if self._bounding_rect is None:
-            self._computeBoundingRect()
+            self._prepareGraph()
         return self._bounding_rect
 
     def paint(self, p, *args) -> None:
         """Override."""
         p.setRenderHint(p.RenderHint.Antialiasing)
-        
-        left, right = self._endPoints
         if self.acceptHoverEvents() and self._mouse_hovering:
             pen = self._hover_pen
         else:
             pen = self._pen
         pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
         p.setPen(pen)
-        p.drawLine(Point(left, 0), Point(right, 0))
+        p.drawLine(self._p1, self._p2)
 
     def mouseDragEvent(self, ev: MouseDragEvent) -> None:
         if ev.button() != Qt.MouseButton.LeftButton:
@@ -146,7 +112,6 @@ class InfiniteLineItem(GraphicsObject):
         elif ev.exiting():
             self._moving = False
             self._cursor_offset = 0
-            self.position_change_finished_sgn.emit(self)
 
         if self._moving:
             self.setPos(self._cursor_offset + self.mapToParent(ev.pos()))
@@ -163,43 +128,40 @@ class InfiniteLineItem(GraphicsObject):
         self.update()
 
 
-class InfiniteHorizontalLineItem(InfiniteLineItem):
-    """A convenient class for creating a horizontal infinite line."""
-    def __init__(self, pos: float = 0., **kwargs):
-        """Initialization.
+class InfiniteVLineItem(InfiniteLineItem):
+    def __init__(self, x: float = 0, *, parent=None):
+        super().__init__(QPointF(x, 0), parent=parent)
 
-        :param pos: Position of the line.
-        """
-        if 'angle' in kwargs:
-            raise ValueError("Cannot set the angle of a horizontal line")
-        super().__init__((0., pos), angle=0., **kwargs)
+    def _prepareGraph(self):
+        """Override."""
+        vr = self.viewRect()
+        if vr is None:
+            self._bounding_rect = QRectF()
+            self._p1 = QPointF()
+            self._p2 = QPointF()
+            return
 
-    def setAngle(self, angle: float) -> None:
-        raise RuntimeError("Cannot change the angle of a horizontal line")
-
-    def value(self) -> float:
-        return self._pos[1]
-
-    def setValue(self, v: float) -> None:
-        super().setPos((0., v))
+        self._bounding_rect = QRectF(
+            self.x() - self._selection_radius, vr.top(),
+            2 * self._selection_radius, vr.height()
+        )
+        self._p1 = QPointF(self.x(), vr.top())
+        self._p2 = QPointF(self.x(), vr.bottom())
 
 
-class InfiniteVerticalLineItem(InfiniteLineItem):
-    """A convenient class for creating a vertical infinite line."""
-    def __init__(self, pos: float = 0., **kwargs):
-        """Initialization.
+class InfiniteHLineItem(InfiniteLineItem):
+    def __init__(self, y: float = 0, *, parent=None):
+        super().__init__(QPointF(0, y), parent=parent)
 
-        :param pos: Position of the line.
-        """
-        if 'angle' in kwargs:
-            raise ValueError("Cannot set the angle of a vertical line")
-        super().__init__((pos, 0.), angle=90., **kwargs)
+    def _prepareGraph(self):
+        vr = self.viewRect()
+        if vr is None:
+            self._bounding_rect = QRectF()
+            return
 
-    def setAngle(self, angle: float) -> None:
-        raise RuntimeError("Cannot change the angle of a vertical line")
-
-    def value(self) -> float:
-        return self._pos[0]
-
-    def setValue(self, v: float) -> None:
-        super().setPos((v, 0.))
+        self._bounding_rect = QRectF(
+            vr.left(), self.y() - self._selection_radius,
+            vr.width(), 2 * self._selection_radius
+        )
+        self._p1 = QPointF(vr.left(), self.y())
+        self._p2 = QPointF(vr.right(), self.y())
