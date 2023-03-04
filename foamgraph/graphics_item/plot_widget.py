@@ -100,12 +100,10 @@ class PlotWidget(GraphicsWidget):
         self._vb.cross_cursor_toggled_sgn.connect(self.onCrossCursorToggled)
 
     def _initCrossCursor(self):
-        self._v_line = InfiniteVerticalLineItem(0.)
+        self._v_line = InfiniteVerticalLineItem(0., parent=self._vb)
         self._v_line.setDraggable(False)
-        self._h_line = InfiniteHorizontalLineItem(0.)
+        self._h_line = InfiniteHorizontalLineItem(0., parent=self._vb)
         self._h_line.setDraggable(False)
-        self._vb.addItem(self._v_line, ignore_bounds=True)
-        self._vb.addItem(self._h_line, ignore_bounds=True)
 
         self.onCrossCursorToggled(False)
 
@@ -148,8 +146,7 @@ class PlotWidget(GraphicsWidget):
             self._v_line.show()
             self._h_line.show()
 
-            if scene is not None:
-                scene.mouse_moved_sgn.connect(self.onCrossCursorMoved)
+            scene.mouse_moved_sgn.connect(self.onCrossCursorMoved)
         else:
             self._cross_cursor_lb.setVisible(False)
             self._cross_cursor_lb.setMaximumHeight(0)
@@ -161,12 +158,12 @@ class PlotWidget(GraphicsWidget):
             if scene is not None:
                 scene.mouse_moved_sgn.disconnect(self.onCrossCursorMoved)
 
-    def onCrossCursorMoved(self, pos):
-        m_pos = self._vb.mapSceneToView(pos)
-        x, y = m_pos.x(), m_pos.y()
-        self._v_line.setValue(x)
-        self._h_line.setValue(y)
-        self._cross_cursor_lb.setPlainText(f"x = {x}, y = {y}")
+    def onCrossCursorMoved(self, pos: QPointF):
+        pos = self._vb.mapFromScene(pos)
+        v = self._vb.mapFromItemToView(self, pos)
+        self._v_line.setValue(pos.x())
+        self._h_line.setValue(pos.y())
+        self._cross_cursor_lb.setPlainText(f"x = {v.x()}, y = {v.y()}")
 
     def _onLogXScaleToggled(self, state: bool):
         for item in chain(self._plot_items, self._plot_items_y2):

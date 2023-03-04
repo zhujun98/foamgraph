@@ -379,7 +379,7 @@ class Canvas(QGraphicsWidget):
         return self._proxy.mapToItem(item, obj)
 
     def mapFromItemToView(self, item, obj):
-        return self._proxy.mapFromItem()
+        return self._proxy.mapFromItem(item, obj)
 
     def scaleXBy(self, sx: float, xc: float) -> None:
         rect = self._graph_rect
