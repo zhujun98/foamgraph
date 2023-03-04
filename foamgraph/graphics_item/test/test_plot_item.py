@@ -198,7 +198,6 @@ class TestScatterPlotItem:
             x = np.arange(10)
             y = np.arange(10)
             item = ScatterPlotItem(x, y, label=sym, symbol=sym, size=np.random.randint(15, 30))
-            view.removeAllItems()
             view.addItem(item)
             view.addLegend()
             _display(interval=0.2)

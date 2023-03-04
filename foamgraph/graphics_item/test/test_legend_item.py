@@ -11,7 +11,7 @@ app = mkQApp()
 
 @pytest.fixture(scope='function')
 def widget():
-    class FooPlotWidget(GraphView):
+    class FooPlot(GraphView):
         def __init__(self):
             super().__init__()
             self.plot1 = self.addBarPlot(label="1")
@@ -22,7 +22,7 @@ def widget():
             # PlotItem without label will not be added into Legend
             self.all_plots = [self.plot1, self.plot2, self.plot3]
 
-    return FooPlotWidget()
+    return FooPlot()
 
 
 class TestLegendItem:
@@ -82,7 +82,7 @@ class TestLegendItem:
         else:
             assert legend._layout.count() == 2
 
-        widget.removeAllItems()
+        widget._cw._removeAllItems()
         assert len(legend._items) == 0
         if orientation == "vertical":
             assert legend._layout.rowCount() == 0

@@ -152,7 +152,7 @@ def test_plot_item_manipulation(pwidget):
     pwidget.removeItem(errorbar_item)
     assert len(pwidget._legend._items) == 2
 
-    pwidget.removeAllItems()
+    pwidget._removeAllItems()
     assert len(pwidget._plot_items) == 0
     assert len(pwidget._plot_items_y2) == 0
     assert len(pwidget._items) == 0

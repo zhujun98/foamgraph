@@ -68,10 +68,6 @@ class GraphView(GraphicsView):
     def removeItem(self, *args, **kwargs):
         self._cw.removeItem(*args, **kwargs)
 
-    def removeAllItems(self):
-        """Remove all the items in the PlotWidget object."""
-        self._cw.removeAllItems()
-
     def addCurvePlot(self, *args, y2=False, **kwargs):
         """Add and return a :class:`CurvePlotItem`."""
         item = CurvePlotItem(*args, **kwargs)

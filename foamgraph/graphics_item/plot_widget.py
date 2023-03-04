@@ -241,7 +241,7 @@ class PlotWidget(GraphicsWidget):
 
         self._vb.removeItem(item)
 
-    def removeAllItems(self):
+    def _removeAllItems(self):
         """Remove all graphics items from the Canvas."""
         for item in self._items:
             if item in self._plot_items_y2:
@@ -338,3 +338,8 @@ class PlotWidget(GraphicsWidget):
 
     def invertY(self, *args, **kwargs) -> None:
         self._vb.invertY(*args, **kwargs)
+
+    def close(self) -> None:
+        """Override."""
+        self._removeAllItems()
+        super().close()
