@@ -46,7 +46,11 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
         self._log_y_mode = False
 
     @abstractmethod
-    def setData(self, *args, **kwargs):
+    def setData(self, *args, **kwargs) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def clearData(self, *args, **kwargs) -> None:
         raise NotImplementedError
 
     def _parseInputData(self, x, y, **kwargs):
@@ -195,6 +199,10 @@ class CurvePlotItem(PlotItem):
         self._parseInputData(x, y)
         self.updateGraph()
 
+    def clearData(self) -> None:
+        """Override."""
+        self.setData([], [])
+
     def data(self):
         """Override."""
         return self._x, self._y
@@ -277,6 +285,10 @@ class BarPlotItem(PlotItem):
         self._parseInputData(x, y)
         self.updateGraph()
 
+    def clearData(self) -> None:
+        """Override."""
+        self.setData([], [])
+
     def data(self):
         """Override."""
         return self._x, self._y
@@ -352,6 +364,10 @@ class ErrorbarPlotItem(PlotItem):
             self._beam = beam
 
         self.updateGraph()
+
+    def clearData(self) -> None:
+        """Override."""
+        self.setData([], [])
 
     def _parseInputData(self, x, y, **kwargs):
         """Override."""
@@ -473,6 +489,10 @@ class ScatterPlotItem(PlotItem):
         self._parseInputData(x, y)
         self.updateGraph()
 
+    def clearData(self) -> None:
+        """Override."""
+        self.setData([], [])
+
     def data(self):
         """Override."""
         return self._x, self._y
@@ -576,6 +596,8 @@ class AnnotationItem(PlotItem):
         self._color = None
         self.setColor(FColor.mkColor('b'))
 
+        self.setData(self._x, self._y, self._annotations)
+
     def setOffsetX(self, x: float) -> None:
         """Set x offset of text items with respect to annotated points."""
         self._offset_x = x
@@ -598,7 +620,7 @@ class AnnotationItem(PlotItem):
             item.setDefaultTextColor(self._color)
         self.update()
 
-    def setData(self, x, y, *, annotations) -> None:
+    def setData(self, x, y, annotations) -> None:
         """Override.
 
         :param x: x coordinates of the annotated points.
@@ -609,6 +631,10 @@ class AnnotationItem(PlotItem):
         self._updateTextItems(annotations)
         self.updateGraph()
 
+    def clearData(self) -> None:
+        """Override."""
+        self.setData([], [], [])
+
     def data(self):
         """Override."""
         return self._x, self._y
@@ -618,7 +644,11 @@ class AnnotationItem(PlotItem):
         super()._parseInputData(x, y)
 
         annotations = kwargs.get("annotations")
-        if len(self._x) != len(kwargs.get("annotations")):
+        if isinstance(annotations, list):
+            annotations = np.array(annotations)
+        elif annotations is None:
+            annotations = self._x
+        if len(self._x) != len(annotations):
             raise ValueError("Annotations have different lengths!")
         self._annotations = annotations
 
@@ -648,7 +678,7 @@ class AnnotationItem(PlotItem):
 
     def _prepareGraph(self) -> None:
         self._graph = QRectF()
-        if self._x is None:
+        if len(self._x) == 0:
             return
 
         x, y = self.transformedData()

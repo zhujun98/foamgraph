@@ -2,63 +2,48 @@ import pytest
 import unittest
 from unittest.mock import MagicMock, patch
 
-import numpy as np
-
 from foamgraph import ImageView, mkQApp, TimedImageView
-from foamgraph.graphics_item.image_item import ImageItem
-from foamgraph.graphics_item.roi import RectROI
 
 from . import _display
 
 app = mkQApp()
 
 
+@pytest.fixture
+def image_view():
+    view = ImageView()
+    if _display():
+        view.show()
+    return view
+
+
 class TestImageView:
-    def testComponents(self):
-        widget = ImageView(n_rois=4)
-        items = widget._graph_view._cw._vb._proxy._items
-        assert isinstance(items[1], ImageItem)
-        for i in range(2, 6):
-            assert isinstance(items[i], RectROI)
+    def test_forwarded_methods(self, image_view):
+        view = image_view
+        cw = view._cw
 
-        widget = ImageView()
-        assert len(widget._graph_view._cw._items) == 1
+        with patch.object(cw, "addROI") as mocked:
+            roi = object()
+            view.addROI(roi)
+            mocked.assert_called_once_with(roi)
 
-        with pytest.raises(TypeError, match="numpy array"):
-            widget.setImage([[1, 2, 3], [4, 5, 6]])
+        with patch.object(cw, "setImage") as mocked:
+            view.setImage()
+            mocked.assert_called_once()
 
-    def testForwardMethod(self):
-        widget = ImageView(n_rois=4)
+        with patch.object(cw, "clearData") as mocked:
+            view.clearData()
+            mocked.assert_called_once()
 
-        for method in ["setLabel", "setTitle", "addItem",
-                       "removeItem", "invertX", "invertY"]:
-            with patch.object(widget._graph_view, method) as mocked:
-                getattr(widget, method)()
-                mocked.assert_called_once()
+        with patch.object(cw, "addItem") as mocked:
+            item = object()
+            view.addItem(item)
+            mocked.assert_called_once_with(item)
 
-    @pytest.mark.parametrize("dtype", [np.uint8, int, np.float32])
-    def testSetImage(self, dtype):
-        widget = ImageView(n_rois=4)
-
-        if _display():
-            widget.show()
-
-        _display()
-
-        # test setImage
-        img = np.arange(64).reshape(8, 8).astype(dtype)
-        widget.setImage(img, auto_levels=False)
-        _display()
-
-        widget.setImage(img, auto_levels=True)
-        _display()
-
-        # test setting image to None
-        widget.setImage(None)
-        assert widget._image is None
-        assert widget._image_item._image is None
-
-        _display()
+        with patch.object(cw, "removeItem") as mocked:
+            item = object()
+            view.removeItem(item)
+            mocked.assert_called_once_with(item)
 
 
 class TestTimedImageView(unittest.TestCase):

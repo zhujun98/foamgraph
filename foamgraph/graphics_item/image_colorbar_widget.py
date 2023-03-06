@@ -7,8 +7,8 @@ Author: Jun Zhu
 """
 import numpy as np
 
-from foamgraph.backend.QtCore import pyqtSignal, QPointF, Qt
-from foamgraph.backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
+from ..backend.QtCore import pyqtSignal, QPointF, Qt
+from ..backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
 
 from ..aesthetics import ColorMap, FColor
 from .axis_item import AxisItem
@@ -55,8 +55,7 @@ class ImageColorbarWidget(GraphicsWidget):
         image_item.setLevels(self._lri.region())
 
     def _createCanvas(self):
-        canvas = Canvas(draggable=False, scalable=False,
-                        has_cross_cursor=False, parent=self)
+        canvas = Canvas(draggable=False, scalable=False, parent=self)
         canvas.setMaximumWidth(152)
         canvas.setMinimumWidth(45)
         canvas.addItem(self._hist)
@@ -97,7 +96,7 @@ class ImageColorbarWidget(GraphicsWidget):
         hist, bin_centers = self._image_item.histogram()
 
         if hist is None:
-            self._hist.setData([], [])
+            self._hist.clearData()
             return
 
         self._hist.setData(bin_centers, hist)

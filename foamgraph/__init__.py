@@ -13,9 +13,10 @@ from .pyqtgraph_be import setConfigOptions
 from .config import config
 from .scenes import AbstractScene
 from .aesthetics import FColor, createIconButton
-from .image_view import ImageView, TimedImageView
+from .graph_view import (
+    GraphView, ImageView, TimedGraphView, TimedImageView
+)
 from .logger import GuiLoggingHandler
-from .graph_view import GraphView, TimedGraphView, HistWidgetF
 from .ctrl_widgets import (
     SmartLineEdit, SmartStringLineEdit, SmartBoundaryLineEdit,
     SmartIdLineEdit, SmartSliceLineEdit

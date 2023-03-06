@@ -6,7 +6,6 @@ from foamgraph.backend.QtTest import QSignalSpy
 
 from foamgraph import mkQApp
 from foamgraph.graphics_item.axis_item import AxisItem
-from foamgraph.graphics_view import GraphicsView
 from foamgraph.graphics_item import ImageItem
 from foamgraph.graphics_item.label_item import LabelItem
 from foamgraph.graphics_item.legend_item import LegendItem
@@ -21,56 +20,83 @@ app = mkQApp()
 
 
 @pytest.fixture(scope="function")
-def graphics_view():
-    return GraphicsView()
-
-
-@pytest.fixture(scope="function")
-def pwidget(graphics_view):
+def pwidget():
     widget = PlotWidget()
-    graphics_view.setCentralWidget(widget)
     return widget
 
 
 def test_axes(pwidget):
     assert len(pwidget._axes) == 3
-    for name, pos in [('left', (3, 0)), ('bottom', (4, 1))]:
-        left_axis = pwidget._axes[name]
-        assert isinstance(left_axis, AxisItem)
-        assert left_axis.isVisible()
-        assert pwidget.getAxis(name) is left_axis
+    for name in ['left', 'bottom']:
+        axis = pwidget._axes[name]
+        assert isinstance(axis, AxisItem)
+        assert axis.isVisible()
 
-        with patch.object(left_axis, "show") as mocked:
+        with patch.object(axis, "setVisible") as mocked:
             pwidget.showAxis(name)
-            mocked.assert_called_once()
+            mocked.assert_called_once_with(True)
 
-        with patch.object(left_axis, "hide") as mocked:
-            pwidget.hideAxis(name)
-            mocked.assert_called_once()
+            mocked.reset_mock()
+            pwidget.showAxis(name, False)
+            mocked.assert_called_once_with(False)
 
-        with patch.object(left_axis, "setLabel") as mocked:
+        with patch.object(axis, "setLabel") as mocked:
             pwidget.setLabel(name, "abc")
             mocked.assert_called_once_with(text="abc")
 
-        with patch.object(left_axis, "showLabel") as mocked:
+        with patch.object(axis, "showLabel") as mocked:
             pwidget.showLabel(name)
-            mocked.assert_called_once()
+            mocked.assert_called_once_with(True)
+
+            mocked.reset_mock()
+            pwidget.showLabel(name, False)
+            mocked.assert_called_once_with(False)
 
     for name in ['right']:
-        assert not pwidget.getAxis(name).isVisible()
+        axis = pwidget._axes[name]
+        assert not axis.isVisible()
+
+        item = CurvePlotItem(label="curve-1")
+        pwidget.addItem(item)
+        assert not axis.isVisible()
+        item = CurvePlotItem(label="curve-2")
+        pwidget.addItem(item, y2=True)
+        assert axis.isVisible()
+
+
+def test_invert(pwidget):
+    canvas = pwidget._canvas
+    with patch.object(canvas, "invertX") as mocked:
+        pwidget.invertX()
+        mocked.assert_called_once_with(True)
+
+        mocked.reset_mock()
+        pwidget.invertX(False)
+        mocked.assert_called_once_with(False)
+
+    with patch.object(canvas, "invertY") as mocked:
+        pwidget.invertY()
+        mocked.assert_called_once_with(True)
+
+        mocked.reset_mock()
+        pwidget.invertY(False)
+        mocked.assert_called_once_with(False)
 
 
 def test_legend(pwidget):
     assert pwidget._legend is None
 
     legend = pwidget.addLegend(QPointF(-30, -30))
-    assert isinstance(pwidget._legend, LegendItem)
-    assert legend, pwidget._legend
+    assert isinstance(legend, LegendItem)
+    assert legend is pwidget._legend
 
     # test addLegend when legend already exists
     pwidget.addLegend(QPointF(-10, -10))
-    assert isinstance(pwidget._legend, LegendItem)
     assert legend is pwidget._legend
+
+    assert legend.isVisible()
+    pwidget.showLegend(False)
+    assert not legend.isVisible()
 
 
 def test_title(pwidget):
@@ -82,13 +108,6 @@ def test_title(pwidget):
     pwidget.setTitle("abcdefg")
     assert pwidget._title.maximumHeight() > 0
     assert pwidget._title.isVisible()
-
-
-def test_forward_methods(pwidget):
-    for method in ["invertY", "invertX"]:
-        with patch.object(pwidget._vb, method) as mocked:
-            getattr(pwidget, method)()
-            mocked.assert_called_once()
 
 
 def test_plot_item_manipulation(pwidget):
@@ -110,13 +129,13 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 1
     assert len(pwidget._items) == 6
-    assert len(pwidget._vb._proxy._items) == 6
-    assert len(pwidget._vb_y2._proxy._items) == 2
+    assert len(pwidget._canvas._proxy._items) == 6
+    assert len(pwidget._canvas_y2._proxy._items) == 2
     assert len(pwidget._legend._items) == 3
 
     with patch.object(curve_plot_item, "setData") as mocked1:
         with patch.object(bar_graph_item, "setData") as mocked2:
-            pwidget.clearAllPlotItems()
+            pwidget.clearData()
             mocked1.assert_called_once()
             mocked2.assert_called_once()
 
@@ -125,8 +144,8 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 1
     assert len(pwidget._items) == 6
-    assert len(pwidget._vb._proxy._items) == 6
-    assert len(pwidget._vb_y2._proxy._items) == 2
+    assert len(pwidget._canvas._proxy._items) == 6
+    assert len(pwidget._canvas_y2._proxy._items) == 2
     assert len(pwidget._legend._items) == 3
 
     # remove an existing item
@@ -134,8 +153,8 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 0
     assert len(pwidget._items) == 5
-    assert len(pwidget._vb._proxy._items) == 6
-    assert len(pwidget._vb_y2._proxy._items) == 1
+    assert len(pwidget._canvas._proxy._items) == 6
+    assert len(pwidget._canvas_y2._proxy._items) == 1
     assert len(pwidget._legend._items) == 2
 
     # remove an existing item which is not a PlotItem
@@ -143,8 +162,8 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 0
     assert len(pwidget._items) == 4
-    assert len(pwidget._vb._proxy._items) == 5
-    assert len(pwidget._vb_y2._proxy._items) == 1
+    assert len(pwidget._canvas._proxy._items) == 5
+    assert len(pwidget._canvas_y2._proxy._items) == 1
     assert len(pwidget._legend._items) == 2
 
     # remove a PlotItem which does not has a name and hence was not added
@@ -156,8 +175,8 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 0
     assert len(pwidget._plot_items_y2) == 0
     assert len(pwidget._items) == 0
-    assert len(pwidget._vb._proxy._items) == 1  # _selection_rect
-    assert len(pwidget._vb_y2._proxy._items) == 1  # _selection_rect
+    assert len(pwidget._canvas._proxy._items) == 1  # _selection_rect
+    assert len(pwidget._canvas_y2._proxy._items) == 1  # _selection_rect
     assert len(pwidget._legend._items) == 0
 
 

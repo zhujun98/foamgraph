@@ -161,9 +161,9 @@ class AxisItem(GraphicsWidget):
         self._label.setPos(p)
         self._picture = None
 
-    def showLabel(self, show=True):
+    def showLabel(self, visible: bool = True):
         """Show/hide the label text for this axis."""
-        self._label.setVisible(show)
+        self._label.setVisible(visible)
         if self._orientation == Qt.Orientation.Vertical:
             self._updateWidth()
         else:

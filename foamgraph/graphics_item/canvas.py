@@ -2,20 +2,18 @@ from enum import Enum, IntEnum
 
 import numpy as np
 
-from foamgraph.backend.QtWidgets import (
-    QGraphicsRectItem, QHBoxLayout, QLabel, QMenu, QWidget, QWidgetAction
-)
-from foamgraph.backend.QtCore import pyqtSignal, QLineF, QPointF, QRectF, Qt
-from foamgraph.backend.QtGui import (
+from ..backend.QtCore import pyqtSignal, QLineF, QPointF, QRectF, Qt
+from ..backend.QtGui import (
     QAction, QActionGroup, QDoubleValidator, QGraphicsSceneResizeEvent,
     QGraphicsSceneWheelEvent, QSizePolicy, QTransform
 )
-
-from foamgraph.aesthetics import FColor
-from foamgraph.graphics_scene import MouseClickEvent, MouseDragEvent
-from foamgraph.graphics_item.graphics_item import (
-    QGraphicsItem, QGraphicsObject, QGraphicsWidget
+from ..backend.QtWidgets import (
+    QGraphicsItem, QGraphicsObject, QGraphicsWidget, QGraphicsRectItem,
+    QHBoxLayout, QLabel, QMenu, QWidget, QWidgetAction
 )
+
+from ..aesthetics import FColor
+from ..graphics_scene import MouseClickEvent, MouseDragEvent
 
 
 _DEBUG_CANVAS = False
@@ -93,7 +91,7 @@ class Canvas(QGraphicsWidget):
     WHEEL_SCALE_FACTOR = 0.00125
 
     def __init__(self, parent=None, *,
-                 has_cross_cursor: bool = True,
+                 cross_cursor_enabled: bool = False,
                  draggable: bool = True,
                  scalable: bool = True):
         """Initialization."""
@@ -112,7 +110,7 @@ class Canvas(QGraphicsWidget):
 
         self._draggable = draggable
         self._scalable = scalable
-        self._has_cross_cursor = has_cross_cursor
+        self._cross_cursor_enabled = cross_cursor_enabled
 
         # clips the painting of all its descendants to its own shape
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
@@ -133,6 +131,10 @@ class Canvas(QGraphicsWidget):
         # region shown in MouseMode.Rect
         self._selection_rect = self._createSelectionRect()
         self.addItem(self._selection_rect)
+
+    def enableCrossCursor(self, state: bool) -> None:
+        self._cross_cursor_enabled = state
+        self._menu = self._createContextMenu()
 
     def _createContextMenu(self):
         root = QMenu()
@@ -159,7 +161,7 @@ class Canvas(QGraphicsWidget):
             action.triggered.connect(
                 lambda: self.setMouseMode(self.MouseMode.Rect))
 
-        if self._has_cross_cursor:
+        if self._cross_cursor_enabled:
             # ---
             action = root.addAction("Cross Cursor")
             action.setCheckable(True)
@@ -341,12 +343,12 @@ class Canvas(QGraphicsWidget):
 
         self._updateAll()
 
-    def invertX(self, state: bool = True):
-        self._x_inverted = state
+    def invertX(self, inverted: bool = True):
+        self._x_inverted = inverted
         self.x_range_changed_sgn.emit()
 
-    def invertY(self, state: bool = True):
-        self._y_inverted = state
+    def invertY(self, inverted: bool = True):
+        self._y_inverted = inverted
         self.y_range_changed_sgn.emit()
 
     def graphTransform(self) -> QTransform:

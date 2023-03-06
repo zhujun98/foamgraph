@@ -6,6 +6,7 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 from abc import abstractmethod
+
 from ..backend.QtGui import QPainterPath, QPen, QPolygonF, QTransform
 from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 

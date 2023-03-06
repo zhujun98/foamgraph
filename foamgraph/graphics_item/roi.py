@@ -112,7 +112,6 @@ class RoiHandle(UIGraphicsItem):
         self._buildPath()
 
         self.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
-        self.setZValue(11)
 
     def hoverEvent(self, ev: HoverEvent) -> None:
         hovering = False
@@ -210,8 +209,6 @@ class ROI(GraphicsObject):
         pos = Point(pos)
         size = Point(size)
 
-        self._translatable = True
-
         self._mouse_hovering = False
         self._moving = False
         self._cursor_offset = None
@@ -227,7 +224,8 @@ class ROI(GraphicsObject):
         self.setPos(pos)
         self.setSize(size)
 
-        self.setZValue(10)
+        self._translatable = True
+        self._addHandles()
 
     def setZValue(self, z):
         QGraphicsItem.setZValue(self, z)
@@ -435,13 +433,11 @@ class ROI(GraphicsObject):
 
 class RectROI(ROI):
     """Rectangular ROI widget."""
-    def __init__(self, idx: int, *,
-                 pos: tuple = (0, 0),
+    def __init__(self, pos: tuple = (0, 0),
                  size: tuple = (1, 1),
                  color: str = 'k', **kwargs):
         """Initialization.
 
-        :param idx: index of the ROI.
         :param pos: (x, y) of the left-upper corner.
         :param size: (w, h) of the ROI.
         :param color: ROI display color.
@@ -452,12 +448,6 @@ class RectROI(ROI):
 
         pen = FColor.mkPen(color, width=2, style=Qt.PenStyle.SolidLine)
         self.setPen(pen)
-
-        self._index = idx
-
-    @property
-    def index(self):
-        return self._index
 
     @property
     def color(self):

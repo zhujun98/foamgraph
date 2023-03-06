@@ -43,7 +43,7 @@ class ImageItem(GraphicsObject):
         self._image = None   # original image data
         self._qimage = None  # rendered image for display
 
-        self._levels = None  # [min, max]
+        self._levels = [0, 1]  # [min, max]
         self._auto_level_quantile = 0.99
         self._lut = None
         self._ds_rate = (1., 1.)  # down-sample rates

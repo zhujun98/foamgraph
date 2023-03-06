@@ -52,21 +52,14 @@ class TestCurvePlotItem:
         assert buf.readInt32() == 0
         assert buf.readInt32() == 0
 
-    def test_curve_plot_item_(self, view):
+    @pytest.mark.xfail
+    def test_bounding_rect(self, view):
         item = CurvePlotItem(check_finite=False)
-        view.addItem(item)
         # nan and infinite values prevent generating plots
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, np.nan, 5]
         item.setData(x, y)
-        # FIXME
-        # assert QRectF() == item.boundingRect()
-        view.removeItem(item)
-
-        item2 = CurvePlotItem(check_finite=True)
-        view.addItem(item2)
-        item2.setData(x, y)
-        assert QRectF(1., 0., 4., 5.) == item2.boundingRect()
+        assert item.boundingRect() == QRectF(1., 1., 4., 5.)
 
     @pytest.mark.parametrize("dtype", [float, np.int64, np.uint16])
     def test_item(self, dtype, view):
@@ -76,12 +69,11 @@ class TestCurvePlotItem:
         # x and y are lists
         item = CurvePlotItem(x.tolist(), y.tolist(), label='line')
         view.addItem(item)
-        view.addLegend()
         assert isinstance(item._x, np.ndarray)
         assert isinstance(item._y, np.ndarray)
 
         # x and y are numpy.arrays
-        # item.setData(x, y)
+        item.setData(x, y)
         if dtype == float:
             _display()
 
@@ -94,15 +86,16 @@ class TestCurvePlotItem:
         if dtype == float:
             _display()
         assert item.boundingRect() == QRectF(0, 0, 1.0, 13.5)
+
         view._cw._onLogYScaleToggled(True)
         if dtype == float:
             _display()
+
         assert item.boundingRect().topLeft() == QPointF(0, 0)
         assert item.boundingRect().bottomRight().x() == 1.0
         assert 1.2 > item.boundingRect().bottomRight().y() > 1.1
 
-        # clear data
-        item.setData([], [])
+        item.clearData()
         assert isinstance(item._x, np.ndarray)
         assert isinstance(item._y, np.ndarray)
         if dtype == float:
@@ -137,7 +130,7 @@ def test_bar_plot_item(view):
     assert item.boundingRect() == QRectF(-1.0, 0, 3.0, 2.0)
 
     # clear data
-    item.setData([], [])
+    item.clearData()
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
     _display()
@@ -185,7 +178,7 @@ def test_errorbar_plot_item(view):
     assert 1.0 < item.boundingRect().bottomRight().y() < 1.1
 
     # clear data
-    item.setData([], [])
+    item.clearData()
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
     _display()
@@ -233,7 +226,7 @@ class TestScatterPlotItem:
         _display()
 
         # clear data
-        item.setData([], [])
+        item.clearData()
         assert isinstance(item._x, np.ndarray)
         assert isinstance(item._y, np.ndarray)
 

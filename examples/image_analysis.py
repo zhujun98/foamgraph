@@ -52,7 +52,7 @@ class RoiProjectionMonitor(GraphView):
     def updateF(self, data):
         """override."""
         if self._roi_geom is None:
-            self.reset()
+            self.clearData()
             return
 
         roi = extract_rect_roi(data['image']['data'], self._roi_geom)
@@ -68,15 +68,20 @@ class ImageAnalysisScene(AbstractScene):
 
     _TOTAL_W, _TOTAL_H = 640, 800
 
-    def __init__(self, n_rois: int = 0, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Initialization."""
         super().__init__(*args, **kwargs)
 
-        self._image = ImageAnalysis(n_rois=n_rois, parent=self)
-        self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
-        self._image.addRoiController(self._roi_ctrl)
+        num_rois = 2
+        self._image = ImageAnalysis(parent=self)
+        for _ in range(num_rois):
+            self._image.addROI()
+
+        # self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
+        # for roi in self._image.rois():
+        #     self._roi_ctrl.addRoi(roi)
         self._roi_monitors = [
-            RoiProjectionMonitor(i + 1, parent=self) for i in range(2)
+            RoiProjectionMonitor(i + 1, parent=self) for i in range(num_rois)
         ]
 
         self.initUI()
@@ -97,7 +102,7 @@ class ImageAnalysisScene(AbstractScene):
 
         layout = QVBoxLayout()
         layout.addWidget(self._image)
-        layout.addWidget(self._roi_ctrl)
+        # layout.addWidget(self._roi_ctrl)
         layout.addLayout(h_layout)
 
         self._cw = QFrame()
@@ -106,13 +111,14 @@ class ImageAnalysisScene(AbstractScene):
 
     def initConnections(self):
         """Override."""
-        for mon in self._roi_monitors:
-            self._roi_ctrl.roi_geometry_change_sgn.connect(
-                mon.onRoiGeometryChange)
+        ...
+        # for mon in self._roi_monitors:
+        #     self._roi_ctrl.roi_geometry_change_sgn.connect(
+        #         mon.onRoiGeometryChange)
 
 
 if __name__ == "__main__":
-    scene = ImageAnalysisScene(n_rois=2)
+    scene = ImageAnalysisScene()
 
     consumer = Consumer(scene.queue)
     consumer.start()

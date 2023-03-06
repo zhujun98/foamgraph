@@ -5,6 +5,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from abc import abstractmethod
 from collections import OrderedDict
 import warnings
 from itertools import chain
@@ -12,7 +13,7 @@ from typing import Optional
 
 from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, Qt
 from ..backend.QtWidgets import (
-    QCheckBox, QGraphicsGridLayout, QGraphicsItem,
+    QCheckBox, QGraphicsGridLayout, QGraphicsWidget,
     QGridLayout, QHBoxLayout, QLabel, QMenu, QSizePolicy, QSlider, QWidget,
     QWidgetAction
 )
@@ -27,56 +28,47 @@ from .legend_item import LegendItem
 from .plot_item import PlotItem
 
 
-class PlotWidget(GraphicsWidget):
+class PlotWidgetBase(GraphicsWidget):
     """2D plot widget for displaying graphs or an image."""
 
-    cross_toggled_sgn = pyqtSignal(bool)
+    _TITLE_LOC = (0, 1)
+    _CANVAS_LOC = (1, 1)
+    _AXIS_BOTTOM_LOC = (2, 1)
+    _AXIS_LEFT_LOC = (1, 0)
+    _AXIS_RIGHT_LOC = (1, 2)
 
-    def __init__(self, *, parent: QGraphicsItem = None, image: bool = False):
+    def __init__(self, *, parent: QGraphicsWidget = None):
         super().__init__(parent=parent)
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding,
                            QSizePolicy.Policy.Expanding)
 
         self._items = set()
-        # The insertion order of PlotItems must be kept because of the legend.
-        # Although QGraphicsScene maintain the sequence of QGraphicsItem, the
-        # LegendItem does not guarantee this since legend can be enabled after
-        # all the PlotItems are added, so it must get the order information
-        # from somewhere. Therefore, we use OrderedDict here to maintain the
-        # insertion order of PlotItems.
         self._plot_items = OrderedDict()  # PlotItem: None
-        self._plot_items_y2 = OrderedDict()  # PlotItem: None
 
-        self._vb = Canvas(parent=self, has_cross_cursor=False)
-        self._vb_y2 = None
+        self._canvas = Canvas(parent=self)
 
-        self._cross_cursor = CrossCursorItem(parent=self._vb)
-        self._cross_cursor.setPen(FColor.mkPen("Magenta"))
-        self._cross_cursor_lb = LabelItem('')
-
-        self._legend = None
         self._axes = {}
         self._title = LabelItem('')
 
         self._layout = QGraphicsGridLayout()
 
-        self.initUI()
-        self.initConnections()
+    def _init(self) -> None:
+        self._initUI()
+        self._initConnections()
 
-    def initUI(self):
+    def _initUI(self) -> None:
         layout = self._layout
 
         layout.setContentsMargins(*self.CONTENT_MARGIN)
         layout.setHorizontalSpacing(0)
         layout.setVerticalSpacing(0)
 
-        layout.addItem(self._cross_cursor_lb, 0, 1)
-        layout.addItem(self._title, 1, 1,
+        layout.addItem(self._title, *self._TITLE_LOC,
                        alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addItem(self._vb, 2, 1)
+        layout.addItem(self._canvas, *self._CANVAS_LOC)
 
-        for i in range(5):
+        for i in range(4):
             layout.setRowPreferredHeight(i, 0)
             layout.setRowMinimumHeight(i, 0)
             layout.setRowSpacing(i, 0)
@@ -88,7 +80,7 @@ class PlotWidget(GraphicsWidget):
             layout.setColumnSpacing(i, 0)
             layout.setColumnStretchFactor(i, 1)
 
-        layout.setRowStretchFactor(2, 100)
+        layout.setRowStretchFactor(1, 100)
         layout.setColumnStretchFactor(1, 100)
 
         self.setLayout(layout)
@@ -96,14 +88,123 @@ class PlotWidget(GraphicsWidget):
         self._initAxisItems()
         self.setTitle()
 
-    def initConnections(self):
-        self._vb.cross_cursor_toggled_sgn.connect(self.onCrossCursorToggled)
+    def _initConnections(self) -> None:
+        ...
+
+    def _initAxisItems(self):
+        ...
+
+    @abstractmethod
+    def clearData(self) -> None:
+        raise NotImplementedError
+
+    def addItem(self, item) -> None:
+        """Add a graphics item to Canvas."""
+        if item in self._items:
+            warnings.warn(f"Item {item} already existed.")
+            return
+
+        self._items.add(item)
+        self._canvas.addItem(item)
+
+    def removeItem(self, item):
+        """Add a graphics item to Canvas."""
+        if item not in self._items:
+            return
+
+        self._items.remove(item)
+        if item in self._plot_items:
+            del self._plot_items[item]
+
+        self._canvas.removeItem(item)
+
+    def _removeAllItems(self):
+        """Remove all graphics items from the Canvas."""
+        for item in self._items:
+            self._canvas.removeItem(item)
+
+        self._plot_items.clear()
+        self._items.clear()
+
+    def showAxis(self, axis: str, visible: bool = True) -> None:
+        """Show the given axis.
+
+        :param axis: axis name.
+        :param visible: axis visibility.
+        """
+        self._axes[axis].setVisible(visible)
+
+    def setLabel(self, axis: str, text: Optional[str] = None) -> None:
+        """Set the label for an axis.
+
+        :param axis: axis name.
+        :param text: text to display along the axis.
+        """
+        self._axes[axis].setLabel(text=text)
+        self.showAxis(axis)
+
+    def showLabel(self, axis: str, visible: bool = True) -> None:
+        """Show or hide one of the axis labels.
+
+        :param axis: axis name.
+        :param visible: label visibility.
+        """
+        self._axes[axis].showLabel(visible)
+
+    def setTitle(self, text: Optional[str] = None) -> None:
+        if text is None:
+            self._title.setMaximumHeight(0)
+            self._layout.setRowFixedHeight(self._TITLE_LOC[0], 0)
+            self._title.setVisible(False)
+        else:
+            self._title.setMaximumHeight(30)
+            self._layout.setRowFixedHeight(self._TITLE_LOC[0], 30)
+            self._title.setPlainText(text)
+            self._title.setVisible(True)
+
+    def invertX(self, inverted: bool = True) -> None:
+        self._canvas.invertX(inverted)
+
+    def invertY(self, inverted: bool = True) -> None:
+        self._canvas.invertY(inverted)
+
+    def close(self) -> None:
+        """Override."""
+        self._removeAllItems()
+        super().close()
+
+
+class PlotWidget(PlotWidgetBase):
+    """2D plot widget for displaying graphs."""
+
+    cross_toggled_sgn = pyqtSignal(bool)
+
+    def __init__(self, *, parent: QGraphicsWidget = None):
+        super().__init__(parent=parent)
+
+        self._plot_items_y2 = OrderedDict()  # PlotItem: None
+        self._canvas_y2 = None
+
+        self._canvas.enableCrossCursor(True)
+        self._cross_cursor = CrossCursorItem(parent=self._canvas)
+        self._cross_cursor.setPen(FColor.mkPen("Magenta"))
+
+        self._legend = None
+
+        self._init()
+
+    def _initConnections(self):
+        """Override."""
+        self._canvas.cross_cursor_toggled_sgn.connect(self.onCrossCursorToggled)
         self.onCrossCursorToggled(False)
 
     def _initAxisItems(self):
-        for name, edge, pos in (('bottom', Qt.Edge.BottomEdge, (3, 1)),
-                                ('left', Qt.Edge.LeftEdge, (2, 0)),
-                                ('right', Qt.Edge.RightEdge, (2, 2))):
+        """Override."""
+        for name, edge, pos in (
+                ('bottom', Qt.Edge.BottomEdge, self._AXIS_BOTTOM_LOC),
+                ('left', Qt.Edge.LeftEdge, self._AXIS_LEFT_LOC),
+                ('right', Qt.Edge.RightEdge, self._AXIS_RIGHT_LOC)
+        ):
             axis = AxisItem(edge, parent=self)
 
             self._axes[name] = axis
@@ -111,66 +212,57 @@ class PlotWidget(GraphicsWidget):
             axis.setFlag(axis.GraphicsItemFlag.ItemNegativeZStacksBehindParent)
 
         x_axis = self._axes['bottom']
-        x_axis.linkToCanvas(self._vb)
+        x_axis.linkToCanvas(self._canvas)
         x_axis.log_Scale_toggled_sgn.connect(self._onLogXScaleToggled)
 
         y_axis = self._axes['left']
-        y_axis.linkToCanvas(self._vb)
+        y_axis.linkToCanvas(self._canvas)
         y_axis.log_Scale_toggled_sgn.connect(self._onLogYScaleToggled)
 
+        # y2 axis
         y2_axis = self._axes['right']
         y2_axis.hide()
         y2_axis.log_Scale_toggled_sgn.connect(self._onLogY2ScaleToggled)
 
-    def clearAllPlotItems(self):
-        """Clear data on all the plot items."""
+    def clearData(self):
+        """Override."""
         for item in chain(self._plot_items, self._plot_items_y2):
-            item.setData([], [])
+            item.clearData()
 
     def onCrossCursorToggled(self, state: bool):
         # scene is None at initialization
         scene = self.scene()
         if state:
-            self._cross_cursor_lb.setVisible(True)
-            self._cross_cursor_lb.setMaximumHeight(30)
-            self._layout.setRowFixedHeight(0, 30)
-
             self._cross_cursor.show()
-
             scene.mouse_moved_sgn.connect(self.onCrossCursorMoved)
         else:
-            self._cross_cursor_lb.setVisible(False)
-            self._cross_cursor_lb.setMaximumHeight(0)
-            self._layout.setRowFixedHeight(0, 0)
-
             self._cross_cursor.hide()
-
             if scene is not None:
                 scene.mouse_moved_sgn.disconnect(self.onCrossCursorMoved)
 
     def onCrossCursorMoved(self, pos: QPointF):
-        pos = self._vb.mapFromScene(pos)
+        pos = self._canvas.mapFromScene(pos)
         self._cross_cursor.setPos(pos)
-        v = self._vb.mapToView(pos)
-        self._cross_cursor_lb.setPlainText(f"x = {v.x()}, y = {v.y()}")
+        v = self._canvas.mapToView(pos)
+        self._cross_cursor.setLabel(v.x(), v.y())
 
     def _onLogXScaleToggled(self, state: bool):
         for item in chain(self._plot_items, self._plot_items_y2):
             item.setLogX(state)
-        self._vb.updateAutoRange()
+        self._canvas.updateAutoRange()
 
     def _onLogYScaleToggled(self, state: bool):
         for item in self._plot_items:
             item.setLogY(state)
-        self._vb.updateAutoRange()
+        self._canvas.updateAutoRange()
 
     def _onLogY2ScaleToggled(self, state: bool):
         for item in self._plot_items_y2:
             item.setLogY(state)
-        self._vb_y2.updateAutoRange()
+        self._canvas_y2.updateAutoRange()
 
     def addItem(self, item, *, y2: bool = False) -> None:
-        """Add a graphics item to Canvas."""
+        """Override."""
         if item in self._items:
             warnings.warn(f"Item {item} already added to PlotItem.")
             return
@@ -178,32 +270,32 @@ class PlotWidget(GraphicsWidget):
         self._items.add(item)
 
         if y2:
-            vb = self._vb_y2
-            if vb is None:
-                vb = Canvas(parent=self)
-                y2_axis = self.getAxis('right')
-                y2_axis.linkToCanvas(vb)
+            canvas = self._canvas_y2
+            if canvas is None:
+                canvas = Canvas(parent=self)
+                y2_axis = self._axes['right']
+                y2_axis.linkToCanvas(canvas)
                 y2_axis.show()
-                vb.linkXTo(self._vb)
-                vb.setZValue(self._vb.zValue() - 1)
-                self._vb_y2 = vb
+                canvas.linkXTo(self._canvas)
+                canvas.setZValue(self._canvas.zValue() - 1)
+                self._canvas_y2 = canvas
                 # _vb_y2 is not added to the layout
-                self._vb.geometryChanged.connect(
-                    lambda: vb.setGeometry(self._vb.geometry()))
+                self._canvas.geometryChanged.connect(
+                    lambda: canvas.setGeometry(self._canvas.geometry()))
         else:
-            vb = self._vb
+            canvas = self._canvas
 
         if isinstance(item, PlotItem):
             if y2:
-                if self.getAxis('bottom').log_scale:
+                if self._axes['bottom'].log_scale:
                     item.setLogX(True)
 
                 self._plot_items_y2[item] = None
             else:
-                if self.getAxis('bottom').log_scale:
+                if self._axes['bottom'].log_scale:
                     item.setLogX(True)
 
-                if self.getAxis('left').log_scale:
+                if self._axes['left'].log_scale:
                     item.setLogY(True)
 
                 self._plot_items[item] = None
@@ -211,10 +303,10 @@ class PlotWidget(GraphicsWidget):
             if self._legend is not None:
                 self._legend.addItem(item)
 
-        vb.addItem(item)
+        canvas.addItem(item)
 
     def removeItem(self, item):
-        """Add a graphics item to Canvas."""
+        """Override."""
         if item not in self._items:
             return
 
@@ -224,7 +316,7 @@ class PlotWidget(GraphicsWidget):
             del self._plot_items_y2[item]
             if self._legend is not None:
                 self._legend.removeItem(item)
-            self._vb_y2.removeItem(item)
+            self._canvas_y2.removeItem(item)
             return
 
         if item in self._plot_items:
@@ -232,15 +324,15 @@ class PlotWidget(GraphicsWidget):
             if self._legend is not None:
                 self._legend.removeItem(item)
 
-        self._vb.removeItem(item)
+        self._canvas.removeItem(item)
 
     def _removeAllItems(self):
-        """Remove all graphics items from the Canvas."""
+        """Override."""
         for item in self._items:
             if item in self._plot_items_y2:
-                self._vb_y2.removeItem(item)
+                self._canvas_y2.removeItem(item)
             else:
-                self._vb.removeItem(item)
+                self._canvas.removeItem(item)
 
         if self._legend is not None:
             self._legend.removeAllItems()
@@ -249,32 +341,11 @@ class PlotWidget(GraphicsWidget):
         self._plot_items_y2.clear()
         self._items.clear()
 
-    def getAxis(self, axis: str) -> AxisItem:
-        """Return the specified AxisItem.
-
-        :param axis: one of 'left', 'bottom', 'right', or 'top'.
-        """
-        return self._axes[axis]
-
-    def showAxis(self, axis: str) -> None:
-        """Show the given axis.
-
-        :param axis: one of 'left', 'bottom', 'right', or 'top'.
-        """
-        self.getAxis(axis).show()
-
-    def hideAxis(self, axis: str) -> None:
-        """Show the given axis.
-
-        :param axis: one of 'left', 'bottom', 'right', or 'top'.
-        """
-        self.getAxis(axis).hide()
-
     def addLegend(self, pos: Optional[QPointF] = None,
                   **kwargs):
         """Add a LegendItem if it does not exist."""
         if self._legend is None:
-            self._legend = LegendItem(parent=self._vb, **kwargs)
+            self._legend = LegendItem(parent=self._canvas, **kwargs)
 
             for item in chain(self._plot_items, self._plot_items_y2):
                 self._legend.addItem(item)
@@ -286,53 +357,9 @@ class PlotWidget(GraphicsWidget):
 
         return self._legend
 
-    def showLegend(self, show=True) -> None:
+    def showLegend(self, visible: bool = True) -> None:
         """Show or hide the legend.
 
-        :param bool show: whether to show the legend.
+        :param visible: whether to show the legend.
         """
-        if show:
-            self._legend.show()
-        else:
-            self._legend.hide()
-
-    def setLabel(self, axis: str, text=None) -> None:
-        """Set the label for an axis. Basic HTML formatting is allowed.
-
-        :param str axis: one of 'left', 'bottom', 'right', or 'top'.
-        :param str text: text to display along the axis. HTML allowed.
-        """
-        self.getAxis(axis).setLabel(text=text)
-        self.showAxis(axis)
-
-    def showLabel(self, axis, show=True) -> None:
-        """Show or hide one of the axis labels.
-
-        :param str axis: one of 'left', 'bottom', 'right', or 'top'.
-        :param bool show: whether to show the label.
-        """
-        self.getAxis(axis).showLabel(show)
-
-    def setTitle(self, *args) -> None:
-        """Set the title of the plot."""
-        title = None if len(args) == 0 else args[0]
-        if title is None:
-            self._title.setMaximumHeight(0)
-            self._layout.setRowFixedHeight(1, 0)
-            self._title.setVisible(False)
-        else:
-            self._title.setMaximumHeight(30)
-            self._layout.setRowFixedHeight(1, 30)
-            self._title.setPlainText(title)
-            self._title.setVisible(True)
-
-    def invertX(self, *args, **kwargs) -> None:
-        self._vb.invertX(*args, **kwargs)
-
-    def invertY(self, *args, **kwargs) -> None:
-        self._vb.invertY(*args, **kwargs)
-
-    def close(self) -> None:
-        """Override."""
-        self._removeAllItems()
-        super().close()
+        self._legend.setVisible(visible)
