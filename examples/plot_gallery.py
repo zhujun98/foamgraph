@@ -41,11 +41,11 @@ class ScatterPlot(GraphView):
 
         self._plot1 = self.addScatterPlot(label="Data1", symbol="d", size=9)
         self._plot2 = self.addScatterPlot(
-            label="Data2", brush=FColor.mkBrush('Purple', alpha=150), size=7)
+            label="Data2", brush=FColor.mkBrush('Purple', alpha=50), size=7)
         self._plot3 = self.addScatterPlot(
-            label="Data3", brush=None, pen=FColor.mkPen('y'), symbol="s")
+            label="Data3", brush=None, pen=FColor.mkPen('y', alpha=100), symbol="s")
         self._plot4 = self.addScatterPlot(
-            label="Data4", pen=FColor.mkPen('k'), symbol="+")
+            label="Data4", pen=FColor.mkPen('k', alpha=150), symbol="+")
         self.addLegend()
 
     def updateF(self, data):
@@ -100,11 +100,11 @@ class MultiLinePlot(GraphView):
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot1 = self.addCurvePlot(
-            label='Line A', pen=FColor.mkPen('k', width=2))
+            label='Line A', pen=FColor.mkPen('k', width=1))
         self._plot2 = self.addCurvePlot(
             label='Line B', pen=FColor.mkPen('b', width=2))
         self._plot3 = self.addCurvePlot(
-            label='Line C', pen=FColor.mkPen('r', width=2))
+            label='Line C', pen=FColor.mkPen('r', width=3))
 
         self.addLegend()
 
