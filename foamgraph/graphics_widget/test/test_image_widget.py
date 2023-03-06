@@ -1,7 +1,7 @@
 import pytest
 
 from foamgraph import mkQApp
-from foamgraph.graphics_item import ImageWidget
+from foamgraph.graphics_widget import ImageWidget
 
 app = mkQApp()
 

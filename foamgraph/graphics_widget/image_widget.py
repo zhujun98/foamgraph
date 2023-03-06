@@ -12,10 +12,10 @@ import numpy as np
 from ..backend.QtCore import Qt
 from ..backend.QtWidgets import QGraphicsWidget
 
-from .axis_item import AxisItem
-from .image_item import ImageItem
+from ..graphics_item import ImageItem, RectROI
+from .axis_widget import AxisWidget
+from .image_colormap_editor import ImageColormapEditor
 from .plot_widget import PlotWidgetBase
-from .roi import RectROI
 
 
 class ImageWidget(PlotWidgetBase):
@@ -29,6 +29,9 @@ class ImageWidget(PlotWidgetBase):
         self._image_item = ImageItem()
         self._image_item.mouse_moved_sgn.connect(self.onMouseMoved)
         self.addItem(self._image_item)
+
+        self._cmap_editor = ImageColormapEditor(self._image_item)
+        self._layout.addItem(self._cmap_editor, 1, 2)
 
         self._rois = []
 
@@ -86,7 +89,7 @@ class ImageWidget(PlotWidgetBase):
                 ('bottom', Qt.Edge.BottomEdge, self._AXIS_BOTTOM_LOC),
                 ('left', Qt.Edge.LeftEdge, self._AXIS_LEFT_LOC)
         ):
-            axis = AxisItem(edge, parent=self)
+            axis = AxisWidget(edge, parent=self)
 
             self._axes[name] = axis
             self._layout.addItem(axis, *pos)

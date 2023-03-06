@@ -13,10 +13,10 @@ from ..pyqtgraph_be.Point import Point
 
 from ..aesthetics import FColor
 from ..graphics_scene import MouseClickEvent, MouseDragEvent
-from .graphics_item import GraphicsWidget
+from .graphics_widget import GraphicsWidget
 
 
-class AxisItem(GraphicsWidget):
+class AxisWidget(GraphicsWidget):
     """A single plot axis with ticks, values, and label."""
 
     log_Scale_toggled_sgn = pyqtSignal(bool)
@@ -52,7 +52,7 @@ class AxisItem(GraphicsWidget):
         self._max_tick_level = 2
         self._max_text_level = 2
         # (list of (tick #, % fill) tuples). This structure
-        #                             determines how the AxisItem decides how many ticks
+        #                             determines how the AxisWidget decides how many ticks
         #                             should have text appear next to them. Each tuple in
         #                             the list specifies what fraction of the axis length
         #                             may be occupied by text, given the number of ticks

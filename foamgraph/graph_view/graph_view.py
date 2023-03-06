@@ -8,15 +8,16 @@ Author: Jun Zhu
 import abc
 from typing import final, Optional
 
-from ..backend.QtCore import pyqtSlot, QTimer
+from ..backend.QtCore import QTimer
 from ..backend.QtGui import QCloseEvent
-from ..backend.QtWidgets import QSizePolicy, QWidget
+from ..backend.QtWidgets import QSizePolicy
 
 from ..graphics_item import (
     AnnotationItem, BarPlotItem, CurvePlotItem, ErrorbarPlotItem,
-    PlotWidget, ScatterPlotItem
+    ScatterPlotItem
 )
 from ..graphics_view import GraphicsView
+from ..graphics_widget import PlotWidget
 
 
 class GraphViewBase(GraphicsView):

@@ -1,10 +1,11 @@
-from .image_colorbar_widget import ImageColorbarWidget
+from .arrow_item import ArrowItem
+from .cross_cursor_item import CrossCursorItem
+from .graphics_item import GraphicsItem
 from .image_item import ImageItem
-from .image_widget import ImageWidget
 from .line_item import InfiniteLineItem
-from .plot_widget import PlotWidget
+from .linear_region_item import LinearVRegionItem, LinearHRegionItem
 from .plot_item import (
-    AnnotationItem, BarPlotItem, CurvePlotItem, ErrorbarPlotItem,
+    AnnotationItem, BarPlotItem, CurvePlotItem, ErrorbarPlotItem, PlotItem,
     ScatterPlotItem
 )
 from .roi import RectROI

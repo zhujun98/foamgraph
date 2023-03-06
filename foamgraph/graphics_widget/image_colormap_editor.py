@@ -11,15 +11,16 @@ from ..backend.QtCore import pyqtSignal, QPointF, Qt
 from ..backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem
 
 from ..aesthetics import ColorMap, FColor
-from .axis_item import AxisItem
+from ..graphics_item import (
+    CurvePlotItem, LinearVRegionItem
+)
+from .axis_widget import AxisWidget
 from .canvas import Canvas
-from .gradient_editor_item import GradientEditorItem
-from .graphics_item import GraphicsWidget
-from .linear_region_item import LinearVRegionItem
-from .plot_item import CurvePlotItem
+from .colorbar_widget import ColorbarWidget
+from .graphics_widget import GraphicsWidget
 
 
-class ImageColorbarWidget(GraphicsWidget):
+class ImageColormapEditor(GraphicsWidget):
     """GraphicsWidget for adjusting the display of an image."""
 
     lut_changed_sgn = pyqtSignal(object)
@@ -28,7 +29,7 @@ class ImageColorbarWidget(GraphicsWidget):
         super().__init__(parent=parent)
         self._lut = None
 
-        self._gradient = GradientEditorItem()
+        self._gradient = ColorbarWidget()
         self._gradient.show()
 
         self._lri = LinearVRegionItem(0, 1)
@@ -38,7 +39,7 @@ class ImageColorbarWidget(GraphicsWidget):
 
         self._canvas = self._createCanvas()
 
-        self._axis = AxisItem(Qt.Edge.LeftEdge, parent=self)
+        self._axis = AxisWidget(Qt.Edge.LeftEdge, parent=self)
         self._axis.linkToCanvas(self._canvas)
 
         self.initUI()

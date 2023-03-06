@@ -67,11 +67,11 @@ class Canvas(QGraphicsWidget):
             """Override."""
             ...
 
-    # Change the range of the AxisItem
+    # Change the range of the AxisWidget
     # Change the range of the linked Canvas
     x_range_changed_sgn = pyqtSignal()
     y_range_changed_sgn = pyqtSignal()
-    # Change the check state of the QAction in AxisItem
+    # Change the check state of the QAction in AxisWidget
     auto_range_x_toggled_sgn = pyqtSignal(bool)
     auto_range_y_toggled_sgn = pyqtSignal(bool)
 

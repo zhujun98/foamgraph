@@ -17,10 +17,11 @@ from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 from ..backend.QtWidgets import QGraphicsItem, QSizePolicy
 
 from ..aesthetics import ColorMap
-from .graphics_item import GraphicsWidget
+from ..config import config
+from .graphics_widget import GraphicsWidget
 
 
-class GradientEditorItem(GraphicsWidget):
+class ColorbarWidget(GraphicsWidget):
 
     gradient_changed_sgn = pyqtSignal(object)
 
@@ -31,7 +32,7 @@ class GradientEditorItem(GraphicsWidget):
         """
         super().__init__(parent=parent)
 
-        self._colormap = None
+        self._colormap = ColorMap.fromName(config['COLOR_MAP'])
         self._gradient = QGraphicsRectItem(parent=self)
 
         # FIXME: do not use magic numbers

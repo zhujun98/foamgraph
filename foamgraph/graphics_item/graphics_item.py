@@ -157,7 +157,7 @@ class GraphicsItem:
         return v
 
     def canvas(self):
-        from .canvas import Canvas
+        from ..graphics_widget import Canvas
 
         if self._vb is None:
             parent = self
@@ -268,14 +268,4 @@ class GraphicsObject(GraphicsItem, QGraphicsObject):
     def __init__(self, *args, **kwargs):
         QGraphicsObject.__init__(self, *args, **kwargs)
         self.setFlag(self.GraphicsItemFlag.ItemSendsGeometryChanges)
-        GraphicsItem.__init__(self)
-
-
-class GraphicsWidget(GraphicsItem, QGraphicsWidget):
-    _qtBaseClass = QGraphicsWidget
-
-    CONTENT_MARGIN = (5, 5, 5, 5)
-
-    def __init__(self, parent: QGraphicsItem = None, **kwargs):
-        QGraphicsWidget.__init__(self, parent=parent, **kwargs)
         GraphicsItem.__init__(self)

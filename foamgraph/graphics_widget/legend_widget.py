@@ -15,16 +15,16 @@ from ..backend.QtWidgets import (
 
 from ..aesthetics import FColor
 from ..graphics_scene import HoverEvent, MouseDragEvent
-from .graphics_item import GraphicsWidget
-from .label_item import LabelItem
-from .plot_item import PlotItem
+from ..graphics_item import PlotItem
+from .graphics_widget import GraphicsWidget
+from .label_widget import LabelWidget
 
 
-class LegendItem(GraphicsWidget):
+class LegendWidget(GraphicsWidget):
     """Displays a legend used for describing the contents of a plot."""
 
     class SampleWidget(GraphicsWidget):
-        """Used as a graphics label in a LegendItem."""
+        """Used as a graphics label in a LegendWidget."""
 
         def __init__(self, item: PlotItem, **kwargs):
             super().__init__(**kwargs)
@@ -96,7 +96,7 @@ class LegendItem(GraphicsWidget):
         if not item.label() or not item.drawSample():
             return
 
-        label = LabelItem(item.label())
+        label = LabelWidget(item.label())
         label.setColor(self._label_color)
         sample = self.SampleWidget(item)
         self._items[item] = (sample, label)

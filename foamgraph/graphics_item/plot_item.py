@@ -21,7 +21,6 @@ from ..backend.QtWidgets import (
 )
 
 from ..aesthetics import FColor, FSymbol
-from .canvas import Canvas
 
 
 class _PlotItemMeta(type(QGraphicsObject), ABCMeta):
@@ -79,10 +78,10 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
     def _prepareGraph(self) -> None:
         raise NotImplementedError
 
-    def setCanvas(self, canvas: Canvas) -> None:
+    def setCanvas(self, canvas: "Canvas") -> None:
         self._canvas = weakref.ref(canvas)
 
-    def canvas(self) -> Optional[Canvas]:
+    def canvas(self) -> Optional["Canvas"]:
         return None if self._canvas is None else self._canvas()
 
     def view(self) -> Optional[QGraphicsView]:
@@ -161,7 +160,7 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
     def label(self):
         """An identity of the PlotItem.
 
-        Used in LegendItem.
+        Used in LegendWidget.
         """
         return self._label
 
@@ -173,7 +172,7 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
         return self._has_sample
 
     def drawSample(self, p: Optional[QPainter] = None) -> bool:
-        """Draw a sample used in LegendItem."""
+        """Draw a sample used in LegendWidget."""
         return False
 
 

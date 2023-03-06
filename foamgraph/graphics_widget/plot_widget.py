@@ -19,13 +19,12 @@ from ..backend.QtWidgets import (
 )
 
 from ..aesthetics import FColor
-from .axis_item import AxisItem
+from ..graphics_item import CrossCursorItem, PlotItem
+from .axis_widget import AxisWidget
 from .canvas import Canvas
-from .cross_cursor_item import CrossCursorItem
-from .graphics_item import GraphicsWidget
-from .label_item import LabelItem
-from .legend_item import LegendItem
-from .plot_item import PlotItem
+from .graphics_widget import GraphicsWidget
+from .label_widget import LabelWidget
+from .legend_widget import LegendWidget
 
 
 class PlotWidgetBase(GraphicsWidget):
@@ -49,7 +48,7 @@ class PlotWidgetBase(GraphicsWidget):
         self._canvas = Canvas(parent=self)
 
         self._axes = {}
-        self._title = LabelItem('')
+        self._title = LabelWidget('')
 
         self._layout = QGraphicsGridLayout()
 
@@ -205,7 +204,7 @@ class PlotWidget(PlotWidgetBase):
                 ('left', Qt.Edge.LeftEdge, self._AXIS_LEFT_LOC),
                 ('right', Qt.Edge.RightEdge, self._AXIS_RIGHT_LOC)
         ):
-            axis = AxisItem(edge, parent=self)
+            axis = AxisWidget(edge, parent=self)
 
             self._axes[name] = axis
             self._layout.addItem(axis, *pos)
@@ -343,9 +342,9 @@ class PlotWidget(PlotWidgetBase):
 
     def addLegend(self, pos: Optional[QPointF] = None,
                   **kwargs):
-        """Add a LegendItem if it does not exist."""
+        """Add a LegendWidget if it does not exist."""
         if self._legend is None:
-            self._legend = LegendItem(parent=self._canvas, **kwargs)
+            self._legend = LegendWidget(parent=self._canvas, **kwargs)
 
             for item in chain(self._plot_items, self._plot_items_y2):
                 self._legend.addItem(item)

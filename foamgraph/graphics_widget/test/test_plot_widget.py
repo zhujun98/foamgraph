@@ -2,18 +2,14 @@ import pytest
 from unittest.mock import patch
 
 from foamgraph.backend.QtCore import QPointF
-from foamgraph.backend.QtTest import QSignalSpy
 
 from foamgraph import mkQApp
-from foamgraph.graphics_item.axis_item import AxisItem
-from foamgraph.graphics_item import ImageItem
-from foamgraph.graphics_item.label_item import LabelItem
-from foamgraph.graphics_item.legend_item import LegendItem
-from foamgraph.graphics_item import PlotWidget
 from foamgraph.graphics_item import (
-    CurvePlotItem, BarPlotItem, ScatterPlotItem, ErrorbarPlotItem
+    BarPlotItem, CurvePlotItem, RectROI, ImageItem, ScatterPlotItem, ErrorbarPlotItem
 )
-from foamgraph.graphics_item.roi import RectROI
+from foamgraph.graphics_widget import (
+    AxisWidget, LabelWidget, LegendWidget, PlotWidget
+)
 
 
 app = mkQApp()
@@ -29,7 +25,7 @@ def test_axes(pwidget):
     assert len(pwidget._axes) == 3
     for name in ['left', 'bottom']:
         axis = pwidget._axes[name]
-        assert isinstance(axis, AxisItem)
+        assert isinstance(axis, AxisWidget)
         assert axis.isVisible()
 
         with patch.object(axis, "setVisible") as mocked:
@@ -87,7 +83,7 @@ def test_legend(pwidget):
     assert pwidget._legend is None
 
     legend = pwidget.addLegend(QPointF(-30, -30))
-    assert isinstance(legend, LegendItem)
+    assert isinstance(legend, LegendWidget)
     assert legend is pwidget._legend
 
     # test addLegend when legend already exists
@@ -100,7 +96,7 @@ def test_legend(pwidget):
 
 
 def test_title(pwidget):
-    assert isinstance(pwidget._title, LabelItem)
+    assert isinstance(pwidget._title, LabelWidget)
 
     assert pwidget._title.maximumHeight() == 0
     assert not pwidget._title.isVisible()

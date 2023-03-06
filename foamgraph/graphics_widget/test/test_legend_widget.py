@@ -1,10 +1,10 @@
 import pytest
 
-from foamgraph import mkQApp, GraphView
-from foamgraph.aesthetics import FColor
+from foamgraph import mkQApp
 from foamgraph.backend.QtCore import QPoint, Qt
 from foamgraph.backend.QtTest import QTest
-
+from foamgraph.aesthetics import FColor
+from foamgraph.graph_view import GraphView
 
 app = mkQApp()
 
@@ -25,7 +25,7 @@ def widget():
     return FooPlot()
 
 
-class TestLegendItem:
+class TestLegendWidget:
 
     @pytest.mark.parametrize("orientation",
                              [Qt.Orientation.Vertical, Qt.Orientation.Horizontal])

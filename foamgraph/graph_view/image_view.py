@@ -9,31 +9,9 @@ import abc
 from typing import final
 
 from ..backend.QtCore import Qt, QTimer
-from ..backend.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
-from ..aesthetics import ColorMap
-from ..graphics_view import GraphicsView
-from ..graphics_item import (
-    ImageColorbarWidget, ImageItem, ImageWidget
-)
+from ..graphics_widget import ImageWidget
 from .graph_view import GraphViewBase
-
-
-class ColorbarView(GraphicsView):
-    def __init__(self, image_item: ImageItem, *, parent=None):
-        super().__init__(parent=parent)
-
-        self._item = ImageColorbarWidget(image_item)
-        self.setCentralWidget(self._item)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred,
-                           QSizePolicy.Policy.Expanding)
-        self.setMinimumWidth(95)
-
-    def setColorMap(self, cm: ColorMap):
-        self._item.setColorMap(cm)
-
-    def updateImage(self, *args, **kwargs):
-        self._cw.updateImage(*args, **kwargs)
 
 
 class ImageView(GraphViewBase):
