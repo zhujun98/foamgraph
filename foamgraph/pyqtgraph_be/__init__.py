@@ -107,7 +107,6 @@ if __version__ is None and not hasattr(sys, 'frozen') and sys.version_info[0] ==
     renamePyc(path)
 
 from .Point import Point
-from .SRTTransform import SRTTransform
 from .functions import *
 from .ptime import time
 from .Qt import isQObjectAlive
