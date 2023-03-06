@@ -110,8 +110,8 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 1
     assert len(pwidget._items) == 6
-    assert len(pwidget._vb._proxy._items) == 5
-    assert len(pwidget._vb_y2._proxy._items) == 1
+    assert len(pwidget._vb._proxy._items) == 6
+    assert len(pwidget._vb_y2._proxy._items) == 2
     assert len(pwidget._legend._items) == 3
 
     with patch.object(curve_plot_item, "setData") as mocked1:
@@ -125,8 +125,8 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 1
     assert len(pwidget._items) == 6
-    assert len(pwidget._vb._proxy._items) == 5
-    assert len(pwidget._vb_y2._proxy._items) == 1
+    assert len(pwidget._vb._proxy._items) == 6
+    assert len(pwidget._vb_y2._proxy._items) == 2
     assert len(pwidget._legend._items) == 3
 
     # remove an existing item
@@ -134,8 +134,8 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 0
     assert len(pwidget._items) == 5
-    assert len(pwidget._vb._proxy._items) == 5
-    assert len(pwidget._vb_y2._proxy._items) == 0
+    assert len(pwidget._vb._proxy._items) == 6
+    assert len(pwidget._vb_y2._proxy._items) == 1
     assert len(pwidget._legend._items) == 2
 
     # remove an existing item which is not a PlotItem
@@ -143,8 +143,8 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 0
     assert len(pwidget._items) == 4
-    assert len(pwidget._vb._proxy._items) == 4
-    assert len(pwidget._vb_y2._proxy._items) == 0
+    assert len(pwidget._vb._proxy._items) == 5
+    assert len(pwidget._vb_y2._proxy._items) == 1
     assert len(pwidget._legend._items) == 2
 
     # remove a PlotItem which does not has a name and hence was not added
@@ -156,8 +156,8 @@ def test_plot_item_manipulation(pwidget):
     assert len(pwidget._plot_items) == 0
     assert len(pwidget._plot_items_y2) == 0
     assert len(pwidget._items) == 0
-    assert len(pwidget._vb._proxy._items) == 0
-    assert len(pwidget._vb_y2._proxy._items) == 0
+    assert len(pwidget._vb._proxy._items) == 1  # _selection_rect
+    assert len(pwidget._vb_y2._proxy._items) == 1  # _selection_rect
     assert len(pwidget._legend._items) == 0
 
 

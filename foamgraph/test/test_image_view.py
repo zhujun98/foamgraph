@@ -17,8 +17,8 @@ class TestImageView:
     def testComponents(self):
         widget = ImageView(n_rois=4)
         items = widget._graph_view._cw._vb._proxy._items
-        assert isinstance(items[0], ImageItem)
-        for i in range(1, 5):
+        assert isinstance(items[1], ImageItem)
+        for i in range(2, 6):
             assert isinstance(items[i], RectROI)
 
         widget = ImageView()
