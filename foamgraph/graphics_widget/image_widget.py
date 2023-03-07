@@ -10,7 +10,6 @@ from typing import Optional
 import numpy as np
 
 from ..backend.QtCore import Qt
-from ..backend.QtWidgets import QGraphicsWidget
 
 from ..graphics_item import ImageItem, RectROI
 from .axis_widget import AxisWidget
@@ -21,7 +20,7 @@ from .plot_widget import PlotWidgetBase
 class ImageWidget(PlotWidgetBase):
     """2D plot widget for displaying an image."""
 
-    def __init__(self, *, parent: QGraphicsWidget = None):
+    def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
         self._mouse_hover_v_rounding_decimals = 1

@@ -25,7 +25,7 @@ class ImageColormapEditor(GraphicsWidget):
 
     lut_changed_sgn = pyqtSignal(object)
 
-    def __init__(self, image_item, *, parent: QGraphicsItem = None):
+    def __init__(self, image_item, *, parent=None):
         super().__init__(parent=parent)
         self._lut = None
 

@@ -15,7 +15,7 @@ from .graphics_widget import GraphicsWidget
 
 class LabelWidget(GraphicsWidget):
     """GraphicsWidget as axis labels, graph titles, etc."""
-    def __init__(self, text: str, parent=None):
+    def __init__(self, text: str, *, parent=None):
         super().__init__(parent=parent)
 
         self._item = QGraphicsTextItem(text, parent=self)

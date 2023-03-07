@@ -25,7 +25,7 @@ class ColorbarWidget(GraphicsWidget):
 
     gradient_changed_sgn = pyqtSignal(object)
 
-    def __init__(self, orientation=Qt.Orientation.Vertical, *, parent: QGraphicsItem = None):
+    def __init__(self, orientation=Qt.Orientation.Vertical, *, parent=None):
         """Initialization.
 
         :param orientation: Orientation of the widget.

@@ -38,7 +38,7 @@ class UIGraphicsItem(GraphicsObject):
     """
 
     # TODO: make parent the first argument
-    def __init__(self, bounds=None, parent=None):
+    def __init__(self, bounds=None, *, parent=None):
         """
         ============== =============================================================================
         **Arguments:**

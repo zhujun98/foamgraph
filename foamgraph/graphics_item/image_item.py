@@ -37,7 +37,7 @@ class ImageItem(GraphicsObject):
     draw_region_changed_sgn = pyqtSignal(int, int)  # (x, y)
     draw_finished_sgn = pyqtSignal()
 
-    def __init__(self, image=None, parent=None):
+    def __init__(self, image=None, *, parent=None):
         super().__init__(parent=parent)
 
         self._image = None   # original image data

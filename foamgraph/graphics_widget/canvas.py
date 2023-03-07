@@ -90,10 +90,11 @@ class Canvas(QGraphicsWidget):
 
     WHEEL_SCALE_FACTOR = 0.00125
 
-    def __init__(self, parent=None, *,
+    def __init__(self, *,
                  cross_cursor_enabled: bool = False,
                  draggable: bool = True,
-                 scalable: bool = True):
+                 scalable: bool = True,
+                 parent=None):
         """Initialization."""
         super().__init__(parent)
 

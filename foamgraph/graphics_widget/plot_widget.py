@@ -36,7 +36,7 @@ class PlotWidgetBase(GraphicsWidget):
     _AXIS_LEFT_LOC = (1, 0)
     _AXIS_RIGHT_LOC = (1, 2)
 
-    def __init__(self, *, parent: QGraphicsWidget = None):
+    def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding,
