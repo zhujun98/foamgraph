@@ -8,21 +8,33 @@ import zmq
 
 class ScatterPlotData:
     def __init__(self, n: int):
-        self._x = np.arange(n)
-        self._y = self._x + np.abs(self._x - n / 2) * (np.random.random(n) - 0.5)
+        self._n_pts = 1000
 
-        np.random.shuffle(self._x)
-        self._y = self._y[self._x]
+        self._x1 = np.random.normal(0, 1, self._n_pts)
+        self._y1 = np.random.normal(0, 1, self._n_pts)
+
+        self._x2 = np.random.normal(10, 0.8, self._n_pts)
+        self._y2 = np.random.normal(5, 0.8, self._n_pts)
+
+        self._x3 = np.random.normal(8, 1.2, self._n_pts)
+        self._y3 = np.random.normal(-3, 1.2, self._n_pts)
+
+        self._x4 = np.random.normal(6, 0.5, self._n_pts)
+        self._y4 = np.random.normal(1, 0.5, self._n_pts)
 
         self._counter = 0
 
     def next(self):
-        if self._counter == len(self._x):
+        if self._counter == self._n_pts:
             self._counter = 0
         self._counter += 1
 
-        return {"x": self._x[:self._counter],
-                "y": self._y[:self._counter]}
+        return {
+            "x1": self._x1[:self._counter], "y1": self._y1[:self._counter],
+            "x2": self._x2[:self._counter], "y2": self._y2[:self._counter],
+            "x3": self._x3[:self._counter], "y3": self._y3[:self._counter],
+            "x4": self._x4[:self._counter], "y4": self._y4[:self._counter]
+        }
 
 
 class ErrorBarPlotData:
@@ -106,9 +118,17 @@ class MultiPeakData:
 
 class ImageData:
     def __init__(self):
-        self._h, self._w = 1024, 1024
+        self._shapes = [(1024, 1024), (800, 600), (600, 800)]
+
+        self._counter = 0
+        self._h, self._w = self._shapes[self._counter]
 
     def next(self):
+        self._counter += 1
+
+        if self._counter % 1000 == 0:
+            self._h, self._w = self._shapes[self._counter % 3]
+
         spot_w = 200
         spot_h = 120
 

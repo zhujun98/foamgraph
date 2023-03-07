@@ -1,12 +1,12 @@
 from foamgraph import mkQApp
-from foamgraph.graphics_item.image_colorbar_item import ImageColorbarItem
-from foamgraph.graphics_item.image_item import ImageItem
+from foamgraph.graphics_item import ImageItem
+from foamgraph.graphics_widget import ColorbarWidget
 
 
 app = mkQApp()
 
 
-class TestImageColorbarItem:
+class TestColorbarWidget:
     def testGeneral(self):
         image_item = ImageItem()
-        ImageColorbarItem(image_item, parent=None)
+        # ColorbarWidget(image_item, parent=None)

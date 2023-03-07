@@ -5,10 +5,13 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from collections import OrderedDict
 from typing import Optional
 
-from .backend.QtCore import Qt, QSize
-from .backend.QtGui import QBrush, QColor, QIcon, QPen
+from .backend.QtCore import Qt, QRectF, QSize
+from .backend.QtGui import (
+    QBrush, QColor, QIcon, QPainterPath, QPen, QTransform
+)
 from .backend.QtWidgets import QPushButton
 
 from .config import config
@@ -42,6 +45,7 @@ class QualitativeColor:
     Orange = (255, 165, 0)
 
     Yellow = (255, 255, 0)
+    Gold = (255, 215, 0)
     Khaki = (240, 230, 140)
 
     Violet = (238, 130, 238)
@@ -294,3 +298,62 @@ def createIconButton(filepath: str, size: int, *, description: str = ""):
     if description:
         btn.setToolTip(description)
     return btn
+
+
+class FSymbol:
+
+    @classmethod
+    def buildSymbols(cls):
+        symbols = OrderedDict([
+            (name, QPainterPath()) for name in
+            ['o', 's', 't', 't1', 't2', 't3', 'd', '+', 'x', 'p', 'h', 'star',
+             'arrow_up', 'arrow_right', 'arrow_down', 'arrow_left']])
+
+        symbols['o'].addEllipse(QRectF(-0.5, -0.5, 1., 1.))
+        symbols['s'].addRect(QRectF(-0.5, -0.5, 1., 1.))
+
+        coordinates = {
+            't': [(-0.5, -0.5), (0, 0.5), (0.5, -0.5)],
+            't1': [(-0.5, 0.5), (0, -0.5), (0.5, 0.5)],
+            't2': [(-0.5, -0.5), (-0.5, 0.5), (0.5, 0)],
+            't3': [(0.5, 0.5), (0.5, -0.5), (-0.5, 0)],
+            'd': [(0., -0.5), (-0.4, 0.), (0, 0.5), (0.4, 0)],
+            '+': [(-0.5, -0.05), (-0.5, 0.05), (-0.05, 0.05), (-0.05, 0.5),
+                  (0.05, 0.5), (0.05, 0.05), (0.5, 0.05), (0.5, -0.05),
+                  (0.05, -0.05), (0.05, -0.5), (-0.05, -0.5), (-0.05, -0.05)],
+            'p': [(0, -0.5), (-0.4755, -0.1545), (-0.2939, 0.4045),
+                  (0.2939, 0.4045), (0.4755, -0.1545)],
+            'h': [(0.433, 0.25), (0., 0.5), (-0.433, 0.25), (-0.433, -0.25),
+                  (0, -0.5), (0.433, -0.25)],
+            'star': [(0, -0.5), (-0.1123, -0.1545), (-0.4755, -0.1545),
+                     (-0.1816, 0.059), (-0.2939, 0.4045), (0, 0.1910),
+                     (0.2939, 0.4045), (0.1816, 0.059), (0.4755, -0.1545),
+                     (0.1123, -0.1545)],
+            'arrow_down': [
+                (-0.125, 0.125), (0, 0), (0.125, 0.125),
+                (0.05, 0.125), (0.05, 0.5), (-0.05, 0.5), (-0.05, 0.125)
+            ]
+        }
+
+        for k, c in coordinates.items():
+            symbols[k].moveTo(*c[0])
+            for x, y in c[1:]:
+                symbols[k].lineTo(x, y)
+            symbols[k].closeSubpath()
+
+        tr = QTransform()
+        tr.rotate(45)
+        symbols['x'] = tr.map(symbols['+'])
+        tr.rotate(45)
+        symbols['arrow_right'] = tr.map(symbols['arrow_down'])
+        symbols['arrow_up'] = tr.map(symbols['arrow_right'])
+        symbols['arrow_left'] = tr.map(symbols['arrow_up'])
+        cls._symbol_map = symbols
+
+    _symbol_map = None
+
+    @classmethod
+    def mkSymbol(cls, name: str):
+        if cls._symbol_map is None:
+            cls.buildSymbols()
+        return cls._symbol_map[name]

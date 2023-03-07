@@ -15,16 +15,16 @@ from ..backend.QtWidgets import (
 
 from ..aesthetics import FColor
 from ..graphics_scene import HoverEvent, MouseDragEvent
-from .graphics_item import GraphicsWidget
-from .label_item import LabelItem
-from .plot_item import PlotItem
+from ..graphics_item import PlotItem
+from .graphics_widget import GraphicsWidget
+from .label_widget import LabelWidget
 
 
-class LegendItem(GraphicsWidget):
+class LegendWidget(GraphicsWidget):
     """Displays a legend used for describing the contents of a plot."""
 
     class SampleWidget(GraphicsWidget):
-        """Used as a graphics label in a LegendItem."""
+        """Used as a graphics label in a LegendWidget."""
 
         def __init__(self, item: PlotItem, **kwargs):
             super().__init__(**kwargs)
@@ -93,7 +93,10 @@ class LegendItem(GraphicsWidget):
 
         :param item: plot item to be added.
         """
-        label = LabelItem(item.label())
+        if not item.label() or not item.drawSample():
+            return
+
+        label = LabelWidget(item.label())
         label.setColor(self._label_color)
         sample = self.SampleWidget(item)
         self._items[item] = (sample, label)
@@ -115,7 +118,7 @@ class LegendItem(GraphicsWidget):
         :param item: PlotItem instance.
         """
         if item not in self._items:
-            raise KeyError(f"Item {item} not found")
+            return
 
         sample, label = self._items[item]
         self._layout.removeItem(sample)
@@ -162,7 +165,10 @@ class LegendItem(GraphicsWidget):
 
     def onItemLabelChanged(self, label: str) -> None:
         item = self.sender()
-        self._items[item][1].setPlainText(label)
+        if item in self._items:
+            self._items[item][1].setPlainText(label)
+        else:
+            self.addItem(item)
 
     def onItemVisibleChanged(self) -> None:
         item = self.sender()

@@ -457,9 +457,6 @@ class GraphicsScene(QGraphicsScene):
     # or ev.scenePos() to get the click position in scene coordinates.
     mouse_clicked_sgn = pyqtSignal(object)
 
-    # emitted immediately before the scene is about to be rendered
-    prepare_for_paint_sgn = pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self._clickRadius = 2
@@ -475,19 +472,6 @@ class GraphicsScene(QGraphicsScene):
         self.minDragTime = 0.5  # drags shorter than 0.5 sec are interpreted as clicks
         
         self.contextMenu = []
-
-    def render(self, *args):
-        self.prepareForPaint()
-        return QGraphicsScene.render(self, *args)
-
-    def prepareForPaint(self):
-        """Called before every render.
-
-        This method will inform items that the scene is about to
-        be rendered by emitting prepare_for_paint_sgn.
-        
-        This allows items to delay expensive processing until they know a paint will be required."""
-        self.prepare_for_paint_sgn.emit()
 
     def mousePressEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
@@ -752,62 +736,3 @@ class GraphicsScene(QGraphicsScene):
         items2.sort(key=absZValue, reverse=True)
         
         return items2
-
-    def addParentContextMenus(self, item, menu, event):
-        """
-        Can be called by any item in the scene to expand its context menu to include parent context menus.
-        Parents may implement getContextMenus to add new menus / actions to the existing menu.
-        getContextMenus must accept 1 argument (the event that generated the original menu) and
-        return a single QMenu or a list of QMenus.
-        
-        The final menu will look like:
-        
-            |    Original Item 1
-            |    Original Item 2
-            |    ...
-            |    Original Item N
-            |    ------------------
-            |    Parent Item 1
-            |    Parent Item 2
-            |    ...
-            |    Grandparent Item 1
-            |    ...
-            
-        
-        ==============  ==================================================
-        **Arguments:**
-        item            The item that initially created the context menu 
-                        (This is probably the item making the call to this function)
-        menu            The context menu being shown by the item
-        event           The original event that triggered the menu to appear.
-        ==============  ==================================================
-        """
-        menusToAdd = []
-        while item is not self:
-            item = item.parentItem()
-            if item is None:
-                item = self
-            if not hasattr(item, "getContextMenus"):
-                continue
-            subMenus = item.getContextMenus(event) or []
-            if isinstance(subMenus, list): # so that some items (like FlowchartViewBox) can return multiple menus
-                menusToAdd.extend(subMenus)
-            else:
-                menusToAdd.append(subMenus)
-
-        if menusToAdd:
-            menu.addSeparator()
-
-        for m in menusToAdd:
-            if isinstance(m, QMenu):
-                menu.addMenu(m)
-            elif isinstance(m, QAction):
-                menu.addAction(m)
-            else:
-                raise Exception("Cannot add object %s (type=%s) to QMenu." % (str(m), str(type(m))))
-            
-        return menu
-
-    def getContextMenus(self, event):
-        self.contextMenuItem = event.acceptedItem
-        return self.contextMenu

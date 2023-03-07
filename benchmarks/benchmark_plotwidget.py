@@ -13,7 +13,7 @@ import numpy as np
 
 from foamgraph.backend.QtCore import QTimer
 
-from foamgraph import mkQApp, PlotWidgetF
+from foamgraph import mkQApp, GraphView
 
 app = mkQApp()
 
@@ -39,7 +39,7 @@ class BenchmarkPlotItemSpeed:
             elif plot_type == "scatter":
                 self._graph = pg.ScatterPlotItem()
             elif plot_type == "bar":
-                class BarPlotItem(pg.BarPlotItem):
+                class BarPlotItem(pg.BarGraphItem):
                     def setData(self, x, y):
                         self.setOpts(x=x, height=y)
                 self._graph = BarPlotItem(
@@ -59,7 +59,7 @@ class BenchmarkPlotItemSpeed:
                 raise ValueError(f"Unsupported plot type: {plot_type}")
             self._widget.addItem(self._graph)
         else:
-            self._widget = PlotWidgetF()
+            self._widget = GraphView()
             self._widget.addLegend()
 
             if plot_type == "line":

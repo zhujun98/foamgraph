@@ -15,4 +15,3 @@ def _display(interval=0.5):
         time.sleep(interval)
         return True
     return False
-

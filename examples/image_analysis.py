@@ -11,7 +11,7 @@ from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 
 from foamgraph import (
-    AbstractScene, ImageViewF, mkQApp, PlotWidgetF
+    AbstractScene, ImageView, mkQApp, GraphView
 )
 from foamgraph.algorithm import extract_rect_roi
 from foamgraph.ctrl_widgets import RoiCtrlWidgetGroup
@@ -21,29 +21,29 @@ from consumer import Consumer
 app = mkQApp()
 
 
-class ImageAnalysis(ImageViewF):
+class ImageAnalysis(ImageView):
     def updateF(self, data):
         """Override."""
         self.setImage(data['image']['data'])
 
 
-# FIXME
-class RoiProjectionMonitor(PlotWidgetF):
-    def __init__(self, idx: int, *, parent=None):
+# TODO: improve ROI geometry handling
+class RoiProjectionMonitor(GraphView):
+    def __init__(self, id_: str, *, parent=None):
         super().__init__(parent=parent)
 
-        self._idx = idx
-        self.setTitle(f"ROI{idx}")
+        self._id = id_
+        self.setTitle(id_)
 
         self._roi_geom = None
 
         self._plot = self.addCurvePlot()
 
-    def onRoiGeometryChange(self, value: tuple):
-        idx, activated, _, x, y, w, h = value
-        if idx != self._idx:
+    def onRoiGeometryChange(self, id_: str, value: tuple):
+        if id_ != self._id:
             return
 
+        activated, _, x, y, w, h = value
         if activated:
             self._roi_geom = (x, y, w, h)
         else:
@@ -52,7 +52,7 @@ class RoiProjectionMonitor(PlotWidgetF):
     def updateF(self, data):
         """override."""
         if self._roi_geom is None:
-            self.reset()
+            self.clearData()
             return
 
         roi = extract_rect_roi(data['image']['data'], self._roi_geom)
@@ -66,24 +66,23 @@ class RoiProjectionMonitor(PlotWidgetF):
 class ImageAnalysisScene(AbstractScene):
     _title = "Image Analysis"
 
-    _TOTAL_W, _TOTAL_H = 640, 800
-
-    def __init__(self, n_rois: int = 0, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Initialization."""
         super().__init__(*args, **kwargs)
 
-        self._image = ImageAnalysis(n_rois=n_rois, parent=self)
+        num_rois = 2
+        self._image = ImageAnalysis(parent=self)
         self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
-        self._image.addRoiController(self._roi_ctrl)
-        self._roi_monitors = [
-            RoiProjectionMonitor(i + 1, parent=self) for i in range(2)
-        ]
+        self._roi_monitors = []
+
+        for i in range(num_rois):
+            roi = self._image.addROI()
+            id_ = f"ROI{i+1}"
+            self._roi_ctrl.addROI(id_, roi)
+            self._roi_monitors.append(RoiProjectionMonitor(id_, parent=self))
 
         self.initUI()
         self.initConnections()
-
-        self.resize(self._TOTAL_W, self._TOTAL_H)
-        self.setMinimumSize(int(0.6 * self._TOTAL_W), int(0.6 * self._TOTAL_H))
 
         self._timer = QTimer()
         self._timer.timeout.connect(self.updateWidgetsF)
@@ -104,6 +103,10 @@ class ImageAnalysisScene(AbstractScene):
         self._cw.setLayout(layout)
         self.setCentralWidget(self._cw)
 
+        w, h = 640, 800
+        self.resize(w, h)
+        self.setMinimumSize(int(0.6 * w), int(0.6 * h))
+
     def initConnections(self):
         """Override."""
         for mon in self._roi_monitors:
@@ -112,7 +115,7 @@ class ImageAnalysisScene(AbstractScene):
 
 
 if __name__ == "__main__":
-    scene = ImageAnalysisScene(n_rois=2)
+    scene = ImageAnalysisScene()
 
     consumer = Consumer(scene.queue)
     consumer.start()

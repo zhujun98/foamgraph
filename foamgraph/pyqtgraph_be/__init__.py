@@ -107,7 +107,6 @@ if __version__ is None and not hasattr(sys, 'frozen') and sys.version_info[0] ==
     renamePyc(path)
 
 from .Point import Point
-from .SRTTransform import SRTTransform
 from .functions import *
 from .ptime import time
 from .Qt import isQObjectAlive
@@ -148,7 +147,7 @@ def cleanup():
             if isinstance(o, QtGui.QGraphicsItem) and isQObjectAlive(o) and o.scene() is None:
                 if getConfigOption('crashWarning'):
                     sys.stderr.write('Error: graphics item without scene. '
-                        'Make sure ViewBox.close() and GraphicsView.close() '
+                        'Make sure Canvas.close() and GraphicsView.close() '
                         'are properly called before app shutdown (%s)\n' % (o,))
                 
                 s.addItem(o)

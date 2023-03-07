@@ -13,7 +13,7 @@ import numpy as np
 
 from foamgraph.backend.QtCore import QTimer
 
-from foamgraph import ImageViewF, mkQApp
+from foamgraph import ImageView, mkQApp
 
 app = mkQApp()
 
@@ -34,7 +34,7 @@ class BenchmarkImageViewSpeed:
             import pyqtgraph as pg
             self._view = pg.ImageView()
         else:
-            self._view = ImageViewF()
+            self._view = ImageView()
         self._view.show()
 
     def start(self):

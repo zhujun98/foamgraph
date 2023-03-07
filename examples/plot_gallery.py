@@ -9,7 +9,7 @@ from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QGridLayout
 
 from foamgraph import (
-    AbstractScene, FColor, mkQApp, PlotWidgetF, TimedPlotWidgetF
+    AbstractScene, FColor, mkQApp, GraphView, TimedGraphView
 )
 
 from consumer import Consumer
@@ -17,7 +17,7 @@ from consumer import Consumer
 app = mkQApp()
 
 
-class LinePlot(PlotWidgetF):
+class LinePlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -32,23 +32,32 @@ class LinePlot(PlotWidgetF):
         self._plot.setData(data['x'], data['y'])
 
 
-class ScatterPlot(PlotWidgetF):
+class ScatterPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
         self.setTitle('Scatter plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.addScatterPlot(
-            brush=FColor.mkBrush('Purple', alpha=150))
+        self._plot1 = self.addScatterPlot(label="Data1", symbol="d", size=9)
+        self._plot2 = self.addScatterPlot(
+            label="Data2", brush=FColor.mkBrush('Purple', alpha=50), size=7)
+        self._plot3 = self.addScatterPlot(
+            label="Data3", brush=None, pen=FColor.mkPen('y', alpha=100), symbol="s")
+        self._plot4 = self.addScatterPlot(
+            label="Data4", pen=FColor.mkPen('k', alpha=150), symbol="+")
+        self.addLegend()
 
     def updateF(self, data):
         """Override."""
         data = data['scatter']
-        self._plot.setData(data['x'], data['y'])
+        self._plot1.setData(data['x1'], data['y1'])
+        self._plot2.setData(data['x2'], data['y2'])
+        self._plot3.setData(data['x3'], data['y3'])
+        self._plot4.setData(data['x4'], data['y4'])
 
 
-class BarPlot(PlotWidgetF):
+class BarPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -64,7 +73,7 @@ class BarPlot(PlotWidgetF):
         self._plot.setData(data['x'], data['y'])
 
 
-class ErrorbarPlot(TimedPlotWidgetF):
+class ErrorbarPlot(TimedGraphView):
     def __init__(self, *, parent=None):
         super().__init__(1000, parent=parent)
 
@@ -83,7 +92,7 @@ class ErrorbarPlot(TimedPlotWidgetF):
         self._plot2.setData(data['x'], data['y'])
 
 
-class MultiLinePlot(PlotWidgetF):
+class MultiLinePlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -91,11 +100,11 @@ class MultiLinePlot(PlotWidgetF):
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot1 = self.addCurvePlot(
-            label='Line A', pen=FColor.mkPen('k', width=2))
+            label='Line A', pen=FColor.mkPen('k', width=1))
         self._plot2 = self.addCurvePlot(
             label='Line B', pen=FColor.mkPen('b', width=2))
         self._plot3 = self.addCurvePlot(
-            label='Line C', pen=FColor.mkPen('r', width=2))
+            label='Line C', pen=FColor.mkPen('r', width=3))
 
         self.addLegend()
 
@@ -107,17 +116,16 @@ class MultiLinePlot(PlotWidgetF):
         self._plot3.setData(data['x'], data['y3'])
 
 
-class DoubleYPlot(PlotWidgetF):
+class DoubleYPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
         self.setTitle('Double-y plot')
-        self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arg. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.addCurvePlot(
-            label="Data", pen=FColor.mkPen('Brown'))
+        self._plot = self.addCurvePlot(pen=FColor.mkPen('Brown'))
         self._plot1 = self.addScatterPlot(
-            symbol='x', pen=FColor.mkPen('Brown'))
+            label="Data", symbol='o', pen=FColor.mkPen('Brown'))
         self._plot2 = self.addBarPlot(
             label="Count", y2=True, brush=FColor.mkBrush('Silver', alpha=150))
         self.addLegend()
@@ -130,7 +138,7 @@ class DoubleYPlot(PlotWidgetF):
         self._plot2.setData(data['x'], data['y2'])
 
 
-class LinePlotWithAnnotation(PlotWidgetF):
+class LinePlotWithAnnotation(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -146,7 +154,7 @@ class LinePlotWithAnnotation(PlotWidgetF):
         data = data['multi-peak']
         x, y, peaks = data['x'], data['y'], data['peaks']
         self._plot.setData(x, y)
-        self._annotation.setData(x[peaks], y[peaks], x[peaks])
+        self._annotation.setData(x[peaks], y[peaks], annotations=x[peaks])
 
 
 class PlotGalleryScene(AbstractScene):

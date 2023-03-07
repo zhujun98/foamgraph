@@ -1,8 +1,6 @@
 from ..backend.QtGui import QPainter, QTransform
 from ..backend.QtWidgets import QGraphicsPathItem
 
-from ..pyqtgraph_be import functions as fn
-
 from ..aesthetics import FColor
 
 
@@ -121,21 +119,21 @@ class ArrowItem(QGraphicsPathItem):
     def shape(self):
         return self.path
     
-    # dataBounds and pixelPadding methods are provided to ensure ViewBox can
-    # properly auto-range
-    def dataBounds(self, ax, frac, orthoRange=None):
-        pw = 0
-        pen = self.pen()
-        if not pen.isCosmetic():
-            pw = pen.width() * 0.7072
-        if self.opts['pxMode']:
-            return [0,0]
-        else:
-            br = self.boundingRect()
-            if ax == 0:
-                return [br.left()-pw, br.right()+pw]
-            else:
-                return [br.top()-pw, br.bottom()+pw]
+    # # dataBounds and pixelPadding methods are provided to ensure Canvas can
+    # # properly auto-range
+    # def dataBounds(self, ax, orthoRange=None):
+    #     pw = 0
+    #     pen = self.pen()
+    #     if not pen.isCosmetic():
+    #         pw = pen.width() * 0.7072
+    #     if self.opts['pxMode']:
+    #         return [0,0]
+    #     else:
+    #         br = self.boundingRect()
+    #         if ax == 0:
+    #             return [br.left()-pw, br.right()+pw]
+    #         else:
+    #             return [br.top()-pw, br.bottom()+pw]
         
     def pixelPadding(self):
         pad = 0

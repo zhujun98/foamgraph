@@ -1,9 +1,9 @@
-from foamgraph.graphics_item.label_item import LabelItem
+from foamgraph.graphics_widget import LabelWidget
 
 
 class TestLabelItem:
     def test_initialization(self):
-        item = LabelItem("x")
+        item = LabelWidget("x")
 
         item.setPlainText("xyz")
 

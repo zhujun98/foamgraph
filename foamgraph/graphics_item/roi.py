@@ -28,20 +28,17 @@ from .graphics_item import GraphicsObject
 
 
 class UIGraphicsItem(GraphicsObject):
-    """Base class for graphics items with boundaries relative to a GraphicsView or ViewBox.
+    """Base class for graphics items with boundaries relative to a GraphicsView or Canvas.
 
     The purpose of this class is to allow the creation of GraphicsItems which live inside
     a scalable view, but whose boundaries will always stay fixed relative to the view's boundaries.
     For example: GridItem, InfiniteLine
 
     The view can be specified on initialization or it can be automatically detected when the item is painted.
-
-    NOTE: Only the item's boundingRect is affected; the item is not transformed in any way. Use viewRangeChanged
-    to respond to changes in the view.
     """
 
     # TODO: make parent the first argument
-    def __init__(self, bounds=None, parent=None):
+    def __init__(self, bounds=None, *, parent=None):
         """
         ============== =============================================================================
         **Arguments:**
@@ -58,7 +55,6 @@ class UIGraphicsItem(GraphicsObject):
             self._bounds = bounds
 
         self._bounding_rect = None
-        self._updateView()
 
     def itemChange(self, change, value):
         ret = super().itemChange(change, value)
@@ -80,16 +76,6 @@ class UIGraphicsItem(GraphicsObject):
                 return QRectF()
             self._bounding_rect = br
         return QRectF(self._bounding_rect)
-
-    def dataBounds(self, axis, frac=1.0, orthoRange=None):
-        """Called by ViewBox for determining the auto-range bounds.
-        By default, UIGraphicsItems are excluded from autoRange."""
-        return None
-
-    def viewRangeChanged(self):
-        """Called when the view widget/viewbox is resized/rescaled"""
-        self.setNewBounds()
-        self.update()
 
     def setNewBounds(self):
         """Update the item's bounding rect to match the viewport"""
@@ -126,7 +112,6 @@ class RoiHandle(UIGraphicsItem):
         self._buildPath()
 
         self.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
-        self.setZValue(11)
 
     def hoverEvent(self, ev: HoverEvent) -> None:
         hovering = False
@@ -184,10 +169,6 @@ class RoiHandle(UIGraphicsItem):
         """Override."""
         return self._path.boundingRect()
 
-    def viewTransformChanged(self):
-        # TODO: check whether this method is needed
-        self.update()
-
     def updatePosition(self):
         self.setPos(self._pos * self.parentItem().size())
 
@@ -228,8 +209,6 @@ class ROI(GraphicsObject):
         pos = Point(pos)
         size = Point(size)
 
-        self._translatable = True
-
         self._mouse_hovering = False
         self._moving = False
         self._cursor_offset = None
@@ -245,7 +224,8 @@ class ROI(GraphicsObject):
         self.setPos(pos)
         self.setSize(size)
 
-        self.setZValue(10)
+        self._translatable = True
+        self._addHandles()
 
     def setZValue(self, z):
         QGraphicsItem.setZValue(self, z)
@@ -453,13 +433,11 @@ class ROI(GraphicsObject):
 
 class RectROI(ROI):
     """Rectangular ROI widget."""
-    def __init__(self, idx: int, *,
-                 pos: tuple = (0, 0),
+    def __init__(self, pos: tuple = (0, 0),
                  size: tuple = (1, 1),
                  color: str = 'k', **kwargs):
         """Initialization.
 
-        :param idx: index of the ROI.
         :param pos: (x, y) of the left-upper corner.
         :param size: (w, h) of the ROI.
         :param color: ROI display color.
@@ -470,12 +448,6 @@ class RectROI(ROI):
 
         pen = FColor.mkPen(color, width=2, style=Qt.PenStyle.SolidLine)
         self.setPen(pen)
-
-        self._index = idx
-
-    @property
-    def index(self):
-        return self._index
 
     @property
     def color(self):

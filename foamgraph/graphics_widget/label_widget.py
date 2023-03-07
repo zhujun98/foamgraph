@@ -10,12 +10,12 @@ from ..backend.QtGui import QColor, QFont, QGraphicsSceneResizeEvent
 from ..backend.QtWidgets import QGraphicsTextItem
 
 from ..aesthetics import FColor
-from .graphics_item import GraphicsWidget
+from .graphics_widget import GraphicsWidget
 
 
-class LabelItem(GraphicsWidget):
+class LabelWidget(GraphicsWidget):
     """GraphicsWidget as axis labels, graph titles, etc."""
-    def __init__(self, text: str, parent=None):
+    def __init__(self, text: str, *, parent=None):
         super().__init__(parent=parent)
 
         self._item = QGraphicsTextItem(text, parent=self)

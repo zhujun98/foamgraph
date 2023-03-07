@@ -5,66 +5,42 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-import abc
 from collections.abc import Callable
 
 import numpy as np
 
-from ..backend.QtGui import (
-    QGraphicsSceneMouseEvent, QPainter, QPicture, QTransform
-)
 from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 
 from ..pyqtgraph_be import Point
 from ..pyqtgraph_be import functions as fn
 
-from ..aesthetics import FColor
 from ..algorithm import quick_min_max
 from ..graphics_scene import HoverEvent
 from .graphics_item import GraphicsObject
 
 
 class ImageItem(GraphicsObject):
-    """GraphicsObject displaying a 2D image.
-
-    Implemented based on pyqtgraph.ImageItem.
-    """
+    """GraphicsObject displaying a 2D image."""
 
     image_changed_sgn = pyqtSignal()
 
     mouse_moved_sgn = pyqtSignal(int, int, float)  # (x, y, value)
-    draw_started_sgn = pyqtSignal(int, int)  # (x, y)
-    draw_region_changed_sgn = pyqtSignal(int, int)  # (x, y)
-    draw_finished_sgn = pyqtSignal()
 
-    def __init__(self, image=None, parent=None):
+    def __init__(self, image=None, *, parent=None):
         super().__init__(parent=parent)
 
-        self._image = None   # original image data
-        self._qimage = None  # rendered image for display
+        self._data = None   # original image data
+        self._image = None  # rendered image for display
 
-        self._levels = None  # [min, max]
+        self._levels = [0, 1]  # [min, max]
         self._auto_level_quantile = 0.99
         self._lut = None
-        self._ds_rate = (1., 1.)  # down-sample rates
 
         # In some cases, a modified lookup table is used to handle both
         # rescaling and LUT more efficiently
         self._fast_lut = None
 
-        self.setImage(image, auto_levels=True)
-
-        self.drawing = False
-
-    def width(self):
-        if self._image is None:
-            return None
-        return self._image.shape[1]
-
-    def height(self):
-        if self._image is None:
-            return None
-        return self._image.shape[0]
+        self.setData(image, auto_levels=True)
 
     def setLevels(self, levels):
         """Set image colormap scaling levels.
@@ -74,7 +50,7 @@ class ImageItem(GraphicsObject):
         if self._levels != levels:
             self._levels = levels
             self._fast_lut = None
-            self.setImage(auto_levels=False)
+            self._prepareForRender()
 
     def levels(self) -> tuple:
         return self._levels
@@ -84,89 +60,67 @@ class ImageItem(GraphicsObject):
             self._lut = lut
             self._fast_lut = None
             if update:
-                self.setImage(auto_levels=False)
+                self._prepareForRender()
 
-    def clear(self):
+    def _prepareForRender(self):
+        self._image = None
+        self.update()
+
+    def updateGraph(self):
+        self._data = None
         self._image = None
         self.prepareGeometryChange()
         self.informViewBoundsChanged()
-        self.update()
 
-    def setImage(self, image=None, auto_levels=False):
-        image_changed = False
-        if image is None:
-            if self._image is None:
-                return
-        else:
-            image_changed = True
-            shape_changed = \
-                self._image is None or image.shape != self._image.shape
+    def clearData(self):
+        self.setData(None)
 
-            image = image.view(np.ndarray)
+    def _parseImageData(self, data):
+        shape_changed = False
+        dtype_changed = False
+        if not isinstance(data, np.ndarray):
+            raise TypeError("Image data must be a numpy.ndarray!")
 
-            if self._image is None or image.dtype != self._image.dtype:
-                self._fast_lut = None
+        if data.ndim != 2:
+            raise ValueError("Image data must be 2 dimensional!")
 
-            self._image = image
+        if self._data is None:
+            shape_changed = True
+            dtype_changed = True
+        elif data.shape != self._data.shape:
+            shape_changed = True
+        elif data.dtype != self._data.shape:
+            dtype_changed = True
 
-            if shape_changed:
-                self.prepareGeometryChange()
-                self.informViewBoundsChanged()
+        self._data = data
+        return shape_changed, dtype_changed
+
+    def setData(self, data, *, auto_levels=False):
+        if data is None:
+            return
+
+        shape_changed, dtype_changed = self._parseImageData(data)
+
+        if shape_changed:
+            self.prepareGeometryChange()
+            self.informViewBoundsChanged()
 
         if auto_levels:
             self._levels = quick_min_max(
-                self._image, q=self._auto_level_quantile)
+                self._data, q=self._auto_level_quantile)
 
-        self._qimage = None
-        self.update()
+        self._prepareForRender()
 
-        if image_changed:
-            self.image_changed_sgn.emit()
-
-    def dataTransform(self):
-        """Return data transform.
-
-        The transform maps from this image's input array to its local
-        coordinate system.
-
-        This transform corrects for the transposition that occurs when
-        image data is interpreted in row-major order.
-        """
-        # Might eventually need to account for downsampling / clipping here
-        tr = QTransform()
-        # transpose
-        tr.scale(1, -1)
-        tr.rotate(-90)
-        return tr
-
-    def inverseDataTransform(self):
-        """Return inverse data transform.
-
-        The transform maps from this image's local coordinate system to
-        its input array.
-        """
-        tr = QTransform()
-        # transpose
-        tr.scale(1, -1)
-        tr.rotate(-90)
-        return tr
-
-    def mapToData(self, obj):
-        tr = self.inverseDataTransform()
-        return tr.map(obj)
-
-    def mapFromData(self, obj):
-        tr = self.dataTransform()
-        return tr.map(obj)
+        self.image_changed_sgn.emit()
 
     def render(self):
         """Convert data to QImage for displaying."""
-        if self._image is None or self._image.size == 0:
+        if self._data is None or self._data.size == 0:
             return
 
         # Request a lookup table
         if isinstance(self._lut, Callable):
-            lut = self._lut(self._image)
+            lut = self._lut(self._data)
         else:
             lut = self._lut
 
@@ -184,15 +138,14 @@ class ImageItem(GraphicsObject):
         w = Point(x-o).length()
         h = Point(y-o).length()
         if w == 0 or h == 0:
-            self._qimage = None
+            self._image = None
             return
 
         xds = max(1, int(1.0 / w))
         yds = max(1, int(1.0 / h))
         # TODO: replace fn.downsample
-        image = fn.downsample(self._image, xds, axis=1)
+        image = fn.downsample(self._data, xds, axis=1)
         image = fn.downsample(image, yds, axis=0)
-        self._ds_rate = (xds, yds)
 
         # Check if downsampling reduced the image size to zero due to inf values.
         if image.size == 0:
@@ -225,32 +178,29 @@ class ImageItem(GraphicsObject):
 
         # TODO: replace fn.makeARGB and fn.makeQImage
         argb, alpha = fn.makeARGB(image, lut=lut, levels=levels)
-        self._qimage = fn.makeQImage(argb, alpha, transpose=False)
+        self._image = fn.makeQImage(argb, alpha, transpose=False)
 
     def paint(self, p, *args) -> None:
         """Override."""
         if self._image is None:
-            return
-
-        if self._qimage is None:
             self.render()
-            if self._qimage is None:
+            if self._image is None:
                 return
 
-        p.drawImage(QRectF(0, 0, *self._image.shape[::-1]), self._qimage)
+        p.drawImage(QRectF(0, 0, *self._data.shape[::-1]), self._image)
 
     def histogram(self):
         """Return estimated histogram of image pixels.
 
         :returns: (hist, bin_centers)
         """
-        if self._image is None or self._image.size == 0:
+        if self._data is None or self._data.size == 0:
             return None, None
 
-        step = (max(1, int(np.ceil(self._image.shape[0] / 200))),
-                max(1, int(np.ceil(self._image.shape[1] / 200))))
+        step = (max(1, int(np.ceil(self._data.shape[0] / 200))),
+                max(1, int(np.ceil(self._data.shape[1] / 200))))
 
-        sliced_data = self._image[::step[0], ::step[1]]
+        sliced_data = self._data[::step[0], ::step[1]]
 
         lb, ub = np.nanmin(sliced_data), np.nanmax(sliced_data)
 
@@ -277,54 +227,12 @@ class ImageItem(GraphicsObject):
 
         return hist, (bin_edges[:-1] + bin_edges[1:]) / 2.
 
-    def setPxMode(self, state):
-        """Set ItemIgnoresTransformations flag.
-
-        Set whether the item ignores transformations and draws directly
-        to screen pixels.
-
-        :param bool state: If True, the item will not inherit any scale or
-            rotation transformations from its parent items, but its position
-            will be transformed as usual.
-        """
-        self.setFlag(self.ItemIgnoresTransformations, state)
-
-    @pyqtSlot()
-    def setScaledMode(self):
-        """Slot connected in GraphicsView."""
-        self.setPxMode(False)
-
-    def pixelSize(self):
-        """Override.
-
-        Return scene-size of a single pixel in the image.
-        """
-        br = self.sceneBoundingRect()
-        if self._image is None:
-            return 1, 1
-        return br.width() / self.width(), br.height() / self.height()
-
     def boundingRect(self) -> QRectF:
         """Override."""
-        if self._image is None:
-            return QRectF(0., 0., 0., 0.)
-        return QRectF(0., 0., float(self.width()), float(self.height()))
-
-    def viewTransformChanged(self):
-        """Override."""
-        o = self.mapToDevice(QPointF(0, 0))
-        x = self.mapToDevice(QPointF(1, 0))
-        y = self.mapToDevice(QPointF(0, 1))
-        w = Point(x-o).length()
-        h = Point(y-o).length()
-        if w == 0 or h == 0:
-            self._qimage = None
-            return
-        xds = max(1, int(1.0 / w))
-        yds = max(1, int(1.0 / h))
-        if (xds, yds) != self._ds_rate:
-            self._qimage = None
-            self.update()
+        if self._data is None:
+            return QRectF()
+        shape = self._data.shape
+        return QRectF(0., 0., shape[1], shape[0])
 
     def hoverEvent(self, ev: HoverEvent) -> None:
         if ev.isExit():
@@ -335,115 +243,6 @@ class ImageItem(GraphicsObject):
             pos = ev.pos()
             x = int(pos.x())
             y = int(pos.y())
-            value = self._image[y, x]
+            value = self._data[y, x]
 
         self.mouse_moved_sgn.emit(x, y, value)
-
-    def mousePressEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
-        """Override."""
-        if self.drawing and ev.button() == Qt.MouseButton.LeftButton:
-            ev.accept()
-            pos = ev.pos()
-            self.draw_started_sgn.emit(int(pos.x()), int(pos.y()))
-        else:
-            ev.ignore()
-
-    def mouseMoveEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
-        """Override."""
-        if self.drawing:
-            ev.accept()
-            pos = ev.pos()
-            self.draw_region_changed_sgn.emit(int(pos.x()), int(pos.y()))
-        else:
-            ev.ignore()
-
-    def mouseReleaseEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
-        """Override."""
-        if self.drawing and ev.button() == Qt.MouseButton.LeftButton:
-            ev.accept()
-            self.draw_finished_sgn.emit()
-        else:
-            ev.ignore()
-
-
-class GeometryItem(GraphicsObject):
-    def __init__(self, pen=None, brush=None, parent=None):
-        super().__init__(parent=parent)
-
-        if pen is None and brush is None:
-            self._pen = FColor.mkPen('b')
-            self._brush = FColor.mkBrush()
-        else:
-            self._pen = FColor.mkPen() if pen is None else pen
-            self._brush = FColor.mkBrush() if brush is None else brush
-
-        self._picture = None
-
-    @abc.abstractmethod
-    def _drawPicture(self):
-        raise NotImplementedError
-
-    def _updatePicture(self):
-        self._picture = None
-        self.prepareGeometryChange()
-        self.informViewBoundsChanged()
-
-    @abc.abstractmethod
-    def setGeometry(self, *args, **kwargs):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def clearGeometry(self):
-        raise NotImplementedError
-
-    def boundingRect(self) -> QRectF:
-        """Override."""
-        if self._picture is None:
-            self._drawPicture()
-        return QRectF(self._picture.boundingRect())
-
-    def paint(self, p, *args) -> None:
-        """Override."""
-        if self._picture is None:
-            self._drawPicture()
-        self._picture.play(p)
-
-
-class RingItem(GeometryItem):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self._cx = None
-        self._cy = None
-        self._radials = None
-
-        self.clearGeometry()
-
-    def _drawPicture(self):
-        """Override."""
-        self._picture = QPicture()
-
-        p = QPainter(self._picture)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        p.setPen(self._pen)
-        p.setBrush(self._brush)
-
-        c = QPointF(self._cx, self._cy)
-        for r in self._radials:
-            p.drawEllipse(c, r, r)
-
-        p.end()
-
-    def setGeometry(self, cx, cy, radials):
-        """Override."""
-        self._cx = cx
-        self._cy = cy
-        self._radials = radials
-        self._updatePicture()
-
-    def clearGeometry(self):
-        """Override."""
-        self._cx = 0
-        self._cy = 0
-        self._radials = []
-        self._updatePicture()
