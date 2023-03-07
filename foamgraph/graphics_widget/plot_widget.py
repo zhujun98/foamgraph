@@ -140,6 +140,11 @@ class PlotWidgetBase(GraphicsWidget):
     def invertY(self, inverted: bool = True) -> None:
         self._canvas.invertY(inverted)
 
+    def close(self) -> None:
+        """Override"""
+        self._canvas.close()
+        super().close()
+
 
 class PlotWidget(PlotWidgetBase):
     """2D plot widget for displaying graphs."""

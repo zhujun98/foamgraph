@@ -70,12 +70,10 @@ class Canvas(QGraphicsWidget):
             """Override."""
             ...
 
-        def close(self) -> None:
-            # Not sure whether it is needed
+        def cleanUp(self) -> None:
             for item in self._items:
                 item.setParentItem(None)
             self._items.clear()
-            super().close()
 
     # Change the range of the AxisWidget
     # Change the range of the linked Canvas
@@ -541,5 +539,5 @@ class Canvas(QGraphicsWidget):
 
     def close(self) -> None:
         """Override."""
-        self._proxy.close()
+        self._proxy.cleanUp()
         super().close()
