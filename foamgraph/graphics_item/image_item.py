@@ -18,24 +18,17 @@ from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
 from ..pyqtgraph_be import Point
 from ..pyqtgraph_be import functions as fn
 
-from ..aesthetics import FColor
 from ..algorithm import quick_min_max
 from ..graphics_scene import HoverEvent
 from .graphics_item import GraphicsObject
 
 
 class ImageItem(GraphicsObject):
-    """GraphicsObject displaying a 2D image.
-
-    Implemented based on pyqtgraph.ImageItem.
-    """
+    """GraphicsObject displaying a 2D image."""
 
     image_changed_sgn = pyqtSignal()
 
     mouse_moved_sgn = pyqtSignal(int, int, float)  # (x, y, value)
-    draw_started_sgn = pyqtSignal(int, int)  # (x, y)
-    draw_region_changed_sgn = pyqtSignal(int, int)  # (x, y)
-    draw_finished_sgn = pyqtSignal()
 
     def __init__(self, image=None, *, parent=None):
         super().__init__(parent=parent)
@@ -53,8 +46,6 @@ class ImageItem(GraphicsObject):
         self._fast_lut = None
 
         self.setImage(image, auto_levels=True)
-
-        self.drawing = False
 
     def width(self):
         if self._image is None:
@@ -122,42 +113,6 @@ class ImageItem(GraphicsObject):
 
         if image_changed:
             self.image_changed_sgn.emit()
-
-    def dataTransform(self):
-        """Return data transform.
-
-        The transform maps from this image's input array to its local
-        coordinate system.
-
-        This transform corrects for the transposition that occurs when
-        image data is interpreted in row-major order.
-        """
-        # Might eventually need to account for downsampling / clipping here
-        tr = QTransform()
-        # transpose
-        tr.scale(1, -1)
-        tr.rotate(-90)
-        return tr
-
-    def inverseDataTransform(self):
-        """Return inverse data transform.
-
-        The transform maps from this image's local coordinate system to
-        its input array.
-        """
-        tr = QTransform()
-        # transpose
-        tr.scale(1, -1)
-        tr.rotate(-90)
-        return tr
-
-    def mapToData(self, obj):
-        tr = self.inverseDataTransform()
-        return tr.map(obj)
-
-    def mapFromData(self, obj):
-        tr = self.dataTransform()
-        return tr.map(obj)
 
     def render(self):
         """Convert data to QImage for displaying."""
@@ -277,33 +232,6 @@ class ImageItem(GraphicsObject):
 
         return hist, (bin_edges[:-1] + bin_edges[1:]) / 2.
 
-    def setPxMode(self, state):
-        """Set ItemIgnoresTransformations flag.
-
-        Set whether the item ignores transformations and draws directly
-        to screen pixels.
-
-        :param bool state: If True, the item will not inherit any scale or
-            rotation transformations from its parent items, but its position
-            will be transformed as usual.
-        """
-        self.setFlag(self.ItemIgnoresTransformations, state)
-
-    @pyqtSlot()
-    def setScaledMode(self):
-        """Slot connected in GraphicsView."""
-        self.setPxMode(False)
-
-    def pixelSize(self):
-        """Override.
-
-        Return scene-size of a single pixel in the image.
-        """
-        br = self.sceneBoundingRect()
-        if self._image is None:
-            return 1, 1
-        return br.width() / self.width(), br.height() / self.height()
-
     def boundingRect(self) -> QRectF:
         """Override."""
         if self._image is None:
@@ -322,112 +250,3 @@ class ImageItem(GraphicsObject):
             value = self._image[y, x]
 
         self.mouse_moved_sgn.emit(x, y, value)
-
-    def mousePressEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
-        """Override."""
-        if self.drawing and ev.button() == Qt.MouseButton.LeftButton:
-            ev.accept()
-            pos = ev.pos()
-            self.draw_started_sgn.emit(int(pos.x()), int(pos.y()))
-        else:
-            ev.ignore()
-
-    def mouseMoveEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
-        """Override."""
-        if self.drawing:
-            ev.accept()
-            pos = ev.pos()
-            self.draw_region_changed_sgn.emit(int(pos.x()), int(pos.y()))
-        else:
-            ev.ignore()
-
-    def mouseReleaseEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
-        """Override."""
-        if self.drawing and ev.button() == Qt.MouseButton.LeftButton:
-            ev.accept()
-            self.draw_finished_sgn.emit()
-        else:
-            ev.ignore()
-
-
-class GeometryItem(GraphicsObject):
-    def __init__(self, pen=None, brush=None, parent=None):
-        super().__init__(parent=parent)
-
-        if pen is None and brush is None:
-            self._pen = FColor.mkPen('b')
-            self._brush = FColor.mkBrush()
-        else:
-            self._pen = FColor.mkPen() if pen is None else pen
-            self._brush = FColor.mkBrush() if brush is None else brush
-
-        self._picture = None
-
-    @abc.abstractmethod
-    def _drawPicture(self):
-        raise NotImplementedError
-
-    def _updatePicture(self):
-        self._picture = None
-        self.prepareGeometryChange()
-        self.informViewBoundsChanged()
-
-    @abc.abstractmethod
-    def setGeometry(self, *args, **kwargs):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def clearGeometry(self):
-        raise NotImplementedError
-
-    def boundingRect(self) -> QRectF:
-        """Override."""
-        if self._picture is None:
-            self._drawPicture()
-        return QRectF(self._picture.boundingRect())
-
-    def paint(self, p, *args) -> None:
-        """Override."""
-        if self._picture is None:
-            self._drawPicture()
-        self._picture.play(p)
-
-
-class RingItem(GeometryItem):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self._cx = None
-        self._cy = None
-        self._radials = None
-
-        self.clearGeometry()
-
-    def _drawPicture(self):
-        """Override."""
-        self._picture = QPicture()
-
-        p = QPainter(self._picture)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        p.setPen(self._pen)
-        p.setBrush(self._brush)
-
-        c = QPointF(self._cx, self._cy)
-        for r in self._radials:
-            p.drawEllipse(c, r, r)
-
-        p.end()
-
-    def setGeometry(self, cx, cy, radials):
-        """Override."""
-        self._cx = cx
-        self._cy = cy
-        self._radials = radials
-        self._updatePicture()
-
-    def clearGeometry(self):
-        """Override."""
-        self._cx = 0
-        self._cy = 0
-        self._radials = []
-        self._updatePicture()
