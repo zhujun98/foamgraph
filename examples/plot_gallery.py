@@ -98,6 +98,7 @@ class MultiLinePlot(GraphView):
 
         self.setTitle('Multi-line plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
+        self.addLegend()  # add legend before plots
 
         self._plot1 = self.addCurvePlot(
             label='Line A', pen=FColor.mkPen('k', width=1))
@@ -106,7 +107,6 @@ class MultiLinePlot(GraphView):
         self._plot3 = self.addCurvePlot(
             label='Line C', pen=FColor.mkPen('r', width=3))
 
-        self.addLegend()
 
     def updateF(self, data):
         """Override."""

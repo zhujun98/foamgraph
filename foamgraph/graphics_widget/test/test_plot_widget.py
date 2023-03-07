@@ -5,8 +5,7 @@ from foamgraph.backend.QtCore import QPointF
 
 from foamgraph import mkQApp
 from foamgraph.graphics_item import (
-    BarPlotItem, CurvePlotItem, RectROI, ImageItem, ScatterPlotItem,
-    ErrorbarPlotItem
+    BarPlotItem, CurvePlotItem, ErrorbarPlotItem, RectROI, ScatterPlotItem
 )
 from foamgraph.graphics_widget import (
     AxisWidget, LabelWidget, LegendWidget, PlotWidget

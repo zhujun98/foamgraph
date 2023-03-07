@@ -34,7 +34,8 @@ class LegendWidget(GraphicsWidget):
             """Override."""
             self._item.drawSample(p)
 
-    def __init__(self, orientation: Qt.Orientation = Qt.Orientation.Vertical,
+    def __init__(self, *,
+                 orientation: Qt.Orientation = Qt.Orientation.Vertical,
                  **kwargs):
         """Initialization.
 
@@ -161,7 +162,9 @@ class LegendWidget(GraphicsWidget):
                     row_height = max(row_height, item.geometry().height())
                 height = max(height, row_height)
                 width += col_width
-        self.setGeometry(0, 0, width, height)
+
+        pos = self.pos()
+        self.setGeometry(pos.x(), pos.y(), width, height)
 
     def onItemLabelChanged(self, label: str) -> None:
         item = self.sender()
