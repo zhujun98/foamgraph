@@ -24,19 +24,21 @@ class RoiCtrlWidget(AbstractCtrlWidget):
     Widget which controls a single ROI.
     """
     # TODO: locked currently is always 0
-    # (idx, activated, locked, x, y, w, h) where idx starts from 1
-    roi_geometry_change_sgn = pyqtSignal(object)
+    # (activated, locked, x, y, w, h) where idx starts from 1
+    roi_geometry_change_sgn = pyqtSignal(str, object)
 
     _pos_validator = QIntValidator(-10000, 10000)
     _size_validator = QIntValidator(1, 10000)
 
-    def __init__(self, roi: RectROI, *, enable_lock: bool = True, **kwargs):
+    def __init__(self, roi: RectROI, id_: str, *,
+                 enable_lock: bool = True, **kwargs):
         super().__init__(**kwargs)
 
         self._roi = roi
+        self._id = id_
         roi.setLocked(False)
 
-        self._activate_cb = QCheckBox(f"ROI{self._roi.index}")
+        self._activate_cb = QCheckBox(self._id)
         palette = self._activate_cb.palette()
         palette.setColor(palette.ColorRole.WindowText, FColor.mkColor(roi.color))
         self._activate_cb.setPalette(palette)
@@ -113,7 +115,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         x, y = [int(v) for v in self._roi.pos()]
         w, h = [int(v) for v in self._roi.size()]
         self.roi_geometry_change_sgn.emit(
-            (self._roi.index, state == Qt.CheckState.Checked, 0, x, y, w, h))
+            self._id, (state == Qt.CheckState.Checked, 0, x, y, w, h))
 
     @pyqtSlot(object)
     def onRoiPositionEdited(self, value):
@@ -135,7 +137,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 
         state = self._activate_cb.isChecked()
         self.roi_geometry_change_sgn.emit(
-            (self._roi.index, state, 0, x, y, w, h))
+            self._id, (state, 0, x, y, w, h))
 
     @pyqtSlot(object)
     def onRoiSizeEdited(self, value):
@@ -155,7 +157,8 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         self._roi.stateChanged(finish=False)
 
         self.roi_geometry_change_sgn.emit(
-            (self._roi.index, self._activate_cb.isChecked(), 0, x, y, w, h))
+            self._id,
+            (self._activate_cb.isChecked(), 0, x, y, w, h))
 
     @pyqtSlot(object)
     def onRoiGeometryChangeFinished(self, roi):
@@ -165,7 +168,8 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         self._updateParameters(x, y, w, h)
         # inform other widgets
         self.roi_geometry_change_sgn.emit(
-            (roi.index, self._activate_cb.isChecked(), 0, x, y, w, h))
+            self._id,
+            (self._activate_cb.isChecked(), 0, x, y, w, h))
 
     def notifyRoiParams(self):
         # fill the QLineEdit(s) and Redis
@@ -214,8 +218,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 class RoiCtrlWidgetGroup(AbstractGroupBoxCtrlWidget):
     """Widget for controlling a group of ROIs."""
 
-    # forward the signal from RoiCtrlWidget
-    roi_geometry_change_sgn = pyqtSignal(object)
+    roi_geometry_change_sgn = pyqtSignal(str, object)
 
     def __init__(self, *args, **kwargs):
         super().__init__("ROI control", *args, **kwargs)
@@ -235,18 +238,8 @@ class RoiCtrlWidgetGroup(AbstractGroupBoxCtrlWidget):
         """Override."""
         ...
 
-    def updateMetaData(self):
-        """Override."""
-        for widget in self._widgets:
-            widget.notifyRoiParams()
-        return True
-
-    def loadMetaData(self):
-        """Override."""
-        ...
-
-    def addRoi(self, roi: RectROI):
-        widget = RoiCtrlWidget(roi, with_frame=False, parent=self)
+    def addROI(self, id_: str, roi: RectROI):
+        widget = RoiCtrlWidget(roi, id_, with_frame=False, parent=self)
         self._widgets.append(widget)
         self.layout().addWidget(widget)
         self.setFixedHeight(self.minimumSizeHint().height())

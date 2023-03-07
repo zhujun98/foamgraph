@@ -44,7 +44,7 @@ class ImageWidget(PlotWidgetBase):
     def imageItem(self):
         return self._image_item
 
-    def addROI(self, roi: Optional[RectROI] = None):
+    def addROI(self, roi: Optional[RectROI] = None) -> RectROI:
         if len(self._rois) == 4:
             raise RuntimeError("The maximum ROIs allowed is 4")
 
@@ -56,6 +56,7 @@ class ImageWidget(PlotWidgetBase):
                           color=colors[i])
         self._rois.append(roi)
         self.addItem(roi)
+        return roi
 
     def setImage(self, *args, **kwargs):
         self._image_item.setData(*args, **kwargs)

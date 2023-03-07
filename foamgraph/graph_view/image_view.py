@@ -27,7 +27,7 @@ class ImageView(GraphViewBase):
         self.setCentralWidget(self._cw)
 
     def addROI(self, *args, **kwargs):
-        self._cw.addROI(*args, **kwargs)
+        return self._cw.addROI(*args, **kwargs)
 
     def setImage(self, *args, **kwargs):
         self._cw.setImage(*args, **kwargs)
