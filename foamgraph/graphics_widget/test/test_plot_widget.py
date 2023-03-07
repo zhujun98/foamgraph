@@ -5,7 +5,8 @@ from foamgraph.backend.QtCore import QPointF
 
 from foamgraph import mkQApp
 from foamgraph.graphics_item import (
-    BarPlotItem, CurvePlotItem, RectROI, ImageItem, ScatterPlotItem, ErrorbarPlotItem
+    BarPlotItem, CurvePlotItem, RectROI, ImageItem, ScatterPlotItem,
+    ErrorbarPlotItem
 )
 from foamgraph.graphics_widget import (
     AxisWidget, LabelWidget, LegendWidget, PlotWidget
@@ -106,15 +107,28 @@ def test_title(pwidget):
     assert pwidget._title.isVisible()
 
 
+def test_clear_data(pwidget):
+    item1 = CurvePlotItem()
+    pwidget.addItem(item1)
+    item2 = BarPlotItem()
+    pwidget.addItem(item2, y2=True)
+
+    with patch.object(item1, "setData") as mocked1:
+        with patch.object(item2, "setData") as mocked2:
+            pwidget.clearData()
+            mocked1.assert_called_once_with([], [])
+            mocked2.assert_called_once_with([], [])  # y2
+
+
 def test_plot_item_manipulation(pwidget):
-    image_item = ImageItem()
-    pwidget.addItem(image_item)
-    roi = RectROI()
-    pwidget.addItem(roi)
-    bar_graph_item = BarPlotItem(label="bar")
-    pwidget.addItem(bar_graph_item, y2=True)
     errorbar_item = ErrorbarPlotItem()
     pwidget.addItem(errorbar_item)
+
+    bar_graph_item = BarPlotItem(label="bar")
+    pwidget.addItem(bar_graph_item, y2=True)
+
+    roi_item = RectROI()
+    pwidget.addItem(roi_item)
 
     pwidget.addLegend()  # add legend when there are already added PlotItems
 
@@ -128,21 +142,15 @@ def test_plot_item_manipulation(pwidget):
 
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 1
-    assert len(pwidget._canvas._proxy._items) == 6
+    assert len(pwidget._canvas._proxy._items) == 5
     assert len(pwidget._canvas_y2._proxy._items) == 2
     assert len(pwidget._legend._items) == 3
-
-    with patch.object(curve_plot_item, "setData") as mocked1:
-        with patch.object(bar_graph_item, "setData") as mocked2:
-            pwidget.clearData()
-            mocked1.assert_called_once()
-            mocked2.assert_called_once()
 
     # remove an item which does not exist
     pwidget.removeItem(BarPlotItem())
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 1
-    assert len(pwidget._canvas._proxy._items) == 6
+    assert len(pwidget._canvas._proxy._items) == 5
     assert len(pwidget._canvas_y2._proxy._items) == 2
     assert len(pwidget._legend._items) == 3
 
@@ -150,15 +158,15 @@ def test_plot_item_manipulation(pwidget):
     pwidget.removeItem(bar_graph_item)
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 0
-    assert len(pwidget._canvas._proxy._items) == 6
+    assert len(pwidget._canvas._proxy._items) == 5
     assert len(pwidget._canvas_y2._proxy._items) == 1
     assert len(pwidget._legend._items) == 2
 
     # remove an existing item which is not a PlotItem
-    pwidget.removeItem(image_item)
+    pwidget.removeItem(roi_item)
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 0
-    assert len(pwidget._canvas._proxy._items) == 5
+    assert len(pwidget._canvas._proxy._items) == 4
     assert len(pwidget._canvas_y2._proxy._items) == 1
     assert len(pwidget._legend._items) == 2
 
@@ -169,7 +177,6 @@ def test_plot_item_manipulation(pwidget):
 
     pwidget.removeItem(curve_plot_item)
     pwidget.removeItem(scatter_plot_item)
-    pwidget.removeItem(roi)
     assert len(pwidget._plot_items) == 0
     assert len(pwidget._plot_items_y2) == 0
     assert len(pwidget._canvas._proxy._items) == 1  # _selection_rect

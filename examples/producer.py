@@ -118,9 +118,17 @@ class MultiPeakData:
 
 class ImageData:
     def __init__(self):
-        self._h, self._w = 1024, 1024
+        self._shapes = [(1024, 1024), (800, 600), (600, 800)]
+
+        self._counter = 0
+        self._h, self._w = self._shapes[self._counter]
 
     def next(self):
+        self._counter += 1
+
+        if self._counter % 1000 == 0:
+            self._h, self._w = self._shapes[self._counter % 3]
+
         spot_w = 200
         spot_h = 120
 

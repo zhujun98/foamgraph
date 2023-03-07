@@ -7,8 +7,6 @@ Author: Jun Zhu
 """
 from typing import Optional
 
-import numpy as np
-
 from ..backend.QtCore import Qt
 
 from ..graphics_item import ImageItem, RectROI
@@ -59,35 +57,8 @@ class ImageWidget(PlotWidgetBase):
         self._rois.append(roi)
         self.addItem(roi)
 
-    def setImage(self, img, *, auto_levels=False, scale=None, pos=None):
-        """Set the displayed image.
-
-        :param np.ndarray img: the image to be displayed.
-        :param bool auto_levels: whether to update the white/black levels
-            to fit the image. default = False
-        :param tuple/list pos: the origin of the displayed image in (x, y).
-        :param tuple/list scale: the origin of the displayed image image in
-            (x_scale, y_scale).
-        """
-        if img is None:
-            self.clearData()
-            return
-
-        if not isinstance(img, np.ndarray):
-            raise TypeError("Image data must be a numpy array!")
-
-        self._image_item.setImage(img, auto_levels=auto_levels)
-        self._image_item.resetTransform()
-
-        if scale is not None:
-            self._image_item.scale(*scale)
-        if pos is not None:
-            self._image_item.setPos(*pos)
-
-    def clearData(self) -> None:
-        """Override."""
-        # FIXME: there is a bug in ImageItem.setImage if the input is None
-        self._image_item.clear()
+    def setImage(self, *args, **kwargs):
+        self._image_item.setData(*args, **kwargs)
 
     def _initAxisItems(self):
         """Override."""

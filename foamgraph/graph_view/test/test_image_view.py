@@ -28,12 +28,9 @@ class TestImageView:
             mocked.assert_called_once_with(roi)
 
         with patch.object(cw, "setImage") as mocked:
-            view.setImage()
-            mocked.assert_called_once()
-
-        with patch.object(cw, "clearData") as mocked:
-            view.clearData()
-            mocked.assert_called_once()
+            data = object()
+            view.setImage(data)
+            mocked.assert_called_once_with(data)
 
         with patch.object(cw, "addItem") as mocked:
             item = object()

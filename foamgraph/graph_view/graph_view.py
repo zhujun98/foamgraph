@@ -31,9 +31,6 @@ class GraphViewBase(GraphicsView):
         if parent is not None and hasattr(parent, 'registerPlotWidget'):
             parent.registerPlotWidget(self)
 
-    def clearData(self):
-        self._cw.clearData()
-
     def addItem(self, *args, **kwargs):
         self._cw.addItem(*args, **kwargs)
 
@@ -114,6 +111,9 @@ class GraphView(GraphViewBase):
         item = AnnotationItem()
         self._cw.addItem(item)
         return item
+
+    def clearData(self):
+        self._cw.clearData()
 
     def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):
         self._cw.setLabel("bottom", x)

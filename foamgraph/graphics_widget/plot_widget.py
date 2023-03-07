@@ -90,10 +90,6 @@ class PlotWidgetBase(GraphicsWidget):
     def _initAxisItems(self):
         ...
 
-    @abstractmethod
-    def clearData(self) -> None:
-        raise NotImplementedError
-
     def addItem(self, item) -> None:
         """Add a graphics item to Canvas."""
         self._canvas.addItem(item)
@@ -197,7 +193,6 @@ class PlotWidget(PlotWidgetBase):
         y2_axis.log_Scale_toggled_sgn.connect(self._onLogY2ScaleToggled)
 
     def clearData(self):
-        """Override."""
         for item in chain(self._plot_items, self._plot_items_y2):
             item.clearData()
 

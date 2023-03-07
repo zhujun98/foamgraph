@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 
 from foamgraph import mkQApp
 from foamgraph.graphics_widget import ImageWidget

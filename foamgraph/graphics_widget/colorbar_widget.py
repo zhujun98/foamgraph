@@ -34,8 +34,8 @@ class ColorbarWidget(GraphicsWidget):
 
         self._orientation = orientation
 
+        self._cmap = None
         self._gradient = QGraphicsRectItem(parent=self)
-        self._colormap = None
         self.setColorMap(ColorMap.fromName(config['COLOR_MAP']))
 
         # FIXME: do not use magic numbers
@@ -94,8 +94,8 @@ class ColorbarWidget(GraphicsWidget):
         return action
 
     def _colorAt(self, x: float):
-        positions = self._colormap.positions
-        colors = self._colormap.colors
+        positions = self._cmap.positions
+        colors = self._cmap.colors
         if x <= positions[0]:
             c = colors[0]
             return c.red(), c.green(), c.blue(), c.alpha()
@@ -126,7 +126,7 @@ class ColorbarWidget(GraphicsWidget):
 
         return r, g, b, a
 
-    def setColorMap(self, colormap: ColorMap) -> None:
+    def setColorMap(self, cmap: ColorMap) -> None:
         if self._orientation == Qt.Orientation.Vertical:
             gradient = QLinearGradient(0., 0., 0., 1)
         else:
@@ -134,12 +134,12 @@ class ColorbarWidget(GraphicsWidget):
         gradient.setCoordinateMode(gradient.CoordinateMode.ObjectMode)
 
         gradient.setStops([(x, QColor(c)) for x, c in
-                           zip(colormap.positions, colormap.colors)])
+                           zip(cmap.positions, cmap.colors)])
         self._gradient.setBrush(QBrush(gradient))
         self.gradient_changed_sgn.emit(self)
         self.update()
 
-        self._colormap = colormap
+        self._cmap = cmap
 
     def getLookupTable(self, n: int) -> np.ndarray:
         """Return an RGBA lookup table.
