@@ -6,7 +6,7 @@ import numpy as np
 from foamgraph import mkQApp, GraphView, TimedGraphView
 from foamgraph.graphics_item.plot_item import AnnotationItem, ErrorbarPlotItem
 
-from foamgraph.test import _display
+from foamgraph.test import visualize
 
 
 app = mkQApp()
@@ -22,7 +22,7 @@ def graph_view_1():
 
     view.addAnnotation()
 
-    if _display():
+    if visualize():
         view.show()
     return view
 
@@ -44,7 +44,7 @@ def add_plot_items_1(graph_view_1):
 def graph_view_2():
     view = GraphView()
     view.setXYLabels("x label", "y label", y2="y2 label")
-    if _display():
+    if visualize():
         view.show()
     return view
 
@@ -122,16 +122,16 @@ class TestGraphView:
                 plot.setData(x, y, x)
             else:
                 plot.setData(x, y)
-            _display()
+            visualize()
 
         view._cw._onLogXScaleToggled(True)
-        _display()
+        visualize()
         view._cw._onLogYScaleToggled(True)
-        _display()
+        visualize()
 
         for plot in plot_items:
             plot.clearData()
-            _display()
+            visualize()
 
     def test_plot2(self, graph_view_2, add_plot_items_2):
         assert len(graph_view_2._cw._canvas._proxy._items) == 4
@@ -148,16 +148,16 @@ class TestGraphView:
                 plot.setData(x, y, x)
             else:
                 plot.setData(x, y)
-            _display()
+            visualize()
 
         view._cw._onLogXScaleToggled(True)
-        _display()
+        visualize()
         view._cw._onLogYScaleToggled(True)
-        _display()
+        visualize()
 
         for plot in plot_items:
             plot.clearData()
-            _display()
+            visualize()
 
 
 class TestTimedPlotWidgetF:

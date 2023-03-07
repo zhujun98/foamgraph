@@ -6,12 +6,30 @@ import numpy as np
 import zmq
 
 
+class LinePlotData:
+    def __init__(self, n: int):
+        self._n_pts = n
+
+    def next(self):
+        x = np.arange(self._n_pts).astype(np.float32)
+        x[0] = np.nan
+        x[2] = np.nan
+        y = np.random.random(self._n_pts).astype(np.float32)
+        y[1] = np.nan
+        y[2] = np.nan
+        return {"x": x, "y": y}
+
+
 class ScatterPlotData:
     def __init__(self, n: int):
-        self._n_pts = 1000
+        self._n_pts = n
 
         self._x1 = np.random.normal(0, 1, self._n_pts)
         self._y1 = np.random.normal(0, 1, self._n_pts)
+        self._x1[0] = np.nan
+        self._x1[2] = np.nan
+        self._y1[1] = np.nan
+        self._y1[2] = np.nan
 
         self._x2 = np.random.normal(10, 0.8, self._n_pts)
         self._y2 = np.random.normal(5, 0.8, self._n_pts)
@@ -157,6 +175,7 @@ if __name__ == "__main__":
     socket = ctx.socket(zmq.PUB)
     socket.bind(f"tcp://*:5555")
 
+    line_plot_data = LinePlotData(500)
     scatter_plot_data = ScatterPlotData(500)
     errorbar_plot_data = ErrorBarPlotData(50)
     multi_line_plot_data = MultiLinePlotData(1000)
@@ -166,10 +185,7 @@ if __name__ == "__main__":
     counter = 0
     while True:
         data = {
-            "line": {
-                "x": np.arange(200),
-                "y": np.random.random(200)
-            },
+            "line": line_plot_data.next(),
             "scatter": scatter_plot_data.next(),
             "bar": {
                 "x": np.arange(50),

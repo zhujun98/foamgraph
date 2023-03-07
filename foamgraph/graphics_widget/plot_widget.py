@@ -5,11 +5,9 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from abc import abstractmethod
 from collections import OrderedDict
-import warnings
 from itertools import chain
-from typing import Optional
+from typing import Optional, Union
 
 from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, Qt
 from ..backend.QtWidgets import (
@@ -287,7 +285,7 @@ class PlotWidget(PlotWidgetBase):
 
         self._canvas.removeItem(item)
 
-    def addLegend(self, pos: Optional[QPointF] = None,
+    def addLegend(self, pos: Optional[Union[tuple, list, QPointF]] = None,
                   **kwargs):
         """Add a LegendWidget if it does not exist."""
         if self._legend is None:
@@ -299,6 +297,9 @@ class PlotWidget(PlotWidgetBase):
             if pos is None:
                 # TODO: use a value which is proportional to the plot size
                 pos = QPointF(20., 20.)
+            elif not isinstance(pos, QPointF):
+                pos = QPointF(*pos)
+
             self._legend.setPos(pos)
 
         return self._legend

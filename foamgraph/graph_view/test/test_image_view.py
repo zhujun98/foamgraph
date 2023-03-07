@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from foamgraph import ImageView, mkQApp, TimedImageView
 
-from foamgraph.test import _display
+from foamgraph.test import visualize
 
 app = mkQApp()
 
@@ -12,7 +12,7 @@ app = mkQApp()
 @pytest.fixture
 def image_view():
     view = ImageView()
-    if _display():
+    if visualize():
         view.show()
     return view
 

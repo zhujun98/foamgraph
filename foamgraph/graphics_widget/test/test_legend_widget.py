@@ -1,7 +1,7 @@
 import pytest
 
 from foamgraph import mkQApp
-from foamgraph.backend.QtCore import QPoint, Qt
+from foamgraph.backend.QtCore import QPoint, QPointF, Qt
 from foamgraph.backend.QtTest import QTest
 from foamgraph.aesthetics import FColor
 from foamgraph.graph_view import GraphView
@@ -102,6 +102,22 @@ class TestLegendWidget:
         assert widget.plot4 not in legend._items
         widget.plot4.setLabel("new 4")
         assert legend._items[widget.plot4][1].toPlainText() == "new 4"
+
+    def test_legend_pos(self, widget):
+        class View1(GraphView):
+            def __init__(self):
+                super().__init__()
+                self.plot = self.addCurvePlot(label="curve")
+                self.addLegend((15, 5))
+
+        class View2(GraphView):
+            def __init__(self):
+                super().__init__()
+                self.addLegend(QPointF(5, 15))
+                self.plot = self.addCurvePlot(label="curve")
+
+        assert View1()._cw._legend.pos() == QPointF(15., 5.)
+        assert View2()._cw._legend.pos() == QPointF(5., 15.)
 
     def test_dragging(self, widget):
         widget.addLegend()
