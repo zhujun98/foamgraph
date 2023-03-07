@@ -26,15 +26,22 @@ class ImageWidget(PlotWidgetBase):
         self._mouse_hover_v_rounding_decimals = 1
 
         self._image_item = ImageItem()
-        self._image_item.mouse_moved_sgn.connect(self.onMouseMoved)
         self.addItem(self._image_item)
-
-        self._cmap_editor = ImageColormapEditor(self._image_item)
-        self._layout.addItem(self._cmap_editor, 1, 2)
 
         self._rois = []
 
+        self._cmap_editor = ImageColormapEditor(self._image_item)
+
         self._init()
+
+    def _initUI(self):
+        """Override."""
+        super()._initUI()
+        self._layout.addItem(self._cmap_editor, 1, 2)
+
+    def _initConnections(self) -> None:
+        """Override."""
+        self._image_item.mouse_moved_sgn.connect(self.onMouseMoved)
 
     def imageItem(self):
         return self._image_item

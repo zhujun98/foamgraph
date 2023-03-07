@@ -32,33 +32,36 @@ class ColorbarWidget(GraphicsWidget):
         """
         super().__init__(parent=parent)
 
-        self._colormap = ColorMap.fromName(config['COLOR_MAP'])
+        self._orientation = orientation
+
         self._gradient = QGraphicsRectItem(parent=self)
+        self._colormap = None
+        self.setColorMap(ColorMap.fromName(config['COLOR_MAP']))
 
         # FIXME: do not use magic numbers
         self._gradient_width = 15
         self._width = 20
 
-        self._orientation = orientation
+        self._menu = QMenu()
+
+        self._initUI()
+
+    def _initUI(self):
         if self._orientation == Qt.Orientation.Vertical:
             self.setMaximumWidth(self._width)
             self.setMinimumWidth(self._width)
             self.setSizePolicy(QSizePolicy.Policy.Fixed,
                                QSizePolicy.Policy.Expanding)
-        elif orientation == Qt.Orientation.Horizontal:
+        elif self._orientation == Qt.Orientation.Horizontal:
             self.setMaximumHeight(self._width)
             self.setMinimumHeight(self._width)
             self.setSizePolicy(QSizePolicy.Policy.Expanding,
                                QSizePolicy.Policy.Fixed)
         else:
-            raise ValueError(f"Unknown orientation value: {orientation}")
+            raise ValueError(f"Unknown orientation value: {self._orientation}")
 
-        self._menu = QMenu()
         for name, ticks in ColorMap.gradients.items():
             self._menu.addAction(self._createCmapActionWidget(name, ticks))
-
-    def gradientItem(self) -> QGraphicsRectItem:
-        return self._gradient
 
     def _createCmapActionWidget(self, name: str, ticks: tuple) -> None:
         cmap = QPixmap(100, 15)
@@ -85,12 +88,10 @@ class ColorbarWidget(GraphicsWidget):
 
         action = QWidgetAction(self)
         action.setDefaultWidget(widget)
-        action.triggered.connect(self.onContextMenuClicked)
+        action.triggered.connect(
+            lambda: self.setColorMap(ColorMap.fromName(action.data())))
         action.setData(name)
         return action
-
-    def onContextMenuClicked(self) -> None:
-        self.setColorMap(ColorMap.fromName(self.sender().data()))
 
     def _colorAt(self, x: float):
         positions = self._colormap.positions
@@ -124,7 +125,22 @@ class ColorbarWidget(GraphicsWidget):
         a = c1.alpha() * (1.-f) + c2.alpha() * f
 
         return r, g, b, a
-                    
+
+    def setColorMap(self, colormap: ColorMap) -> None:
+        if self._orientation == Qt.Orientation.Vertical:
+            gradient = QLinearGradient(0., 0., 0., 1)
+        else:
+            gradient = QLinearGradient(0., 0., 1, 0.)
+        gradient.setCoordinateMode(gradient.CoordinateMode.ObjectMode)
+
+        gradient.setStops([(x, QColor(c)) for x, c in
+                           zip(colormap.positions, colormap.colors)])
+        self._gradient.setBrush(QBrush(gradient))
+        self.gradient_changed_sgn.emit(self)
+        self.update()
+
+        self._colormap = colormap
+
     def getLookupTable(self, n: int) -> np.ndarray:
         """Return an RGBA lookup table.
 
@@ -138,28 +154,15 @@ class ColorbarWidget(GraphicsWidget):
 
         return table
 
-    def setColorMap(self, colormap: ColorMap) -> None:
-        self._colormap = colormap
-
-        if self._orientation == Qt.Orientation.Vertical:
-            gradient = QLinearGradient(0., 0., 0., self.geometry().height())
-        else:
-            gradient = QLinearGradient(0., 0., self.geometry().width(), 0.)
-
-        gradient.setStops([
-            (x, QColor(c)) for x, c in zip(self._colormap.positions,
-                                           self._colormap.colors)])
-        self._gradient.setBrush(QBrush(gradient))
-        self.gradient_changed_sgn.emit(self)
+    def mouseClickEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
+        if ev.button() == Qt.MouseButton.RightButton:
+            self._menu.popup(ev.screenPos().toQPoint())
+            ev.accept()
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent) -> None:
         """Override."""
-        if self._orientation in ['bottom', 'top']:
+        if self._orientation == Qt.Orientation.Horizontal:
             return self._gradient.setRect(
                 0, 0, self.geometry().width(), self._gradient_width)
         self._gradient.setRect(
             0, 0, self._gradient_width, self.geometry().height())
-
-    def mouseClickEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
-        if ev.button() == Qt.MouseButton.RightButton:
-            self._menu.popup(ev.screenPos().toQPoint())
