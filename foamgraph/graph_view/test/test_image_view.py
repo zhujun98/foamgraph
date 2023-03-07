@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from foamgraph import ImageView, mkQApp, TimedImageView
 
-from . import _display
+from foamgraph.test import _display
 
 app = mkQApp()
 

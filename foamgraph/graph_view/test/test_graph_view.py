@@ -6,7 +6,7 @@ import numpy as np
 from foamgraph import mkQApp, GraphView, TimedGraphView
 from foamgraph.graphics_item.plot_item import AnnotationItem, ErrorbarPlotItem
 
-from . import _display
+from foamgraph.test import _display
 
 
 app = mkQApp()
@@ -109,7 +109,7 @@ class TestGraphView:
 
     def test_plot1(self, graph_view_1, add_plot_items_1):
         view = graph_view_1
-        assert len(view._cw._items) == 6
+        assert len(view._cw._canvas._proxy._items) == 5
 
         plot_items = add_plot_items_1
         for i, plot in enumerate(plot_items):
@@ -134,7 +134,7 @@ class TestGraphView:
             _display()
 
     def test_plot2(self, graph_view_2, add_plot_items_2):
-        assert len(graph_view_2._cw._items) == 5
+        assert len(graph_view_2._cw._canvas._proxy._items) == 4
 
         view = graph_view_2
         plot_items = add_plot_items_2

@@ -109,7 +109,8 @@ def test_title(pwidget):
 def test_plot_item_manipulation(pwidget):
     image_item = ImageItem()
     pwidget.addItem(image_item)
-    pwidget.addItem(RectROI(0))
+    roi = RectROI()
+    pwidget.addItem(roi)
     bar_graph_item = BarPlotItem(label="bar")
     pwidget.addItem(bar_graph_item, y2=True)
     errorbar_item = ErrorbarPlotItem()
@@ -119,12 +120,14 @@ def test_plot_item_manipulation(pwidget):
 
     curve_plot_item = CurvePlotItem(label="curve")
     pwidget.addItem(curve_plot_item)
+    with pytest.raises(RuntimeError):
+        pwidget.addItem(curve_plot_item)
+
     scatter_plot_item = ScatterPlotItem(label="scatter")
     pwidget.addItem(scatter_plot_item)
 
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 1
-    assert len(pwidget._items) == 6
     assert len(pwidget._canvas._proxy._items) == 6
     assert len(pwidget._canvas_y2._proxy._items) == 2
     assert len(pwidget._legend._items) == 3
@@ -139,7 +142,6 @@ def test_plot_item_manipulation(pwidget):
     pwidget.removeItem(BarPlotItem())
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 1
-    assert len(pwidget._items) == 6
     assert len(pwidget._canvas._proxy._items) == 6
     assert len(pwidget._canvas_y2._proxy._items) == 2
     assert len(pwidget._legend._items) == 3
@@ -148,7 +150,6 @@ def test_plot_item_manipulation(pwidget):
     pwidget.removeItem(bar_graph_item)
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 0
-    assert len(pwidget._items) == 5
     assert len(pwidget._canvas._proxy._items) == 6
     assert len(pwidget._canvas_y2._proxy._items) == 1
     assert len(pwidget._legend._items) == 2
@@ -157,7 +158,6 @@ def test_plot_item_manipulation(pwidget):
     pwidget.removeItem(image_item)
     assert len(pwidget._plot_items) == 3
     assert len(pwidget._plot_items_y2) == 0
-    assert len(pwidget._items) == 4
     assert len(pwidget._canvas._proxy._items) == 5
     assert len(pwidget._canvas_y2._proxy._items) == 1
     assert len(pwidget._legend._items) == 2
@@ -167,10 +167,11 @@ def test_plot_item_manipulation(pwidget):
     pwidget.removeItem(errorbar_item)
     assert len(pwidget._legend._items) == 2
 
-    pwidget._removeAllItems()
+    pwidget.removeItem(curve_plot_item)
+    pwidget.removeItem(scatter_plot_item)
+    pwidget.removeItem(roi)
     assert len(pwidget._plot_items) == 0
     assert len(pwidget._plot_items_y2) == 0
-    assert len(pwidget._items) == 0
     assert len(pwidget._canvas._proxy._items) == 1  # _selection_rect
     assert len(pwidget._canvas_y2._proxy._items) == 1  # _selection_rect
     assert len(pwidget._legend._items) == 0

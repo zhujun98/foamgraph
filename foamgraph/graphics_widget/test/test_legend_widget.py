@@ -82,8 +82,7 @@ class TestLegendWidget:
         else:
             assert legend._layout.count() == 2
 
-        widget._cw._removeAllItems()
-        assert len(legend._items) == 0
+        widget._cw.removeItem(widget.plot2)
         if orientation == "vertical":
             assert legend._layout.rowCount() == 0
         else:

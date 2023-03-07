@@ -29,15 +29,18 @@ class Canvas(QGraphicsWidget):
         def __init__(self, parent: "Canvas"):
             super().__init__(parent=parent)
 
-            self._items = []
+            self._items = set()
 
         def addItem(self, item: QGraphicsItem):
-            self._items.append(item)
+            if item in self._items:
+                raise RuntimeError(f"Item {item} already exists!")
+            self._items.add(item)
             item.setParentItem(self)
 
         def removeItem(self, item: QGraphicsItem):
-            if item in self._items:
-                self._items.remove(item)
+            if item not in self._items:
+                return
+            self._items.remove(item)
 
         def itemChange(self, change, value):
             ret = super().itemChange(change, value)
@@ -66,6 +69,13 @@ class Canvas(QGraphicsWidget):
         def paint(self, p, *args):
             """Override."""
             ...
+
+        def close(self) -> None:
+            # Not sure whether it is needed
+            for item in self._items:
+                item.setParentItem(None)
+            self._items.clear()
+            super().close()
 
     # Change the range of the AxisWidget
     # Change the range of the linked Canvas
@@ -198,8 +208,6 @@ class Canvas(QGraphicsWidget):
         if scene is not None:
             scene.removeItem(item)
         item.setParentItem(None)
-
-        self.updateAutoRange()
 
     def graphRect(self) -> QRectF:
         return self._graph_rect
@@ -530,3 +538,8 @@ class Canvas(QGraphicsWidget):
         else:
             self._v_line.hide()
             self._h_line.hide()
+
+    def close(self) -> None:
+        """Override."""
+        self._proxy.close()
+        super().close()

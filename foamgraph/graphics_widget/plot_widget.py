@@ -42,9 +42,6 @@ class PlotWidgetBase(GraphicsWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding,
                            QSizePolicy.Policy.Expanding)
 
-        self._items = set()
-        self._plot_items = OrderedDict()  # PlotItem: None
-
         self._canvas = Canvas(parent=self)
 
         self._axes = {}
@@ -99,31 +96,11 @@ class PlotWidgetBase(GraphicsWidget):
 
     def addItem(self, item) -> None:
         """Add a graphics item to Canvas."""
-        if item in self._items:
-            warnings.warn(f"Item {item} already existed.")
-            return
-
-        self._items.add(item)
         self._canvas.addItem(item)
 
     def removeItem(self, item):
         """Add a graphics item to Canvas."""
-        if item not in self._items:
-            return
-
-        self._items.remove(item)
-        if item in self._plot_items:
-            del self._plot_items[item]
-
         self._canvas.removeItem(item)
-
-    def _removeAllItems(self):
-        """Remove all graphics items from the Canvas."""
-        for item in self._items:
-            self._canvas.removeItem(item)
-
-        self._plot_items.clear()
-        self._items.clear()
 
     def showAxis(self, axis: str, visible: bool = True) -> None:
         """Show the given axis.
@@ -167,11 +144,6 @@ class PlotWidgetBase(GraphicsWidget):
     def invertY(self, inverted: bool = True) -> None:
         self._canvas.invertY(inverted)
 
-    def close(self) -> None:
-        """Override."""
-        self._removeAllItems()
-        super().close()
-
 
 class PlotWidget(PlotWidgetBase):
     """2D plot widget for displaying graphs."""
@@ -181,6 +153,7 @@ class PlotWidget(PlotWidgetBase):
     def __init__(self, *, parent: QGraphicsWidget = None):
         super().__init__(parent=parent)
 
+        self._plot_items = OrderedDict()  # PlotItem: None
         self._plot_items_y2 = OrderedDict()  # PlotItem: None
         self._canvas_y2 = None
 
@@ -262,12 +235,6 @@ class PlotWidget(PlotWidgetBase):
 
     def addItem(self, item, *, y2: bool = False) -> None:
         """Override."""
-        if item in self._items:
-            warnings.warn(f"Item {item} already added to PlotItem.")
-            return
-
-        self._items.add(item)
-
         if y2:
             canvas = self._canvas_y2
             if canvas is None:
@@ -306,11 +273,6 @@ class PlotWidget(PlotWidgetBase):
 
     def removeItem(self, item):
         """Override."""
-        if item not in self._items:
-            return
-
-        self._items.remove(item)
-
         if item in self._plot_items_y2:
             del self._plot_items_y2[item]
             if self._legend is not None:
@@ -324,21 +286,6 @@ class PlotWidget(PlotWidgetBase):
                 self._legend.removeItem(item)
 
         self._canvas.removeItem(item)
-
-    def _removeAllItems(self):
-        """Override."""
-        for item in self._items:
-            if item in self._plot_items_y2:
-                self._canvas_y2.removeItem(item)
-            else:
-                self._canvas.removeItem(item)
-
-        if self._legend is not None:
-            self._legend.removeAllItems()
-
-        self._plot_items.clear()
-        self._plot_items_y2.clear()
-        self._items.clear()
 
     def addLegend(self, pos: Optional[QPointF] = None,
                   **kwargs):
