@@ -242,7 +242,6 @@ class CurvePlotItem(PlotItem):
 
         arr[:, 0] = x
         arr[:, 1] = y
-
         path = QPainterPath()
         path.addPolygon(polyline)
         return path
@@ -511,8 +510,12 @@ class ScatterPlotItem(PlotItem):
             return
 
         x, y = self.transformedData()
-        x_min, x_max = np.min(x), np.max(x)
-        y_min, y_max = np.min(y), np.max(y)
+        x_min, x_max = np.nanmin(x), np.nanmax(x)
+        y_min, y_max = np.nanmin(y), np.nanmax(y)
+        if np.isnan(x_min) or np.isnan(x_max):
+            x_min, x_max = 0, 0
+        if np.isnan(y_min) or np.isnan(y_max):
+            y_min, y_max = 0, 0
 
         padding_x, padding_y = self._computePaddings()
 

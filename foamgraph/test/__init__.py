@@ -9,7 +9,7 @@ app = mkQApp()
 _VISUALIZE = False
 
 
-def _display(interval=0.5):
+def visualize(interval=0.5):
     if _VISUALIZE:
         app.processEvents()
         time.sleep(interval)

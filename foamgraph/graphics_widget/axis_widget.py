@@ -445,7 +445,6 @@ class AxisWidget(GraphicsWidget):
 
             # determine starting tick
             start = (np.ceil((minVal-offset) / spacing) * spacing) + offset
-
             # determine number of ticks
             num = int((maxVal-start) / spacing) + 1
             values = (np.arange(num) * spacing + start) / self.scale

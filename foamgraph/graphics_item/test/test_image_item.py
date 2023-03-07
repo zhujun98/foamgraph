@@ -4,7 +4,7 @@ from foamgraph import mkQApp
 from foamgraph import GraphView
 from foamgraph.graphics_item import ImageItem
 
-from foamgraph.test import _display
+from foamgraph.test import visualize
 
 app = mkQApp()
 
