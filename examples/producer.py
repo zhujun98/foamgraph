@@ -136,30 +136,30 @@ class MultiPeakData:
 
 class ImageData:
     def __init__(self):
-        self._shapes = [(1024, 1024), (800, 600), (600, 800)]
+        self._shape = (1024, 768)
 
         self._counter = 0
-        self._h, self._w = self._shapes[self._counter]
+        self._h, self._w = self._shape
+        self._max_v = 255
+
+        self._spot = self._generate_spot(200, 120)
+
+    def _generate_spot(self, w, h):
+        yc = int(self._h / 2) - int(h / 2) + np.random.randint(10)
+        xc = int(self._w / 2) - int(w / 2) + np.random.randint(10)
+
+        x = np.arange(w) - int(w / 2)
+        y = np.arange(h) - int(h / 2)
+        xx, yy = np.meshgrid(x, y)
+        return xc, yc, 0.2 * self._max_v * np.exp(-0.5 * (xx ** 2 / (w / 8) ** 2 + yy ** 2 / (h / 8) ** 2))
 
     def next(self):
         self._counter += 1
 
-        if self._counter % 1000 == 0:
-            self._h, self._w = self._shapes[self._counter % 3]
+        data = (self._counter % self._max_v) * np.random.random((self._h, self._w))
 
-        spot_w = 200
-        spot_h = 120
-
-        yc = int(self._h / 2) - int(spot_h / 2) + np.random.randint(10)
-        xc = int(self._w / 2) - int(spot_w / 2) + np.random.randint(10)
-
-        x = np.arange(spot_w) - int(spot_w / 2)
-        y = np.arange(spot_h) - int(spot_h / 2)
-        xx, yy = np.meshgrid(x, y)
-        spot_i = 2 * np.exp(-0.5 * (xx ** 2 / (spot_w / 8) ** 2 + yy ** 2 / (spot_h / 8) ** 2))
-
-        data = np.random.random((self._h, self._w))
-        data[yc:yc + spot_h, xc:xc + spot_w] += spot_i
+        xc, yc, spot = self._spot
+        data[yc:yc + spot.shape[0], xc:xc + spot.shape[1]] += spot
         return {'data': data}
 
 

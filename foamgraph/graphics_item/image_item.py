@@ -32,7 +32,7 @@ class ImageItem(GraphicsObject):
         self._data = None   # original image data
         self._image = None  # rendered image for display
 
-        self._levels = [0, 1]  # [min, max]
+        self._levels = (0, 1)  # [min, max]
         self._auto_level_quantile = 0.99
         self._lut = None
 

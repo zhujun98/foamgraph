@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 import numpy as np
 
@@ -28,13 +28,15 @@ class Canvas(QGraphicsWidget):
 
         def __init__(self, parent: "Canvas"):
             super().__init__(parent=parent)
+            self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
             self._items = set()
 
-        def addItem(self, item: QGraphicsItem):
-            if item in self._items:
+        def addItem(self, item: QGraphicsItem, ignore_bounds: bool):
+            if item in self.childItems():
                 raise RuntimeError(f"Item {item} already exists!")
-            self._items.add(item)
+            if not ignore_bounds:
+                self._items.add(item)
             item.setParentItem(self)
 
         def removeItem(self, item: QGraphicsItem):
@@ -88,9 +90,10 @@ class Canvas(QGraphicsWidget):
 
     cross_cursor_toggled_sgn = pyqtSignal(bool)
 
-    class MouseMode(Enum):
-        Pan = 3
-        Rect = 1
+    class MouseMode(IntEnum):
+        Off = 0
+        Pan = 1
+        Rect = 2
 
     class Axis(IntEnum):
         X = 0
@@ -100,25 +103,29 @@ class Canvas(QGraphicsWidget):
 
     def __init__(self, *,
                  cross_cursor_enabled: bool = False,
-                 draggable: bool = True,
-                 scalable: bool = True,
+                 auto_range_x_locked: bool = False,
+                 auto_range_y_locked: bool = False,
                  parent=None):
         """Initialization."""
         super().__init__(parent)
 
-        self._x_inverted = False
-        self._y_inverted = False
+        # The lock status of auto range is not allowed to be changed after
+        # initialization. Otherwise, a few other things, e.g. Menu, are
+        # required to be regenerated!
+        self._auto_range_x_locked = auto_range_x_locked
+        self._auto_range_y_locked = auto_range_y_locked
 
         self._auto_range_x = True
         self._auto_range_y = True
+
+        self._x_inverted = False
+        self._y_inverted = False
 
         self._graph_rect = QRectF(0, 0, 1, 1)
         self._linked_x = None
         self._linked_y = None
         self._mouse_mode = self.MouseMode.Pan
 
-        self._draggable = draggable
-        self._scalable = scalable
         self._cross_cursor_enabled = cross_cursor_enabled
 
         # clips the painting of all its descendants to its own shape
@@ -133,13 +140,14 @@ class Canvas(QGraphicsWidget):
         self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding,
                                        QSizePolicy.Policy.Expanding))
 
+        self._mouse_mode_menu = None
         self._menu = self._createContextMenu()
 
         self._proxy = self.CanvasProxy(self)
 
         # region shown in MouseMode.Rect
         self._selection_rect = self._createSelectionRect()
-        self.addItem(self._selection_rect)
+        self.addItem(self._selection_rect, ignore_bounds=True)
 
     def enableCrossCursor(self, state: bool) -> None:
         self._cross_cursor_enabled = state
@@ -153,22 +161,30 @@ class Canvas(QGraphicsWidget):
             self._proxy.viewRect(), disable_auto_range=True))
 
         # ---
-        if self._draggable:
+        if not self._auto_range_x_locked and not self._auto_range_y_locked:
             menu = root.addMenu("Mouse Mode")
             group = QActionGroup(menu)
+
+            action = menu.addAction("Off")
+            action.setActionGroup(group)
+            action.setCheckable(True)
+            action.toggled.connect(
+                lambda: self.setMouseMode(self.MouseMode.Off))
 
             action = menu.addAction("Pan")
             action.setActionGroup(group)
             action.setCheckable(True)
-            action.triggered.connect(
+            action.toggled.connect(
                 lambda: self.setMouseMode(self.MouseMode.Pan))
             action.setChecked(True)
 
             action = menu.addAction("Zoom")
             action.setActionGroup(group)
             action.setCheckable(True)
-            action.triggered.connect(
+            action.toggled.connect(
                 lambda: self.setMouseMode(self.MouseMode.Rect))
+
+            self._mouse_mode_menu = menu
 
         if self._cross_cursor_enabled:
             # ---
@@ -177,6 +193,15 @@ class Canvas(QGraphicsWidget):
             action.triggered.connect(self.cross_cursor_toggled_sgn)
 
         return root
+
+    def extendContextMenu(self) -> QMenu:
+        return self._menu.addMenu()
+
+    def extendContextMenuAction(self, label: str) -> QAction:
+        return self._menu.addAction(label)
+
+    def setMouseModeOff(self):
+        self._mouse_mode_menu.actions()[self.MouseMode.Off].setChecked(True)
 
     def _createSelectionRect(self):
         rect = QGraphicsRectItem(0, 0, 1, 1)
@@ -189,12 +214,12 @@ class Canvas(QGraphicsWidget):
     def setMouseMode(self, mode: "Canvas.MouseMode"):
         self._mouse_mode = mode
 
-    def addItem(self, item: QGraphicsItem):
+    def addItem(self, item: QGraphicsItem, *, ignore_bounds=False):
         """Add a QGraphicsItem to this view."""
         if item.zValue() < self.zValue():
             item.setZValue(self.zValue() + 1)
 
-        self._proxy.addItem(item)
+        self._proxy.addItem(item, ignore_bounds)
 
         if hasattr(item, "setCanvas"):
             item.setCanvas(self)
@@ -210,19 +235,26 @@ class Canvas(QGraphicsWidget):
     def graphRect(self) -> QRectF:
         return self._graph_rect
 
-    def _regularizeRange(self, vmin, vmax, axis: "Canvas.Axis"):
+    def _regularizeRange(self, vmin, vmax, axis: "Canvas.Axis", add_padding: bool):
+        if axis == self.Axis.X:
+            delta = self._graph_rect.width()
+        else:
+            delta = self._graph_rect.height()
+
         # If we requested 0 range, try to preserve previous scale.
         # Otherwise just pick an arbitrary scale.
         if vmin == vmax:
-            if axis == self.Axis.X:
-                dy = self._graph_rect.width()
-            else:
-                dy = self._graph_rect.height()
+            if delta == 0:
+                delta = 1
+            vmin -= 0.5 * delta
+            vmax += 0.5 * delta
 
-            if dy == 0:
-                dy = 1
-            vmin -= 0.5 * dy
-            vmax += 0.5 * dy
+        elif add_padding:
+            # FIXME: not sure this is a good function
+            padding = np.clip(1./(delta**0.5), 0.02, 0.1) if delta > 0 else 0.02
+
+            vmin -= padding
+            vmax += padding
 
         return vmin, vmax
 
@@ -238,8 +270,9 @@ class Canvas(QGraphicsWidget):
 
     def setTargetXRange(self, vmin: float, vmax: float, *,
                         disable_auto_range: bool = True,
+                        add_padding: bool = True,
                         update: bool = True):
-        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.X)
+        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.X, add_padding)
         self._graph_rect.setLeft(vmin)
         self._graph_rect.setRight(vmax)
 
@@ -251,8 +284,9 @@ class Canvas(QGraphicsWidget):
 
     def setTargetYRange(self, vmin: float, vmax: float, *,
                         disable_auto_range: bool = True,
+                        add_padding: bool = True,
                         update: bool = True):
-        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.Y)
+        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.Y, add_padding)
         self._graph_rect.setTop(vmin)
         self._graph_rect.setBottom(vmax)
 
@@ -262,7 +296,9 @@ class Canvas(QGraphicsWidget):
         if update:
             self._updateAll()
 
-    def setTargetRange(self, *args, disable_auto_range: bool = True):
+    def setTargetRange(self, *args,
+                       disable_auto_range: bool = True,
+                       add_padding: bool = True):
         if len(args) == 1:
             rect = args[0]
             xrange = (rect.left(), rect.right())
@@ -274,24 +310,25 @@ class Canvas(QGraphicsWidget):
 
         self.setTargetXRange(xrange[0], xrange[1],
                              disable_auto_range=disable_auto_range,
+                             add_padding=add_padding,
                              update=False)
+
         self.setTargetYRange(yrange[0], yrange[1],
                              disable_auto_range=disable_auto_range,
+                             add_padding=add_padding,
                              update=False)
         self._updateAll()
 
-    def suggestPadding(self, axis):
-        l = self.geometry().width() if axis == self.Axis.X else self.geometry().height()
-        if l > 0:
-            return np.clip(1./(l**0.5), 0.02, 0.1)
-        return 0.02
-
-    def enableAutoRangeX(self, state: bool = True):
+    def enableAutoRangeX(self, state: bool = True) -> None:
+        if self._auto_range_x_locked:
+            return
         if self._auto_range_x ^ state:
             self._auto_range_x = state
             self.auto_range_x_toggled_sgn.emit(state)
 
-    def enableAutoRangeY(self, state: bool = True):
+    def enableAutoRangeY(self, state: bool = True) -> None:
+        if self._auto_range_y_locked:
+            return
         if self._auto_range_y ^ state:
             self._auto_range_y = state
             self.auto_range_y_toggled_sgn.emit(state)
@@ -318,11 +355,11 @@ class Canvas(QGraphicsWidget):
 
     def linkedXChanged(self):
         rect = self._linked_x.graphRect()
-        self.setTargetXRange(rect.left(), rect.right())
+        self.setTargetXRange(rect.left(), rect.right(), add_padding=False)
 
     def linkedYChanged(self):
         rect = self._linked_y.graphRect()
-        self.setTargetYRange(rect.top(), rect.bottom())
+        self.setTargetYRange(rect.top(), rect.bottom(), add_padding=False)
 
     def screenGeometry(self):
         """return the screen geometry"""
@@ -409,7 +446,7 @@ class Canvas(QGraphicsWidget):
         xc = center.x()
         x0 = xc + (rect.left() - xc) * sx
         x1 = xc + (rect.right() - xc) * sx
-        self.setTargetXRange(x0, x1)
+        self.setTargetXRange(x0, x1, add_padding=False)
 
     def scaleYBy(self, sy: float, yc: float) -> None:
         rect = self._graph_rect
@@ -417,7 +454,7 @@ class Canvas(QGraphicsWidget):
         yc = center.y()
         y0 = yc + (rect.top() - yc) * sy
         y1 = yc + (rect.bottom() - yc) * sy
-        self.setTargetYRange(y0, y1)
+        self.setTargetYRange(y0, y1, add_padding=False)
 
     def scaleBy(self, sx: float, sy: float, xc: float, yc: float) -> None:
         rect = self._graph_rect
@@ -427,41 +464,52 @@ class Canvas(QGraphicsWidget):
         x1 = xc + (rect.right() - xc) * sx
         y0 = yc + (rect.top() - yc) * sy
         y1 = yc + (rect.bottom() - yc) * sy
-        self.setTargetRange((x0, x1), (y0, y1))
+        self.setTargetRange((x0, x1), (y0, y1), add_padding=False)
 
     def wheelMovementToScaleFactor(self, delta: float) -> float:
         return 1 + delta * self.WHEEL_SCALE_FACTOR
 
     def wheelEvent(self, ev: QGraphicsSceneWheelEvent) -> None:
         """Override."""
-        if not self._scalable:
+        if self._auto_range_x_locked and self._auto_range_y_locked:
             return
 
         s = self.wheelMovementToScaleFactor(ev.delta())
         pos = ev.pos()
-        self.scaleBy(s, s, pos.x(), pos.y())
+        if self._auto_range_x_locked:
+            self.scaleYBy(s, pos.y())
+        elif self._auto_range_y_locked:
+            self.scaleXBy(s, pos.x())
+        else:
+            self.scaleBy(s, s, pos.x(), pos.y())
         ev.accept()
 
     def translateXBy(self, dx: float) -> None:
         rect = self._graph_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, dx, 0))
-        self.setTargetXRange(rect.left() + l.dx(), rect.right() + l.dx())
+        self.setTargetXRange(rect.left() + l.dx(), rect.right() + l.dx(),
+                             add_padding=False)
 
     def translateYBy(self, dy: float) -> None:
         rect = self._graph_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, 0, dy))
-        self.setTargetYRange(rect.top() + l.dy(), rect.bottom() + l.dy())
+        self.setTargetYRange(rect.top() + l.dy(), rect.bottom() + l.dy(),
+                             add_padding=False)
 
     def translateBy(self, dx: float, dy: float) -> None:
         rect = self._graph_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, dx, dy))
-        self.setTargetRange(rect.adjusted(l.dx(), l.dy(), l.dx(), l.dy()))
+        self.setTargetRange(rect.adjusted(l.dx(), l.dy(), l.dx(), l.dy()),
+                            add_padding=False)
 
     def mouseDragEvent(self, ev: MouseDragEvent):
-        if not self._draggable:
+        if self._auto_range_x_locked and self._auto_range_y_locked:
+            return
+
+        if self._mouse_mode == self.MouseMode.Off:
             return
 
         pos = ev.pos()
@@ -469,22 +517,30 @@ class Canvas(QGraphicsWidget):
 
         # Scale or translate based on mouse button
         if ev.button() == Qt.MouseButton.LeftButton:
+            # Rect mode cannot be selected if any of _auto_range_x_locked
+            # or _auto_range_y_locked is True.
             if self._mouse_mode == self.MouseMode.Rect:
+                rect = self._proxy.mapRectFromParent(
+                    QRectF(ev.buttonDownPos(), ev.pos()))
                 if ev.exiting():
                     self._selection_rect.hide()
-                    rect = self._proxy.mapRectFromParent(QRectF(
-                        ev.buttonDownPos(ev.button()), pos))
-                    self.setTargetRange(rect.normalized())
+                    # should not go beyond the bounding rect of the canvas
+                    self.setTargetRange(
+                        rect.intersected(self._graph_rect), add_padding=False)
                 else:
-                    rect = self._proxy.mapRectFromParent(
-                        QRectF(ev.buttonDownPos(), ev.pos()))
+                    if ev.entering():
+                        self._selection_rect.show()
                     self._selection_rect.setPos(rect.topLeft())
                     self._selection_rect.resetTransform()
                     self._selection_rect.scale(rect.width(), rect.height())
-                    if ev.entering():
-                        self._selection_rect.show()
-            else:
-                self.translateBy(delta.x(), delta.y())
+
+            else:  # self._mouse_mode == self.MouseMode.Pan
+                if self._auto_range_x_locked:
+                    self.translateYBy(delta.y())
+                elif self._auto_range_y_locked:
+                    self.translateXBy(delta.x())
+                else:
+                    self.translateBy(delta.x(), delta.y())
 
             ev.accept()
 
