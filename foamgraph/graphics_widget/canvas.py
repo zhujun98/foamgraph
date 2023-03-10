@@ -194,6 +194,12 @@ class Canvas(QGraphicsWidget):
 
         return root
 
+    def extendContextMenu(self) -> QMenu:
+        return self._menu.addMenu()
+
+    def extendContextMenuAction(self, label: str) -> QAction:
+        return self._menu.addAction(label)
+
     def setMouseModeOff(self):
         self._mouse_mode_menu.actions()[self.MouseMode.Off].setChecked(True)
 

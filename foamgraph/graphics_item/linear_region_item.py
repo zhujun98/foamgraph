@@ -19,6 +19,7 @@ from .graphics_item import GraphicsObject
 class LinearRegionItem(GraphicsObject):
     """A horizontal or vertical region inbetween two lines."""
     region_changed_sgn = pyqtSignal()
+    region_dragged_sgn = pyqtSignal()
 
     class Moving(Enum):
         NONE = 0
@@ -103,6 +104,7 @@ class LinearRegionItem(GraphicsObject):
             p = self._pos(ev.buttonDownPos())
             self._updateMovingState(p)
             self._cursor_offset = [self._p1 - p, self._p2 - p]
+            self.region_dragged_sgn.emit()
 
         if self._moving == self.Moving.NONE:
             return
