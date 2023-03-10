@@ -19,3 +19,9 @@ def test_axes(iwidget):
         assert not axis.isVisible()
 
     assert 'right' not in iwidget._axes
+
+
+def test_clear_data(iwidget):
+    with patch.object(iwidget._image_item, "setData") as patched:
+        iwidget.clearData()
+        patched.assert_called_once_with(None)

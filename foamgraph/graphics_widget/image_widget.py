@@ -12,11 +12,11 @@ from ..backend.QtCore import Qt
 from ..graphics_item import ImageItem, RectROI
 from .axis_widget import AxisWidget
 from .image_colormap_editor import ImageColormapEditor
-from .plot_widget import PlotWidgetBase
+from .plot_widget import PlotWidget
 
 
-class ImageWidget(PlotWidgetBase):
-    """2D plot widget for displaying an image."""
+class ImageWidget(PlotWidget):
+    """PlotWidget for displaying an image."""
 
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
@@ -60,6 +60,10 @@ class ImageWidget(PlotWidgetBase):
 
     def setImage(self, *args, **kwargs):
         self._image_item.setData(*args, **kwargs)
+
+    def clearData(self) -> None:
+        """Override."""
+        self._image_item.setData(None)
 
     def _initAxisItems(self):
         """Override."""

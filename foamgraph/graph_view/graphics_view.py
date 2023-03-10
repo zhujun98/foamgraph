@@ -65,7 +65,7 @@ class GraphicsView(QGraphicsView):
         self.scene().addItem(widget)
         self.resizeEvent(None)
 
-    def resizeEvent(self, ev: QResizeEvent):
+    def resizeEvent(self, ev: QResizeEvent) -> None:
         """Override."""
         self._range = QRectF(0, 0, self.size().width(), self.size().height())
         self._cw.setGeometry(self._range)
@@ -95,6 +95,9 @@ class GraphicsView(QGraphicsView):
 
     def setYLabel(self, *args, **kwargs):
         self._cw.setLabel("left", *args, **kwargs)
+
+    def clearData(self):
+        self._cw.clearData()
 
     @abc.abstractmethod
     def updateF(self, data):

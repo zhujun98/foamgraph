@@ -14,7 +14,7 @@ from ..graphics_item import (
     AnnotationItem, BarPlotItem, CurvePlotItem, ErrorbarPlotItem,
     ScatterPlotItem
 )
-from ..graphics_widget import PlotWidget
+from ..graphics_widget import GraphWidget
 from .graphics_view import GraphicsView
 
 
@@ -27,7 +27,7 @@ class GraphView(GraphicsView):
         """Initialization."""
         super().__init__(parent=parent)
 
-        self._cw = PlotWidget()
+        self._cw = GraphWidget()
         self.setCentralWidget(self._cw)
 
     def addCurvePlot(self, *args, y2=False, **kwargs):
@@ -58,9 +58,6 @@ class GraphView(GraphicsView):
         item = AnnotationItem()
         self._cw.addItem(item)
         return item
-
-    def clearData(self):
-        self._cw.clearData()
 
     def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):
         self._cw.setLabel("bottom", x)

@@ -53,7 +53,7 @@ class AbstractScene(QMainWindow, _SceneMixin):
             parent.registerWindow(self)
 
         self._ctrl_widgets = WeakKeyDictionary()
-        self._plot_widgets = WeakKeyDictionary()  # book-keeping plot widgets
+        self._graphics_view = WeakKeyDictionary()  # book-keeping plot widgets
 
         try:
             title = parent.title + " - " + self._title
@@ -74,7 +74,7 @@ class AbstractScene(QMainWindow, _SceneMixin):
 
     def reset(self):
         """Override."""
-        for widget in self._plot_widgets:
+        for widget in self._graphics_view:
             widget.reset()
 
     def updateWidgetsF(self):
@@ -83,7 +83,7 @@ class AbstractScene(QMainWindow, _SceneMixin):
             return
 
         data = self._queue[0]
-        for widget in self._plot_widgets:
+        for widget in self._graphics_view:
             widget.updateF(data)
 
     def onStart(self):
@@ -117,10 +117,10 @@ class AbstractScene(QMainWindow, _SceneMixin):
         del self._ctrl_widgets[instance]
 
     def registerGraphicsView(self, instance):
-        self._plot_widgets[instance] = 1
+        self._graphics_view[instance] = 1
 
     def unregisterGraphicsView(self, instance):
-        del self._plot_widgets[instance]
+        del self._graphics_view[instance]
 
     def closeEvent(self, QCloseEvent):
         parent = self.parent()

@@ -22,6 +22,10 @@ class TestImageView:
         view = image_view
         cw = view._cw
 
+        with patch.object(cw, "clearData") as mocked:
+            view.clearData()
+            mocked.assert_called_once()
+
         with patch.object(cw, "addROI") as mocked:
             roi = object()
             view.addROI(roi)
