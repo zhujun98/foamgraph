@@ -28,13 +28,15 @@ class Canvas(QGraphicsWidget):
 
         def __init__(self, parent: "Canvas"):
             super().__init__(parent=parent)
+            self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
             self._items = set()
 
-        def addItem(self, item: QGraphicsItem):
-            if item in self._items:
+        def addItem(self, item: QGraphicsItem, ignore_bounds: bool):
+            if item in self.childItems():
                 raise RuntimeError(f"Item {item} already exists!")
-            self._items.add(item)
+            if not ignore_bounds:
+                self._items.add(item)
             item.setParentItem(self)
 
         def removeItem(self, item: QGraphicsItem):
@@ -100,25 +102,29 @@ class Canvas(QGraphicsWidget):
 
     def __init__(self, *,
                  cross_cursor_enabled: bool = False,
-                 draggable: bool = True,
-                 scalable: bool = True,
+                 auto_range_x_locked: bool = False,
+                 auto_range_y_locked: bool = False,
                  parent=None):
         """Initialization."""
         super().__init__(parent)
 
-        self._x_inverted = False
-        self._y_inverted = False
+        # The lock status of auto range is not allowed to be changed after
+        # initialization. Otherwise, a few other things, e.g. Menu, are
+        # required to be regenerated!
+        self._auto_range_x_locked = auto_range_x_locked
+        self._auto_range_y_locked = auto_range_y_locked
 
         self._auto_range_x = True
         self._auto_range_y = True
+
+        self._x_inverted = False
+        self._y_inverted = False
 
         self._graph_rect = QRectF(0, 0, 1, 1)
         self._linked_x = None
         self._linked_y = None
         self._mouse_mode = self.MouseMode.Pan
 
-        self._draggable = draggable
-        self._scalable = scalable
         self._cross_cursor_enabled = cross_cursor_enabled
 
         # clips the painting of all its descendants to its own shape
@@ -139,7 +145,7 @@ class Canvas(QGraphicsWidget):
 
         # region shown in MouseMode.Rect
         self._selection_rect = self._createSelectionRect()
-        self.addItem(self._selection_rect)
+        self.addItem(self._selection_rect, ignore_bounds=True)
 
     def enableCrossCursor(self, state: bool) -> None:
         self._cross_cursor_enabled = state
@@ -153,7 +159,7 @@ class Canvas(QGraphicsWidget):
             self._proxy.viewRect(), disable_auto_range=True))
 
         # ---
-        if self._draggable:
+        if not self._auto_range_x_locked and not self._auto_range_y_locked:
             menu = root.addMenu("Mouse Mode")
             group = QActionGroup(menu)
 
@@ -189,12 +195,12 @@ class Canvas(QGraphicsWidget):
     def setMouseMode(self, mode: "Canvas.MouseMode"):
         self._mouse_mode = mode
 
-    def addItem(self, item: QGraphicsItem):
+    def addItem(self, item: QGraphicsItem, *, ignore_bounds=False):
         """Add a QGraphicsItem to this view."""
         if item.zValue() < self.zValue():
             item.setZValue(self.zValue() + 1)
 
-        self._proxy.addItem(item)
+        self._proxy.addItem(item, ignore_bounds)
 
         if hasattr(item, "setCanvas"):
             item.setCanvas(self)
@@ -287,18 +293,23 @@ class Canvas(QGraphicsWidget):
                              disable_auto_range=disable_auto_range,
                              add_padding=add_padding,
                              update=False)
+
         self.setTargetYRange(yrange[0], yrange[1],
                              disable_auto_range=disable_auto_range,
                              add_padding=add_padding,
                              update=False)
         self._updateAll()
 
-    def enableAutoRangeX(self, state: bool = True):
+    def enableAutoRangeX(self, state: bool = True) -> None:
+        if self._auto_range_x_locked:
+            return
         if self._auto_range_x ^ state:
             self._auto_range_x = state
             self.auto_range_x_toggled_sgn.emit(state)
 
-    def enableAutoRangeY(self, state: bool = True):
+    def enableAutoRangeY(self, state: bool = True) -> None:
+        if self._auto_range_y_locked:
+            return
         if self._auto_range_y ^ state:
             self._auto_range_y = state
             self.auto_range_y_toggled_sgn.emit(state)
@@ -441,12 +452,17 @@ class Canvas(QGraphicsWidget):
 
     def wheelEvent(self, ev: QGraphicsSceneWheelEvent) -> None:
         """Override."""
-        if not self._scalable:
+        if self._auto_range_x_locked and self._auto_range_y_locked:
             return
 
         s = self.wheelMovementToScaleFactor(ev.delta())
         pos = ev.pos()
-        self.scaleBy(s, s, pos.x(), pos.y())
+        if self._auto_range_x_locked:
+            self.scaleYBy(s, pos.y())
+        elif self._auto_range_y_locked:
+            self.scaleXBy(s, pos.x())
+        else:
+            self.scaleBy(s, s, pos.x(), pos.y())
         ev.accept()
 
     def translateXBy(self, dx: float) -> None:
@@ -471,7 +487,7 @@ class Canvas(QGraphicsWidget):
                             add_padding=False)
 
     def mouseDragEvent(self, ev: MouseDragEvent):
-        if not self._draggable:
+        if self._auto_range_x_locked and self._auto_range_y_locked:
             return
 
         pos = ev.pos()
@@ -479,22 +495,29 @@ class Canvas(QGraphicsWidget):
 
         # Scale or translate based on mouse button
         if ev.button() == Qt.MouseButton.LeftButton:
+            # Rect mode cannot be selected if any of _auto_range_x_locked
+            # or _auto_range_y_locked is True.
             if self._mouse_mode == self.MouseMode.Rect:
+                rect = self._proxy.mapRectFromParent(
+                    QRectF(ev.buttonDownPos(), ev.pos()))
                 if ev.exiting():
                     self._selection_rect.hide()
-                    rect = self._proxy.mapRectFromParent(QRectF(
-                        ev.buttonDownPos(ev.button()), pos))
-                    self.setTargetRange(rect.normalized())
+                    # should not go beyond the bounding rect of the canvas
+                    self.setTargetRange(
+                        rect.intersected(self._graph_rect), add_padding=False)
                 else:
-                    rect = self._proxy.mapRectFromParent(
-                        QRectF(ev.buttonDownPos(), ev.pos()))
+                    if ev.entering():
+                        self._selection_rect.show()
                     self._selection_rect.setPos(rect.topLeft())
                     self._selection_rect.resetTransform()
                     self._selection_rect.scale(rect.width(), rect.height())
-                    if ev.entering():
-                        self._selection_rect.show()
             else:
-                self.translateBy(delta.x(), delta.y())
+                if self._auto_range_x_locked:
+                    self.translateYBy(delta.y())
+                elif self._auto_range_y_locked:
+                    self.translateXBy(delta.x())
+                else:
+                    self.translateBy(delta.x(), delta.y())
 
             ev.accept()
 

@@ -107,7 +107,6 @@ class MultiLinePlot(GraphView):
         self._plot3 = self.addCurvePlot(
             label='Line C', pen=FColor.mkPen('r', width=3))
 
-
     def updateF(self, data):
         """Override."""
         data = data['multi-line']

@@ -141,32 +141,32 @@ def test_plot_item_manipulation(gwidget):
 
     assert len(gwidget._plot_items) == 3
     assert len(gwidget._plot_items_y2) == 1
-    assert len(gwidget._canvas._proxy._items) == 5
-    assert len(gwidget._canvas_y2._proxy._items) == 2
+    assert len(gwidget._canvas._proxy._items) == 4
+    assert len(gwidget._canvas_y2._proxy._items) == 1
     assert len(gwidget._legend._items) == 3
 
     # remove an item which does not exist
     gwidget.removeItem(BarPlotItem())
     assert len(gwidget._plot_items) == 3
     assert len(gwidget._plot_items_y2) == 1
-    assert len(gwidget._canvas._proxy._items) == 5
-    assert len(gwidget._canvas_y2._proxy._items) == 2
+    assert len(gwidget._canvas._proxy._items) == 4
+    assert len(gwidget._canvas_y2._proxy._items) == 1
     assert len(gwidget._legend._items) == 3
 
     # remove an existing item
     gwidget.removeItem(bar_graph_item)
     assert len(gwidget._plot_items) == 3
     assert len(gwidget._plot_items_y2) == 0
-    assert len(gwidget._canvas._proxy._items) == 5
-    assert len(gwidget._canvas_y2._proxy._items) == 1
+    assert len(gwidget._canvas._proxy._items) == 4
+    assert len(gwidget._canvas_y2._proxy._items) == 0
     assert len(gwidget._legend._items) == 2
 
     # remove an existing item which is not a PlotItem
     gwidget.removeItem(roi_item)
     assert len(gwidget._plot_items) == 3
     assert len(gwidget._plot_items_y2) == 0
-    assert len(gwidget._canvas._proxy._items) == 4
-    assert len(gwidget._canvas_y2._proxy._items) == 1
+    assert len(gwidget._canvas._proxy._items) == 3
+    assert len(gwidget._canvas_y2._proxy._items) == 0
     assert len(gwidget._legend._items) == 2
 
     # remove a PlotItem which does not has a name and hence was not added
@@ -178,8 +178,8 @@ def test_plot_item_manipulation(gwidget):
     gwidget.removeItem(scatter_plot_item)
     assert len(gwidget._plot_items) == 0
     assert len(gwidget._plot_items_y2) == 0
-    assert len(gwidget._canvas._proxy._items) == 1  # _selection_rect
-    assert len(gwidget._canvas_y2._proxy._items) == 1  # _selection_rect
+    assert len(gwidget._canvas._proxy._items) == 0
+    assert len(gwidget._canvas_y2._proxy._items) == 0
     assert len(gwidget._legend._items) == 0
 
 

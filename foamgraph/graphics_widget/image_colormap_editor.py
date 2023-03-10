@@ -28,6 +28,7 @@ class ImageColormapEditor(GraphicsWidget):
         super().__init__(parent=parent)
 
         self._image_item = image_item
+        self._auto_levels = True
 
         self._lut = None
 
@@ -38,11 +39,11 @@ class ImageColormapEditor(GraphicsWidget):
         self._hist = CurvePlotItem(pen=FColor.mkPen('k'))
         self._hist.rotate(90)
 
-        canvas = Canvas(draggable=False, scalable=False, parent=self)
+        canvas = Canvas(auto_range_x_locked=True, parent=self)
         canvas.setMaximumWidth(152)
         canvas.setMinimumWidth(45)
         canvas.addItem(self._hist)
-        canvas.addItem(self._lri)
+        canvas.addItem(self._lri, ignore_bounds=True)
         self._canvas = canvas
 
         self._axis = AxisWidget(Qt.Edge.LeftEdge, parent=self)
@@ -56,6 +57,7 @@ class ImageColormapEditor(GraphicsWidget):
 
         # synchronize levels
         image_item.setLevels(self._lri.region())
+        # self.onImageChanged(auto_levels=True)
 
     def initUI(self):
         layout = QGraphicsGridLayout()
@@ -93,7 +95,7 @@ class ImageColormapEditor(GraphicsWidget):
         self._image_item.setLevels(self._lri.region())
         self.update()
 
-    def onImageChanged(self, auto_levels=False):
+    def onImageChanged(self, auto_levels=True):
         hist, bin_centers = self._image_item.histogram()
 
         if hist is None:
