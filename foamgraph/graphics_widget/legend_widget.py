@@ -204,4 +204,10 @@ class LegendWidget(GraphicsWidget):
 
         if self._moving:
             pos = self._cursor_offset + self.mapToParent(ev.pos())
+            # TODO: Add constraint for the right and bottom as well as
+            #       during a resize event.
+            if pos.x() < 0:
+                pos.setX(0)
+            if pos.y() < 0:
+                pos.setY(0)
             self.setPos(pos)

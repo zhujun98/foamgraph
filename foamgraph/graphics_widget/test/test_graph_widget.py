@@ -8,7 +8,7 @@ from foamgraph.graphics_item import (
     BarPlotItem, CurvePlotItem, ErrorbarPlotItem, RectROI, ScatterPlotItem
 )
 from foamgraph.graphics_widget import (
-    AxisWidget, LabelWidget, LegendWidget, PlotWidget
+    AxisWidget, LabelWidget, LegendWidget, GraphWidget
 )
 
 
@@ -16,171 +16,171 @@ app = mkQApp()
 
 
 @pytest.fixture(scope="function")
-def pwidget():
-    widget = PlotWidget()
+def gwidget():
+    widget = GraphWidget()
     return widget
 
 
-def test_axes(pwidget):
-    assert len(pwidget._axes) == 3
+def test_axes(gwidget):
+    assert len(gwidget._axes) == 3
     for name in ['left', 'bottom']:
-        axis = pwidget._axes[name]
+        axis = gwidget._axes[name]
         assert isinstance(axis, AxisWidget)
         assert axis.isVisible()
 
         with patch.object(axis, "setVisible") as mocked:
-            pwidget.showAxis(name)
+            gwidget.showAxis(name)
             mocked.assert_called_once_with(True)
 
             mocked.reset_mock()
-            pwidget.showAxis(name, False)
+            gwidget.showAxis(name, False)
             mocked.assert_called_once_with(False)
 
         with patch.object(axis, "setLabel") as mocked:
-            pwidget.setLabel(name, "abc")
+            gwidget.setLabel(name, "abc")
             mocked.assert_called_once_with(text="abc")
 
         with patch.object(axis, "showLabel") as mocked:
-            pwidget.showLabel(name)
+            gwidget.showLabel(name)
             mocked.assert_called_once_with(True)
 
             mocked.reset_mock()
-            pwidget.showLabel(name, False)
+            gwidget.showLabel(name, False)
             mocked.assert_called_once_with(False)
 
     for name in ['right']:
-        axis = pwidget._axes[name]
+        axis = gwidget._axes[name]
         assert not axis.isVisible()
 
         item = CurvePlotItem(label="curve-1")
-        pwidget.addItem(item)
+        gwidget.addItem(item)
         assert not axis.isVisible()
         item = CurvePlotItem(label="curve-2")
-        pwidget.addItem(item, y2=True)
+        gwidget.addItem(item, y2=True)
         assert axis.isVisible()
 
 
-def test_invert(pwidget):
-    canvas = pwidget._canvas
+def test_invert(gwidget):
+    canvas = gwidget._canvas
     with patch.object(canvas, "invertX") as mocked:
-        pwidget.invertX()
+        gwidget.invertX()
         mocked.assert_called_once_with(True)
 
         mocked.reset_mock()
-        pwidget.invertX(False)
+        gwidget.invertX(False)
         mocked.assert_called_once_with(False)
 
     with patch.object(canvas, "invertY") as mocked:
-        pwidget.invertY()
+        gwidget.invertY()
         mocked.assert_called_once_with(True)
 
         mocked.reset_mock()
-        pwidget.invertY(False)
+        gwidget.invertY(False)
         mocked.assert_called_once_with(False)
 
 
-def test_legend(pwidget):
-    assert pwidget._legend is None
+def test_legend(gwidget):
+    assert gwidget._legend is None
 
-    legend = pwidget.addLegend(QPointF(-30, -30))
+    legend = gwidget.addLegend(QPointF(-30, -30))
     assert isinstance(legend, LegendWidget)
-    assert legend is pwidget._legend
+    assert legend is gwidget._legend
 
     # test addLegend when legend already exists
-    pwidget.addLegend(QPointF(-10, -10))
-    assert legend is pwidget._legend
+    gwidget.addLegend(QPointF(-10, -10))
+    assert legend is gwidget._legend
 
     assert legend.isVisible()
-    pwidget.showLegend(False)
+    gwidget.showLegend(False)
     assert not legend.isVisible()
 
 
-def test_title(pwidget):
-    assert isinstance(pwidget._title, LabelWidget)
+def test_title(gwidget):
+    assert isinstance(gwidget._title, LabelWidget)
 
-    assert pwidget._title.maximumHeight() == 0
-    assert not pwidget._title.isVisible()
+    assert gwidget._title.maximumHeight() == 0
+    assert not gwidget._title.isVisible()
 
-    pwidget.setTitle("abcdefg")
-    assert pwidget._title.maximumHeight() > 0
-    assert pwidget._title.isVisible()
+    gwidget.setTitle("abcdefg")
+    assert gwidget._title.maximumHeight() > 0
+    assert gwidget._title.isVisible()
 
 
-def test_clear_data(pwidget):
+def test_clear_data(gwidget):
     item1 = CurvePlotItem()
-    pwidget.addItem(item1)
+    gwidget.addItem(item1)
     item2 = BarPlotItem()
-    pwidget.addItem(item2, y2=True)
+    gwidget.addItem(item2, y2=True)
 
     with patch.object(item1, "setData") as mocked1:
         with patch.object(item2, "setData") as mocked2:
-            pwidget.clearData()
+            gwidget.clearData()
             mocked1.assert_called_once_with([], [])
             mocked2.assert_called_once_with([], [])  # y2
 
 
-def test_plot_item_manipulation(pwidget):
+def test_plot_item_manipulation(gwidget):
     errorbar_item = ErrorbarPlotItem()
-    pwidget.addItem(errorbar_item)
+    gwidget.addItem(errorbar_item)
 
     bar_graph_item = BarPlotItem(label="bar")
-    pwidget.addItem(bar_graph_item, y2=True)
+    gwidget.addItem(bar_graph_item, y2=True)
 
     roi_item = RectROI()
-    pwidget.addItem(roi_item)
+    gwidget.addItem(roi_item)
 
-    pwidget.addLegend()  # add legend when there are already added PlotItems
+    gwidget.addLegend()  # add legend when there are already added PlotItems
 
     curve_plot_item = CurvePlotItem(label="curve")
-    pwidget.addItem(curve_plot_item)
+    gwidget.addItem(curve_plot_item)
     with pytest.raises(RuntimeError):
-        pwidget.addItem(curve_plot_item)
+        gwidget.addItem(curve_plot_item)
 
     scatter_plot_item = ScatterPlotItem(label="scatter")
-    pwidget.addItem(scatter_plot_item)
+    gwidget.addItem(scatter_plot_item)
 
-    assert len(pwidget._plot_items) == 3
-    assert len(pwidget._plot_items_y2) == 1
-    assert len(pwidget._canvas._proxy._items) == 5
-    assert len(pwidget._canvas_y2._proxy._items) == 2
-    assert len(pwidget._legend._items) == 3
+    assert len(gwidget._plot_items) == 3
+    assert len(gwidget._plot_items_y2) == 1
+    assert len(gwidget._canvas._proxy._items) == 5
+    assert len(gwidget._canvas_y2._proxy._items) == 2
+    assert len(gwidget._legend._items) == 3
 
     # remove an item which does not exist
-    pwidget.removeItem(BarPlotItem())
-    assert len(pwidget._plot_items) == 3
-    assert len(pwidget._plot_items_y2) == 1
-    assert len(pwidget._canvas._proxy._items) == 5
-    assert len(pwidget._canvas_y2._proxy._items) == 2
-    assert len(pwidget._legend._items) == 3
+    gwidget.removeItem(BarPlotItem())
+    assert len(gwidget._plot_items) == 3
+    assert len(gwidget._plot_items_y2) == 1
+    assert len(gwidget._canvas._proxy._items) == 5
+    assert len(gwidget._canvas_y2._proxy._items) == 2
+    assert len(gwidget._legend._items) == 3
 
     # remove an existing item
-    pwidget.removeItem(bar_graph_item)
-    assert len(pwidget._plot_items) == 3
-    assert len(pwidget._plot_items_y2) == 0
-    assert len(pwidget._canvas._proxy._items) == 5
-    assert len(pwidget._canvas_y2._proxy._items) == 1
-    assert len(pwidget._legend._items) == 2
+    gwidget.removeItem(bar_graph_item)
+    assert len(gwidget._plot_items) == 3
+    assert len(gwidget._plot_items_y2) == 0
+    assert len(gwidget._canvas._proxy._items) == 5
+    assert len(gwidget._canvas_y2._proxy._items) == 1
+    assert len(gwidget._legend._items) == 2
 
     # remove an existing item which is not a PlotItem
-    pwidget.removeItem(roi_item)
-    assert len(pwidget._plot_items) == 3
-    assert len(pwidget._plot_items_y2) == 0
-    assert len(pwidget._canvas._proxy._items) == 4
-    assert len(pwidget._canvas_y2._proxy._items) == 1
-    assert len(pwidget._legend._items) == 2
+    gwidget.removeItem(roi_item)
+    assert len(gwidget._plot_items) == 3
+    assert len(gwidget._plot_items_y2) == 0
+    assert len(gwidget._canvas._proxy._items) == 4
+    assert len(gwidget._canvas_y2._proxy._items) == 1
+    assert len(gwidget._legend._items) == 2
 
     # remove a PlotItem which does not has a name and hence was not added
     # into the legend
-    pwidget.removeItem(errorbar_item)
-    assert len(pwidget._legend._items) == 2
+    gwidget.removeItem(errorbar_item)
+    assert len(gwidget._legend._items) == 2
 
-    pwidget.removeItem(curve_plot_item)
-    pwidget.removeItem(scatter_plot_item)
-    assert len(pwidget._plot_items) == 0
-    assert len(pwidget._plot_items_y2) == 0
-    assert len(pwidget._canvas._proxy._items) == 1  # _selection_rect
-    assert len(pwidget._canvas_y2._proxy._items) == 1  # _selection_rect
-    assert len(pwidget._legend._items) == 0
+    gwidget.removeItem(curve_plot_item)
+    gwidget.removeItem(scatter_plot_item)
+    assert len(gwidget._plot_items) == 0
+    assert len(gwidget._plot_items_y2) == 0
+    assert len(gwidget._canvas._proxy._items) == 1  # _selection_rect
+    assert len(gwidget._canvas_y2._proxy._items) == 1  # _selection_rect
+    assert len(gwidget._legend._items) == 0
 
 
 def test_context_menu():

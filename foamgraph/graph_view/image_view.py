@@ -11,10 +11,10 @@ from typing import final
 from ..backend.QtCore import Qt, QTimer
 
 from ..graphics_widget import ImageWidget
-from .graph_view import GraphViewBase
+from .graph_view import GraphicsView
 
 
-class ImageView(GraphViewBase):
+class ImageView(GraphicsView):
     """QGraphicsView for displaying images.
 
     This is normally used as a base class.
