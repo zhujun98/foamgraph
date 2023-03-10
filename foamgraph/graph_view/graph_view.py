@@ -9,69 +9,16 @@ import abc
 from typing import final, Optional
 
 from ..backend.QtCore import QTimer
-from ..backend.QtGui import QCloseEvent
-from ..backend.QtWidgets import QSizePolicy
 
 from ..graphics_item import (
     AnnotationItem, BarPlotItem, CurvePlotItem, ErrorbarPlotItem,
     ScatterPlotItem
 )
-from ..graphics_view import GraphicsView
 from ..graphics_widget import PlotWidget
+from .graphics_view import GraphicsView
 
 
-class GraphViewBase(GraphicsView):
-    def __init__(self, *, parent=None):
-        """Initialization."""
-        super().__init__(parent=parent)
-
-        self.setSizePolicy(QSizePolicy.Policy.Expanding,
-                           QSizePolicy.Policy.Expanding)
-
-        if parent is not None and hasattr(parent, 'registerPlotWidget'):
-            parent.registerPlotWidget(self)
-
-    def addItem(self, *args, **kwargs):
-        self._cw.addItem(*args, **kwargs)
-
-    def removeItem(self, *args, **kwargs):
-        self._cw.removeItem(*args, **kwargs)
-
-    def setTitle(self, *args, **kwargs):
-        self._cw.setTitle(*args, **kwargs)
-
-    def showXAxis(self, *args, **kwargs):
-        self._cw.showAxis('bottom', *args, **kwargs)
-
-    def showYAxis(self, *args, **kwargs):
-        self._cw.showAxis('left', *args, **kwargs)
-
-    def setXLabel(self, *args, **kwargs):
-        self._cw.setLabel("bottom", *args, **kwargs)
-
-    def setYLabel(self, *args, **kwargs):
-        self._cw.setLabel("left", *args, **kwargs)
-
-    @abc.abstractmethod
-    def updateF(self, data):
-        """This method is called by the parent window."""
-        raise NotImplementedError
-
-    def close(self) -> None:
-        """Override."""
-        self._cw.close()
-        self.setParent(None)
-        super().close()
-
-    def closeEvent(self, event: QCloseEvent) -> None:
-        """Override."""
-        parent = self.parent()
-        if parent is not None:
-            parent.unregisterPlotWidget(self)
-        super().closeEvent(event)
-
-
-class GraphView(GraphViewBase):
+class GraphView(GraphicsView):
     """QGraphicsView for displaying graphs.
 
     This is normally used as a base class.

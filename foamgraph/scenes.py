@@ -116,10 +116,10 @@ class AbstractScene(QMainWindow, _SceneMixin):
     def unregisterCtrlWidget(self, instance):
         del self._ctrl_widgets[instance]
 
-    def registerPlotWidget(self, instance):
+    def registerGraphicsView(self, instance):
         self._plot_widgets[instance] = 1
 
-    def unregisterPlotWidget(self, instance):
+    def unregisterGraphicsView(self, instance):
         del self._plot_widgets[instance]
 
     def closeEvent(self, QCloseEvent):
