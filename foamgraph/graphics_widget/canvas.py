@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 import numpy as np
 
@@ -90,9 +90,10 @@ class Canvas(QGraphicsWidget):
 
     cross_cursor_toggled_sgn = pyqtSignal(bool)
 
-    class MouseMode(Enum):
-        Pan = 3
-        Rect = 1
+    class MouseMode(IntEnum):
+        Off = 0
+        Pan = 1
+        Rect = 2
 
     class Axis(IntEnum):
         X = 0
@@ -139,6 +140,7 @@ class Canvas(QGraphicsWidget):
         self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding,
                                        QSizePolicy.Policy.Expanding))
 
+        self._mouse_mode_menu = None
         self._menu = self._createContextMenu()
 
         self._proxy = self.CanvasProxy(self)
@@ -163,18 +165,26 @@ class Canvas(QGraphicsWidget):
             menu = root.addMenu("Mouse Mode")
             group = QActionGroup(menu)
 
+            action = menu.addAction("Off")
+            action.setActionGroup(group)
+            action.setCheckable(True)
+            action.toggled.connect(
+                lambda: self.setMouseMode(self.MouseMode.Off))
+
             action = menu.addAction("Pan")
             action.setActionGroup(group)
             action.setCheckable(True)
-            action.triggered.connect(
+            action.toggled.connect(
                 lambda: self.setMouseMode(self.MouseMode.Pan))
             action.setChecked(True)
 
             action = menu.addAction("Zoom")
             action.setActionGroup(group)
             action.setCheckable(True)
-            action.triggered.connect(
+            action.toggled.connect(
                 lambda: self.setMouseMode(self.MouseMode.Rect))
+
+            self._mouse_mode_menu = menu
 
         if self._cross_cursor_enabled:
             # ---
@@ -183,6 +193,9 @@ class Canvas(QGraphicsWidget):
             action.triggered.connect(self.cross_cursor_toggled_sgn)
 
         return root
+
+    def setMouseModeOff(self):
+        self._mouse_mode_menu.actions()[self.MouseMode.Off].setChecked(True)
 
     def _createSelectionRect(self):
         rect = QGraphicsRectItem(0, 0, 1, 1)
@@ -490,6 +503,9 @@ class Canvas(QGraphicsWidget):
         if self._auto_range_x_locked and self._auto_range_y_locked:
             return
 
+        if self._mouse_mode == self.MouseMode.Off:
+            return
+
         pos = ev.pos()
         delta = ev.lastPos() - pos
 
@@ -511,7 +527,8 @@ class Canvas(QGraphicsWidget):
                     self._selection_rect.setPos(rect.topLeft())
                     self._selection_rect.resetTransform()
                     self._selection_rect.scale(rect.width(), rect.height())
-            else:
+
+            else:  # self._mouse_mode == self.MouseMode.Pan
                 if self._auto_range_x_locked:
                     self.translateYBy(delta.y())
                 elif self._auto_range_y_locked:

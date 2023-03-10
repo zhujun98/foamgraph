@@ -30,6 +30,8 @@ class ImageWidget(PlotWidget):
 
         self._cmap_editor = ImageColormapEditor(self._image_item)
 
+        self._canvas.setMouseModeOff()
+
         self._init()
 
     def _initUI(self):
