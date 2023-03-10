@@ -210,19 +210,26 @@ class Canvas(QGraphicsWidget):
     def graphRect(self) -> QRectF:
         return self._graph_rect
 
-    def _regularizeRange(self, vmin, vmax, axis: "Canvas.Axis"):
+    def _regularizeRange(self, vmin, vmax, axis: "Canvas.Axis", add_padding: bool):
+        if axis == self.Axis.X:
+            delta = self._graph_rect.width()
+        else:
+            delta = self._graph_rect.height()
+
         # If we requested 0 range, try to preserve previous scale.
         # Otherwise just pick an arbitrary scale.
         if vmin == vmax:
-            if axis == self.Axis.X:
-                dy = self._graph_rect.width()
-            else:
-                dy = self._graph_rect.height()
+            if delta == 0:
+                delta = 1
+            vmin -= 0.5 * delta
+            vmax += 0.5 * delta
 
-            if dy == 0:
-                dy = 1
-            vmin -= 0.5 * dy
-            vmax += 0.5 * dy
+        elif add_padding:
+            # FIXME: not sure this is a good function
+            padding = np.clip(1./(delta**0.5), 0.02, 0.1) if delta > 0 else 0.02
+
+            vmin -= padding
+            vmax += padding
 
         return vmin, vmax
 
@@ -238,8 +245,9 @@ class Canvas(QGraphicsWidget):
 
     def setTargetXRange(self, vmin: float, vmax: float, *,
                         disable_auto_range: bool = True,
+                        add_padding: bool = True,
                         update: bool = True):
-        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.X)
+        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.X, add_padding)
         self._graph_rect.setLeft(vmin)
         self._graph_rect.setRight(vmax)
 
@@ -251,8 +259,9 @@ class Canvas(QGraphicsWidget):
 
     def setTargetYRange(self, vmin: float, vmax: float, *,
                         disable_auto_range: bool = True,
+                        add_padding: bool = True,
                         update: bool = True):
-        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.Y)
+        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.Y, add_padding)
         self._graph_rect.setTop(vmin)
         self._graph_rect.setBottom(vmax)
 
@@ -262,7 +271,9 @@ class Canvas(QGraphicsWidget):
         if update:
             self._updateAll()
 
-    def setTargetRange(self, *args, disable_auto_range: bool = True):
+    def setTargetRange(self, *args,
+                       disable_auto_range: bool = True,
+                       add_padding: bool = True):
         if len(args) == 1:
             rect = args[0]
             xrange = (rect.left(), rect.right())
@@ -274,17 +285,13 @@ class Canvas(QGraphicsWidget):
 
         self.setTargetXRange(xrange[0], xrange[1],
                              disable_auto_range=disable_auto_range,
+                             add_padding=add_padding,
                              update=False)
         self.setTargetYRange(yrange[0], yrange[1],
                              disable_auto_range=disable_auto_range,
+                             add_padding=add_padding,
                              update=False)
         self._updateAll()
-
-    def suggestPadding(self, axis):
-        l = self.geometry().width() if axis == self.Axis.X else self.geometry().height()
-        if l > 0:
-            return np.clip(1./(l**0.5), 0.02, 0.1)
-        return 0.02
 
     def enableAutoRangeX(self, state: bool = True):
         if self._auto_range_x ^ state:
@@ -318,11 +325,11 @@ class Canvas(QGraphicsWidget):
 
     def linkedXChanged(self):
         rect = self._linked_x.graphRect()
-        self.setTargetXRange(rect.left(), rect.right())
+        self.setTargetXRange(rect.left(), rect.right(), add_padding=False)
 
     def linkedYChanged(self):
         rect = self._linked_y.graphRect()
-        self.setTargetYRange(rect.top(), rect.bottom())
+        self.setTargetYRange(rect.top(), rect.bottom(), add_padding=False)
 
     def screenGeometry(self):
         """return the screen geometry"""
@@ -409,7 +416,7 @@ class Canvas(QGraphicsWidget):
         xc = center.x()
         x0 = xc + (rect.left() - xc) * sx
         x1 = xc + (rect.right() - xc) * sx
-        self.setTargetXRange(x0, x1)
+        self.setTargetXRange(x0, x1, add_padding=False)
 
     def scaleYBy(self, sy: float, yc: float) -> None:
         rect = self._graph_rect
@@ -417,7 +424,7 @@ class Canvas(QGraphicsWidget):
         yc = center.y()
         y0 = yc + (rect.top() - yc) * sy
         y1 = yc + (rect.bottom() - yc) * sy
-        self.setTargetYRange(y0, y1)
+        self.setTargetYRange(y0, y1, add_padding=False)
 
     def scaleBy(self, sx: float, sy: float, xc: float, yc: float) -> None:
         rect = self._graph_rect
@@ -427,7 +434,7 @@ class Canvas(QGraphicsWidget):
         x1 = xc + (rect.right() - xc) * sx
         y0 = yc + (rect.top() - yc) * sy
         y1 = yc + (rect.bottom() - yc) * sy
-        self.setTargetRange((x0, x1), (y0, y1))
+        self.setTargetRange((x0, x1), (y0, y1), add_padding=False)
 
     def wheelMovementToScaleFactor(self, delta: float) -> float:
         return 1 + delta * self.WHEEL_SCALE_FACTOR
@@ -446,19 +453,22 @@ class Canvas(QGraphicsWidget):
         rect = self._graph_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, dx, 0))
-        self.setTargetXRange(rect.left() + l.dx(), rect.right() + l.dx())
+        self.setTargetXRange(rect.left() + l.dx(), rect.right() + l.dx(),
+                             add_padding=False)
 
     def translateYBy(self, dy: float) -> None:
         rect = self._graph_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, 0, dy))
-        self.setTargetYRange(rect.top() + l.dy(), rect.bottom() + l.dy())
+        self.setTargetYRange(rect.top() + l.dy(), rect.bottom() + l.dy(),
+                             add_padding=False)
 
     def translateBy(self, dx: float, dy: float) -> None:
         rect = self._graph_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, dx, dy))
-        self.setTargetRange(rect.adjusted(l.dx(), l.dy(), l.dx(), l.dy()))
+        self.setTargetRange(rect.adjusted(l.dx(), l.dy(), l.dx(), l.dy()),
+                            add_padding=False)
 
     def mouseDragEvent(self, ev: MouseDragEvent):
         if not self._draggable:
