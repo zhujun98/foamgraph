@@ -108,6 +108,7 @@ class Canvas(QGraphicsWidget):
     WHEEL_SCALE_FACTOR = 0.00125
 
     def __init__(self, *,
+                 cross_cursor_enabled: bool = True,
                  auto_range_x_locked: bool = False,
                  auto_range_y_locked: bool = False,
                  parent=None):
@@ -130,6 +131,8 @@ class Canvas(QGraphicsWidget):
         self._linked_x = None
         self._linked_y = None
         self._mouse_mode = self.MouseMode.Pan
+
+        self._cross_cursor_enabled = cross_cursor_enabled
 
         # clips the painting of all its descendants to its own shape
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
@@ -185,10 +188,11 @@ class Canvas(QGraphicsWidget):
 
             self._mouse_mode_menu = menu
 
-        # ---
-        action = root.addAction("Cross Cursor")
-        action.setCheckable(True)
-        action.triggered.connect(self.cross_cursor_toggled_sgn)
+        if self._cross_cursor_enabled:
+            # ---
+            action = root.addAction("Cross Cursor")
+            action.setCheckable(True)
+            action.triggered.connect(self.cross_cursor_toggled_sgn)
 
         return root
 

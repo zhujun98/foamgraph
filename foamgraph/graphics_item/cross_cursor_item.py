@@ -30,15 +30,13 @@ class CrossCursorItem(QGraphicsObject):
     def setPos(self, pos: QPointF) -> None:
         """Override."""
         super().setPos(pos)
-        self._label.setPlainText(f"    {pos.x():.1f}, {pos.y():.1f}")
-
         pos = self.mapFromParent(pos)
         self._v_line.setPos(pos)
         self._h_line.setPos(pos)
         self._label.setPos(pos)
 
-    def setLabel(self, x: float, y: float) -> None:
-        self._label.setPlainText(f"{x}, {y}")
+    def setLabel(self, text: str) -> None:
+        self._label.setPlainText(text)
 
     def setPen(self, pen: QPen) -> None:
         self._v_line.setPen(pen)

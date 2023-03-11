@@ -66,6 +66,12 @@ class GraphWidget(PlotWidget):
         y2_axis.hide()
         y2_axis.log_Scale_toggled_sgn.connect(self._onLogY2ScaleToggled)
 
+    def onCrossCursorMoved(self, pos: QPointF) -> None:
+        """Override."""
+        super().onCrossCursorMoved(pos)
+        label = f"    {pos.x():.1f}, {pos.y():.1f}"
+        self._cross_cursor.setLabel(label)
+
     def clearData(self) -> None:
         """Override."""
         for item in chain(self._plot_items, self._plot_items_y2):

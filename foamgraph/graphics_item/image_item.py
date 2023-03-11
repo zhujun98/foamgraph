@@ -6,6 +6,7 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 from collections.abc import Callable
+from typing import Optional
 
 import numpy as np
 
@@ -109,6 +110,9 @@ class ImageItem(GraphicsObject):
         self._prepareForRender()
 
         self.image_changed_sgn.emit()
+
+    def dataAt(self, x: int, y: int) -> float:
+        return self._data[y, x]
 
     def render(self):
         """Convert data to QImage for displaying."""

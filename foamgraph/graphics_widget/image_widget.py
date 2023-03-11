@@ -21,8 +21,6 @@ class ImageWidget(PlotWidget):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
-        self._mouse_hover_v_rounding_decimals = 1
-
         self._image_item = ImageItem()
         self.addItem(self._image_item)
 
@@ -66,6 +64,16 @@ class ImageWidget(PlotWidget):
     def clearData(self) -> None:
         """Override."""
         self._image_item.setData(None)
+
+    def onCrossCursorMoved(self, pos: QPointF) -> None:
+        """Override."""
+        super().onCrossCursorMoved(pos)
+        x, y = int(pos.x()), int(pos.y())
+        if self._image_item.boundingRect().contains(pos):
+            v = self._image_item.dataAt(x, y)
+            self._cross_cursor.setLabel(f"    {x}, {y}, {v:.1f}")
+        else:
+            self._cross_cursor.setLabel(f"    {x}, {y}")
 
     def _initAxisItems(self):
         """Override."""
