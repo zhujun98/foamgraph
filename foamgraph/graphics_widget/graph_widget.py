@@ -32,8 +32,10 @@ class GraphWidget(PlotWidget):
         self._canvas_y2 = None
 
         self._canvas.enableCrossCursor(True)
-        self._cross_cursor = CrossCursorItem(parent=self._canvas)
+        self._cross_cursor = CrossCursorItem()
+        self._cross_cursor.hide()
         self._cross_cursor.setPen(FColor.mkPen("Magenta"))
+        self._canvas.addItem(self._cross_cursor, ignore_bounds=True)
 
         self._legend = None
 
@@ -42,7 +44,6 @@ class GraphWidget(PlotWidget):
     def _initConnections(self):
         """Override."""
         self._canvas.cross_cursor_toggled_sgn.connect(self.onCrossCursorToggled)
-        self.onCrossCursorToggled(False)
 
     def _initAxisItems(self):
         """Override."""
@@ -76,21 +77,19 @@ class GraphWidget(PlotWidget):
             item.clearData()
 
     def onCrossCursorToggled(self, state: bool):
-        # scene is None at initialization
-        scene = self.scene()
         if state:
             self._cross_cursor.show()
-            scene.mouse_moved_sgn.connect(self.onCrossCursorMoved)
+            self._canvas.mouse_moved_sgn.connect(self.onCrossCursorMoved)
+            self._canvas.mouse_hovering_toggled_sgn.connect(
+                self._cross_cursor.setVisible)
         else:
             self._cross_cursor.hide()
-            if scene is not None:
-                scene.mouse_moved_sgn.disconnect(self.onCrossCursorMoved)
+            self._canvas.mouse_moved_sgn.disconnect(self.onCrossCursorMoved)
+            self._canvas.mouse_hovering_toggled_sgn.disconnect(
+                self._cross_cursor.setVisible)
 
-    def onCrossCursorMoved(self, pos: QPointF):
-        pos = self._canvas.mapFromScene(pos)
+    def onCrossCursorMoved(self, pos: QPointF) -> None:
         self._cross_cursor.setPos(pos)
-        v = self._canvas.mapToView(pos)
-        self._cross_cursor.setLabel(v.x(), v.y())
 
     def _onLogXScaleToggled(self, state: bool):
         for item in chain(self._plot_items, self._plot_items_y2):

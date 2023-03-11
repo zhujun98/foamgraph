@@ -21,6 +21,8 @@ class CrossCursorItem(QGraphicsObject):
         self._h_line.setDraggable(False)
 
         self._label = QGraphicsTextItem('', parent=self)
+        self._label.setFlag(
+            QGraphicsTextItem.GraphicsItemFlag.ItemIgnoresTransformations)
         self._label.show()
 
     def setPos(self, pos: QPointF) -> None:
@@ -30,6 +32,7 @@ class CrossCursorItem(QGraphicsObject):
         self._v_line.setPos(pos)
         self._h_line.setPos(pos)
         self._label.setPos(pos)
+        self._label.setPlainText(f"{pos.y():.1f}, {pos.x():.1f}")
 
     def setLabel(self, x: float, y: float) -> None:
         self._label.setPlainText(f"{x}, {y}")
