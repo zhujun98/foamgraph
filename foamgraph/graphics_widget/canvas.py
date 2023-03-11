@@ -14,6 +14,7 @@ from ..backend.QtWidgets import (
 )
 
 from ..aesthetics import FColor
+from ..graphics_item import CrossCursorItem
 from ..graphics_scene import HoverEvent, MouseClickEvent, MouseDragEvent
 
 
@@ -24,6 +25,7 @@ class Canvas(QGraphicsWidget):
     """Canvas."""
 
     _Z_SELECTION_RECT = 100
+    _Z_CROSS_CURSOR = 200
 
     class CanvasProxy(QGraphicsObject):
 
@@ -106,7 +108,6 @@ class Canvas(QGraphicsWidget):
     WHEEL_SCALE_FACTOR = 0.00125
 
     def __init__(self, *,
-                 cross_cursor_enabled: bool = False,
                  auto_range_x_locked: bool = False,
                  auto_range_y_locked: bool = False,
                  parent=None):
@@ -130,8 +131,6 @@ class Canvas(QGraphicsWidget):
         self._linked_y = None
         self._mouse_mode = self.MouseMode.Pan
 
-        self._cross_cursor_enabled = cross_cursor_enabled
-
         # clips the painting of all its descendants to its own shape
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
@@ -152,10 +151,6 @@ class Canvas(QGraphicsWidget):
         # region shown in MouseMode.Rect
         self._selection_rect = self._createSelectionRect()
         self.addItem(self._selection_rect, ignore_bounds=True)
-
-    def enableCrossCursor(self, state: bool) -> None:
-        self._cross_cursor_enabled = state
-        self._menu = self._createContextMenu()
 
     def _createContextMenu(self):
         root = QMenu()
@@ -190,11 +185,10 @@ class Canvas(QGraphicsWidget):
 
             self._mouse_mode_menu = menu
 
-        if self._cross_cursor_enabled:
-            # ---
-            action = root.addAction("Cross Cursor")
-            action.setCheckable(True)
-            action.triggered.connect(self.cross_cursor_toggled_sgn)
+        # ---
+        action = root.addAction("Cross Cursor")
+        action.setCheckable(True)
+        action.triggered.connect(self.cross_cursor_toggled_sgn)
 
         return root
 
@@ -227,6 +221,9 @@ class Canvas(QGraphicsWidget):
 
         if hasattr(item, "setCanvas"):
             item.setCanvas(self)
+
+        if isinstance(item, CrossCursorItem):
+            item.setZValue(self._Z_CROSS_CURSOR)
 
     def removeItem(self, item: QGraphicsItem) -> None:
         self._proxy.removeItem(item)

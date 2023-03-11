@@ -11,6 +11,8 @@ from typing import Optional
 from ..backend.QtCore import pyqtSignal, QPointF, Qt
 from ..backend.QtWidgets import QGraphicsGridLayout, QSizePolicy
 
+from ..aesthetics import FColor
+from ..graphics_item import CrossCursorItem
 from .canvas import Canvas
 from .graphics_widget import GraphicsWidget
 from .label_widget import LabelWidget
@@ -25,6 +27,8 @@ class PlotWidget(GraphicsWidget):
     _AXIS_LEFT_LOC = (1, 0)
     _AXIS_RIGHT_LOC = (1, 2)
 
+    cross_toggled_sgn = pyqtSignal(bool)
+
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -32,6 +36,10 @@ class PlotWidget(GraphicsWidget):
                            QSizePolicy.Policy.Expanding)
 
         self._canvas = Canvas(parent=self)
+        self._cross_cursor = CrossCursorItem()
+        self._cross_cursor.hide()
+        self._cross_cursor.setPen(FColor.mkPen("Magenta"))
+        self._canvas.addItem(self._cross_cursor, ignore_bounds=True)
 
         self._axes = {}
         self._title = LabelWidget('')
@@ -74,10 +82,26 @@ class PlotWidget(GraphicsWidget):
         self.setTitle()
 
     def _initConnections(self) -> None:
-        ...
+        self._canvas.cross_cursor_toggled_sgn.connect(
+            self.onCrossCursorToggled)
 
     def _initAxisItems(self):
         ...
+
+    def onCrossCursorToggled(self, state: bool):
+        if state:
+            self._cross_cursor.show()
+            self._canvas.mouse_moved_sgn.connect(self.onCrossCursorMoved)
+            self._canvas.mouse_hovering_toggled_sgn.connect(
+                self._cross_cursor.setVisible)
+        else:
+            self._cross_cursor.hide()
+            self._canvas.mouse_moved_sgn.disconnect(self.onCrossCursorMoved)
+            self._canvas.mouse_hovering_toggled_sgn.disconnect(
+                self._cross_cursor.setVisible)
+
+    def onCrossCursorMoved(self, pos: QPointF) -> None:
+        self._cross_cursor.setPos(pos)
 
     @abstractmethod
     def clearData(self):

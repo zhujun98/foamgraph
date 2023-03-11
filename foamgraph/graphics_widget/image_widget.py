@@ -7,7 +7,7 @@ Author: Jun Zhu
 """
 from typing import Optional
 
-from ..backend.QtCore import Qt
+from ..backend.QtCore import QPointF, Qt
 
 from ..graphics_item import ImageItem, RectROI
 from .axis_widget import AxisWidget
@@ -34,14 +34,14 @@ class ImageWidget(PlotWidget):
 
         self._init()
 
-    def _initUI(self):
+    def _initUI(self) -> None:
         """Override."""
         super()._initUI()
         self._layout.addItem(self._cmap_editor, 1, 2)
 
     def _initConnections(self) -> None:
         """Override."""
-        self._image_item.mouse_moved_sgn.connect(self.onMouseMoved)
+        super()._initConnections()
 
     def imageItem(self):
         return self._image_item
@@ -87,11 +87,3 @@ class ImageWidget(PlotWidget):
         y_axis.linkToCanvas(self._canvas)
         self._canvas.invertY()
         y_axis.hide()
-
-    def onMouseMoved(self, x: int, y: int, v: float):
-        if x < 0 or y < 0:
-            self.setTitle("")
-        else:
-            self.setTitle(
-                f'x={x}, y={y}, '
-                f'value={round(v, self._mouse_hover_v_rounding_decimals)}')
