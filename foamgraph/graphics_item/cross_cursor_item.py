@@ -5,6 +5,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from typing import Any
+
 from ..backend.QtCore import QPointF, QRectF
 from ..backend.QtGui import QPen
 from ..backend.QtWidgets import QGraphicsObject, QGraphicsTextItem
@@ -28,11 +30,12 @@ class CrossCursorItem(QGraphicsObject):
     def setPos(self, pos: QPointF) -> None:
         """Override."""
         super().setPos(pos)
+        self._label.setPlainText(f"    {pos.x():.1f}, {pos.y():.1f}")
+
         pos = self.mapFromParent(pos)
         self._v_line.setPos(pos)
         self._h_line.setPos(pos)
         self._label.setPos(pos)
-        self._label.setPlainText(f"{pos.y():.1f}, {pos.x():.1f}")
 
     def setLabel(self, x: float, y: float) -> None:
         self._label.setPlainText(f"{x}, {y}")

@@ -1,4 +1,5 @@
 from enum import IntEnum
+from typing import Any
 
 import numpy as np
 
@@ -44,7 +45,7 @@ class Canvas(QGraphicsWidget):
                 return
             self._items.remove(item)
 
-        def itemChange(self, change, value):
+        def itemChange(self, change, value) -> Any:
             ret = super().itemChange(change, value)
             if change in [
                 self.GraphicsItemChange.ItemChildAddedChange,

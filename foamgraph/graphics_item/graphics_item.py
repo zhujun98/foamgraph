@@ -1,6 +1,6 @@
 import itertools
 import operator
-from typing import Optional
+from typing import Any, Optional
 import weakref
 
 from ..backend.QtCore import QRectF
@@ -249,7 +249,8 @@ class GraphicsItem:
         if canvas is not None:
             canvas.updateAutoRange()
 
-    def itemChange(self, change, value):
+    def itemChange(self, change, value) -> Any:
+        """Override."""
         ret = super().itemChange(change, value)
 
         if change in [self.GraphicsItemChange.ItemPositionHasChanged,

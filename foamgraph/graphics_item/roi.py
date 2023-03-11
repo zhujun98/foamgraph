@@ -57,6 +57,7 @@ class UIGraphicsItem(GraphicsObject):
         self._bounding_rect = None
 
     def itemChange(self, change, value):
+        """Override."""
         ret = super().itemChange(change, value)
 
         # workaround for pyqt bug:
