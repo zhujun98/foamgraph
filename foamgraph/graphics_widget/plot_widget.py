@@ -14,7 +14,8 @@ from ..backend.QtWidgets import QGraphicsGridLayout, QSizePolicy
 
 from ..aesthetics import FColor
 from ..graphics_item import (
-    MouseCursorItem, MouseCursorStyle, InfiniteLineMouseCursorItem
+    FiniteLineMouseCursorItem, MouseCursorItem, MouseCursorStyle,
+    InfiniteLineMouseCursorItem
 )
 from .canvas import Canvas
 from .graphics_widget import GraphicsWidget
@@ -83,7 +84,8 @@ class PlotWidget(GraphicsWidget):
         self._extendContextMenu()
 
     def _initConnections(self) -> None:
-        ...
+        self._canvas.transform_changed_sgn.connect(
+            self._onCanvasTransformChanged)
 
     def _extendContextMenu(self):
         menu = self._canvas.extendContextMenu("Cursor")
@@ -134,6 +136,8 @@ class PlotWidget(GraphicsWidget):
 
         if style == MouseCursorStyle.Simple:
             cursor = MouseCursorItem()
+        elif style == MouseCursorStyle.Cross:
+            cursor = FiniteLineMouseCursorItem(40)
         else:
             cursor = InfiniteLineMouseCursorItem()
         cursor.setPen(FColor.mkPen("Magenta"))
@@ -163,6 +167,9 @@ class PlotWidget(GraphicsWidget):
 
     def _onMouseCursorMoved(self, pos: QPointF) -> None:
         self._mouse_cursor.setPos(pos)
+
+    def _onCanvasTransformChanged(self) -> None:
+        self._mouse_cursor.updateBoundingRect()
 
     @abstractmethod
     def clearData(self):

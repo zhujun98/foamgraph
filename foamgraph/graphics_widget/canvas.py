@@ -84,6 +84,9 @@ class Canvas(QGraphicsWidget):
     # Change the range of the linked Canvas
     x_range_changed_sgn = pyqtSignal()
     y_range_changed_sgn = pyqtSignal()
+
+    transform_changed_sgn = pyqtSignal()
+
     # Change the check state of the QAction in AxisWidget
     auto_range_x_toggled_sgn = pyqtSignal(bool)
     auto_range_y_toggled_sgn = pyqtSignal(bool)
@@ -577,6 +580,7 @@ class Canvas(QGraphicsWidget):
         m.translate(-center.x(), -center.y())
 
         self._proxy.setTransform(m)
+        self.transform_changed_sgn.emit()
 
     def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton:

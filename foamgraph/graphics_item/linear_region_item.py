@@ -40,7 +40,6 @@ class LinearRegionItem(GraphicsObject):
         self._moving = self.Moving.NONE
         self._cursor_offset = 0
         self._mouse_hovering = False
-        self._bounding_rect = None
 
         self._pen = FColor.mkPen(None)
         self._brush = None
