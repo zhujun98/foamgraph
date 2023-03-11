@@ -16,7 +16,6 @@ from .aesthetics import FColor, createIconButton
 from .graph_view import (
     GraphView, ImageView, TimedGraphView, TimedImageView
 )
-from .logger import GuiLoggingHandler
 from .ctrl_widgets import (
     SmartLineEdit, SmartStringLineEdit, SmartBoundaryLineEdit,
     SmartIdLineEdit, SmartSliceLineEdit
