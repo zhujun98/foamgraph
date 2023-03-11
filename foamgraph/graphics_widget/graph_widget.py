@@ -11,7 +11,7 @@ from typing import Optional, Union
 
 from ..backend.QtCore import pyqtSignal, QPointF, Qt
 
-from ..graphics_item import PlotItem
+from ..graphics_item import MouseCursorStyle, PlotItem
 from .axis_widget import AxisWidget
 from .canvas import Canvas
 from .legend_widget import LegendWidget
@@ -30,15 +30,15 @@ class GraphWidget(PlotWidget):
 
         self._legend = None
 
-        self._init()
-
-    def _initUI(self) -> None:
-        """Override."""
-        super()._initUI()
+        self._initUI()
+        self._initConnections()
 
     def _initConnections(self) -> None:
         """Override."""
         super()._initConnections()
+        self._canvas.setMouseMode(self._canvas.MouseMode.Pan)
+        self._setMouseCursorStyle(MouseCursorStyle.Cross)
+        self._mouse_cursor_enable_action.setChecked(False)
 
     def _initAxisItems(self):
         """Override."""
@@ -66,11 +66,11 @@ class GraphWidget(PlotWidget):
         y2_axis.hide()
         y2_axis.log_Scale_toggled_sgn.connect(self._onLogY2ScaleToggled)
 
-    def onCrossCursorMoved(self, pos: QPointF) -> None:
+    def _onMouseCursorMoved(self, pos: QPointF) -> None:
         """Override."""
-        super().onCrossCursorMoved(pos)
+        super()._onMouseCursorMoved(pos)
         label = f"    {pos.x():.1f}, {pos.y():.1f}"
-        self._cross_cursor.setLabel(label)
+        self._mouse_cursor.setLabel(label)
 
     def clearData(self) -> None:
         """Override."""

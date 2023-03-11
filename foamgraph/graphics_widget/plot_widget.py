@@ -9,10 +9,13 @@ from abc import abstractmethod
 from typing import Optional
 
 from ..backend.QtCore import pyqtSignal, QPointF, Qt
+from ..backend.QtGui import QActionGroup
 from ..backend.QtWidgets import QGraphicsGridLayout, QSizePolicy
 
 from ..aesthetics import FColor
-from ..graphics_item import CrossCursorItem
+from ..graphics_item import (
+    MouseCursorItem, MouseCursorStyle, InfiniteLineMouseCursorItem
+)
 from .canvas import Canvas
 from .graphics_widget import GraphicsWidget
 from .label_widget import LabelWidget
@@ -36,19 +39,15 @@ class PlotWidget(GraphicsWidget):
                            QSizePolicy.Policy.Expanding)
 
         self._canvas = Canvas(parent=self)
-        self._cross_cursor = CrossCursorItem()
-        self._cross_cursor.hide()
-        self._cross_cursor.setPen(FColor.mkPen("Magenta"))
-        self._canvas.addItem(self._cross_cursor, ignore_bounds=True)
+        self._mouse_cursor = None
 
         self._axes = {}
         self._title = LabelWidget('')
 
         self._layout = QGraphicsGridLayout()
 
-    def _init(self) -> None:
-        self._initUI()
-        self._initConnections()
+        self._mouse_cursor_enable_action = None
+        self._mouse_cursor_style_menu = None
 
     def _initUI(self) -> None:
         layout = self._layout
@@ -81,27 +80,89 @@ class PlotWidget(GraphicsWidget):
         self._initAxisItems()
         self.setTitle()
 
+        self._extendContextMenu()
+
     def _initConnections(self) -> None:
-        self._canvas.cross_cursor_toggled_sgn.connect(
-            self.onCrossCursorToggled)
+        ...
+
+    def _extendContextMenu(self):
+        menu = self._canvas.extendContextMenu("Cursor")
+
+        action = menu.addAction("Enable")
+        action.setCheckable(True)
+        action.toggled.connect(self._onMouseCursorToggled)
+        self._mouse_cursor_enable_action = action
+
+        style_menu = menu.addMenu("Style")
+        group = QActionGroup(style_menu)
+
+        action = style_menu.addAction("Simple")
+        assert (len(group.actions()) == MouseCursorStyle.Simple)
+        action.setActionGroup(group)
+        action.setCheckable(True)
+        action.toggled.connect(lambda x: self._createMouseCursor(
+            MouseCursorStyle.Simple, x))
+
+        action = style_menu.addAction("Cross")
+        assert (len(group.actions()) == MouseCursorStyle.Cross)
+        action.setActionGroup(group)
+        action.setCheckable(True)
+        action.toggled.connect(lambda x: self._createMouseCursor(
+            MouseCursorStyle.Cross, x))
+
+        action = style_menu.addAction("Infinite Cross")
+        assert (len(group.actions()) == MouseCursorStyle.InfiniteCross)
+        action.setActionGroup(group)
+        action.setCheckable(True)
+        action.toggled.connect(lambda x: self._createMouseCursor(
+            MouseCursorStyle.InfiniteCross, x))
+
+        self._mouse_cursor_style_menu = style_menu
 
     def _initAxisItems(self):
         ...
 
-    def onCrossCursorToggled(self, state: bool):
-        if state:
-            self._cross_cursor.show()
-            self._canvas.mouse_moved_sgn.connect(self.onCrossCursorMoved)
-            self._canvas.mouse_hovering_toggled_sgn.connect(
-                self._cross_cursor.setVisible)
-        else:
-            self._cross_cursor.hide()
-            self._canvas.mouse_moved_sgn.disconnect(self.onCrossCursorMoved)
-            self._canvas.mouse_hovering_toggled_sgn.disconnect(
-                self._cross_cursor.setVisible)
+    def _setMouseCursorStyle(self, style: int) -> None:
+        self._mouse_cursor_style_menu.actions()[style].setChecked(True)
 
-    def onCrossCursorMoved(self, pos: QPointF) -> None:
-        self._cross_cursor.setPos(pos)
+    def _createMouseCursor(self, style: int, state: bool = True):
+        if not state:
+            return
+
+        if self._mouse_cursor is not None:
+            self._canvas.removeItem(self._mouse_cursor)
+
+        if style == MouseCursorStyle.Simple:
+            cursor = MouseCursorItem()
+        else:
+            cursor = InfiniteLineMouseCursorItem()
+        cursor.setPen(FColor.mkPen("Magenta"))
+        self._mouse_cursor = cursor
+
+        self._canvas.addItem(cursor, ignore_bounds=True)
+        if self._mouse_cursor_enable_action.isChecked():
+            # initialize connections
+            self._onMouseCursorToggled(True)
+        else:
+            # When a new cursor style is selected, we can assume that the user
+            # wants to show it immediately. We also need the following line for
+            # initializing signal-slot connections.
+            self._mouse_cursor_enable_action.setChecked(True)
+
+    def _onMouseCursorToggled(self, state: bool):
+        if state:
+            self._mouse_cursor.show()
+            self._canvas.mouse_moved_sgn.connect(self._onMouseCursorMoved)
+            self._canvas.mouse_hovering_toggled_sgn.connect(
+                self._mouse_cursor.setVisible)
+        else:
+            self._mouse_cursor.hide()
+            self._canvas.mouse_moved_sgn.disconnect(self._onMouseCursorMoved)
+            self._canvas.mouse_hovering_toggled_sgn.disconnect(
+                self._mouse_cursor.setVisible)
+
+    def _onMouseCursorMoved(self, pos: QPointF) -> None:
+        self._mouse_cursor.setPos(pos)
 
     @abstractmethod
     def clearData(self):

@@ -9,7 +9,7 @@ from typing import Optional
 
 from ..backend.QtCore import QPointF, Qt
 
-from ..graphics_item import ImageItem, RectROI
+from ..graphics_item import ImageItem, RectROI, MouseCursorStyle
 from .axis_widget import AxisWidget
 from .image_colormap_editor import ImageColormapEditor
 from .plot_widget import PlotWidget
@@ -28,9 +28,8 @@ class ImageWidget(PlotWidget):
 
         self._cmap_editor = ImageColormapEditor(self._image_item)
 
-        self._canvas.setMouseModeOff()
-
-        self._init()
+        self._initUI()
+        self._initConnections()
 
     def _initUI(self) -> None:
         """Override."""
@@ -40,6 +39,9 @@ class ImageWidget(PlotWidget):
     def _initConnections(self) -> None:
         """Override."""
         super()._initConnections()
+        self._canvas.setMouseMode(self._canvas.MouseMode.Off)
+        self._setMouseCursorStyle(MouseCursorStyle.Simple)
+        self._mouse_cursor_enable_action.setChecked(False)
 
     def imageItem(self):
         return self._image_item
@@ -65,15 +67,15 @@ class ImageWidget(PlotWidget):
         """Override."""
         self._image_item.setData(None)
 
-    def onCrossCursorMoved(self, pos: QPointF) -> None:
+    def _onMouseCursorMoved(self, pos: QPointF) -> None:
         """Override."""
-        super().onCrossCursorMoved(pos)
+        super()._onMouseCursorMoved(pos)
         x, y = int(pos.x()), int(pos.y())
         if self._image_item.boundingRect().contains(pos):
             v = self._image_item.dataAt(x, y)
-            self._cross_cursor.setLabel(f"    {x}, {y}, {v:.1f}")
+            self._mouse_cursor.setLabel(f"    {x}, {y}, {v:.1f}")
         else:
-            self._cross_cursor.setLabel(f"    {x}, {y}")
+            self._mouse_cursor.setLabel(f"    {x}, {y}")
 
     def _initAxisItems(self):
         """Override."""

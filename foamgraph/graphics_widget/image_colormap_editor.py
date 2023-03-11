@@ -42,8 +42,7 @@ class ImageColormapEditor(GraphicsWidget):
         image_item.setLookupTable(self.getLookupTable)
         image_item.setLevels(self._lri.region())
 
-        canvas = Canvas(cross_cursor_enabled=False,
-                        auto_range_x_locked=True,
+        canvas = Canvas(auto_range_x_locked=True,
                         parent=self)
         canvas.setMaximumWidth(152)
         canvas.setMinimumWidth(45)
