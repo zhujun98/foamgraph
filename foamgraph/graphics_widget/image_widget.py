@@ -7,9 +7,9 @@ Author: Jun Zhu
 """
 from typing import Optional
 
-from ..backend.QtCore import Qt
+from ..backend.QtCore import QPointF, Qt
 
-from ..graphics_item import ImageItem, RectROI
+from ..graphics_item import ImageItem, RectROI, MouseCursorStyle
 from .axis_widget import AxisWidget
 from .image_colormap_editor import ImageColormapEditor
 from .plot_widget import PlotWidget
@@ -21,8 +21,6 @@ class ImageWidget(PlotWidget):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
-        self._mouse_hover_v_rounding_decimals = 1
-
         self._image_item = ImageItem()
         self.addItem(self._image_item)
 
@@ -30,18 +28,20 @@ class ImageWidget(PlotWidget):
 
         self._cmap_editor = ImageColormapEditor(self._image_item)
 
-        self._canvas.setMouseModeOff()
+        self._initUI()
+        self._initConnections()
 
-        self._init()
-
-    def _initUI(self):
+    def _initUI(self) -> None:
         """Override."""
         super()._initUI()
         self._layout.addItem(self._cmap_editor, 1, 2)
 
     def _initConnections(self) -> None:
         """Override."""
-        self._image_item.mouse_moved_sgn.connect(self.onMouseMoved)
+        super()._initConnections()
+        self._canvas.setMouseMode(self._canvas.MouseMode.Off)
+        self._setMouseCursorStyle(MouseCursorStyle.Simple)
+        self._mouse_cursor_enable_action.setChecked(False)
 
     def imageItem(self):
         return self._image_item
@@ -67,6 +67,16 @@ class ImageWidget(PlotWidget):
         """Override."""
         self._image_item.setData(None)
 
+    def _onMouseCursorMoved(self, pos: QPointF) -> None:
+        """Override."""
+        super()._onMouseCursorMoved(pos)
+        x, y = int(pos.x()), int(pos.y())
+        if self._image_item.boundingRect().contains(pos):
+            v = self._image_item.dataAt(x, y)
+            self._mouse_cursor.setLabel(f"    {x}, {y}, {v:.1f}")
+        else:
+            self._mouse_cursor.setLabel(f"    {x}, {y}")
+
     def _initAxisItems(self):
         """Override."""
         for name, edge, pos in (
@@ -87,11 +97,3 @@ class ImageWidget(PlotWidget):
         y_axis.linkToCanvas(self._canvas)
         self._canvas.invertY()
         y_axis.hide()
-
-    def onMouseMoved(self, x: int, y: int, v: float):
-        if x < 0 or y < 0:
-            self.setTitle("")
-        else:
-            self.setTitle(
-                f'x={x}, y={y}, '
-                f'value={round(v, self._mouse_hover_v_rounding_decimals)}')

@@ -6,6 +6,7 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 from collections.abc import Callable
+from typing import Optional
 
 import numpy as np
 
@@ -15,7 +16,6 @@ from ..pyqtgraph_be import Point
 from ..pyqtgraph_be import functions as fn
 
 from ..algorithm import quick_min_max
-from ..graphics_scene import HoverEvent
 from .graphics_item import GraphicsObject
 
 
@@ -23,8 +23,6 @@ class ImageItem(GraphicsObject):
     """GraphicsObject displaying a 2D image."""
 
     image_changed_sgn = pyqtSignal()
-
-    mouse_moved_sgn = pyqtSignal(int, int, float)  # (x, y, value)
 
     def __init__(self, image=None, *, parent=None):
         super().__init__(parent=parent)
@@ -112,6 +110,9 @@ class ImageItem(GraphicsObject):
         self._prepareForRender()
 
         self.image_changed_sgn.emit()
+
+    def dataAt(self, x: int, y: int) -> float:
+        return self._data[y, x]
 
     def render(self):
         """Convert data to QImage for displaying."""
@@ -233,16 +234,3 @@ class ImageItem(GraphicsObject):
             return QRectF()
         shape = self._data.shape
         return QRectF(0., 0., shape[1], shape[0])
-
-    def hoverEvent(self, ev: HoverEvent) -> None:
-        if ev.isExit():
-            x = -1  # out of image
-            y = -1  # out of image
-            value = 0.0
-        else:
-            pos = ev.pos()
-            x = int(pos.x())
-            y = int(pos.y())
-            value = self._data[y, x]
-
-        self.mouse_moved_sgn.emit(x, y, value)

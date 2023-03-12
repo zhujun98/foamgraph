@@ -1,4 +1,5 @@
 from enum import IntEnum
+from typing import Any
 
 import numpy as np
 
@@ -13,7 +14,8 @@ from ..backend.QtWidgets import (
 )
 
 from ..aesthetics import FColor
-from ..graphics_scene import MouseClickEvent, MouseDragEvent
+from ..graphics_item import MouseCursorItem
+from ..graphics_scene import HoverEvent, MouseClickEvent, MouseDragEvent
 
 
 _DEBUG_CANVAS = False
@@ -23,6 +25,7 @@ class Canvas(QGraphicsWidget):
     """Canvas."""
 
     _Z_SELECTION_RECT = 100
+    _Z_MOUSE_CURSOR = 200
 
     class CanvasProxy(QGraphicsObject):
 
@@ -44,7 +47,7 @@ class Canvas(QGraphicsWidget):
                 return
             self._items.remove(item)
 
-        def itemChange(self, change, value):
+        def itemChange(self, change, value) -> Any:
             ret = super().itemChange(change, value)
             if change in [
                 self.GraphicsItemChange.ItemChildAddedChange,
@@ -81,6 +84,9 @@ class Canvas(QGraphicsWidget):
     # Change the range of the linked Canvas
     x_range_changed_sgn = pyqtSignal()
     y_range_changed_sgn = pyqtSignal()
+
+    transform_changed_sgn = pyqtSignal()
+
     # Change the check state of the QAction in AxisWidget
     auto_range_x_toggled_sgn = pyqtSignal(bool)
     auto_range_y_toggled_sgn = pyqtSignal(bool)
@@ -88,7 +94,8 @@ class Canvas(QGraphicsWidget):
     x_link_state_toggled_sgn = pyqtSignal(bool)
     y_link_state_toggled_sgn = pyqtSignal(bool)
 
-    cross_cursor_toggled_sgn = pyqtSignal(bool)
+    mouse_hovering_toggled_sgn = pyqtSignal(bool)
+    mouse_moved_sgn = pyqtSignal(object)
 
     class MouseMode(IntEnum):
         Off = 0
@@ -102,7 +109,6 @@ class Canvas(QGraphicsWidget):
     WHEEL_SCALE_FACTOR = 0.00125
 
     def __init__(self, *,
-                 cross_cursor_enabled: bool = False,
                  auto_range_x_locked: bool = False,
                  auto_range_y_locked: bool = False,
                  parent=None):
@@ -126,8 +132,6 @@ class Canvas(QGraphicsWidget):
         self._linked_y = None
         self._mouse_mode = self.MouseMode.Pan
 
-        self._cross_cursor_enabled = cross_cursor_enabled
-
         # clips the painting of all its descendants to its own shape
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
@@ -149,10 +153,6 @@ class Canvas(QGraphicsWidget):
         self._selection_rect = self._createSelectionRect()
         self.addItem(self._selection_rect, ignore_bounds=True)
 
-    def enableCrossCursor(self, state: bool) -> None:
-        self._cross_cursor_enabled = state
-        self._menu = self._createContextMenu()
-
     def _createContextMenu(self):
         root = QMenu()
 
@@ -169,39 +169,36 @@ class Canvas(QGraphicsWidget):
             action.setActionGroup(group)
             action.setCheckable(True)
             action.toggled.connect(
-                lambda: self.setMouseMode(self.MouseMode.Off))
+                lambda: self.__setMouseMode(self.MouseMode.Off))
 
             action = menu.addAction("Pan")
             action.setActionGroup(group)
             action.setCheckable(True)
             action.toggled.connect(
-                lambda: self.setMouseMode(self.MouseMode.Pan))
+                lambda: self.__setMouseMode(self.MouseMode.Pan))
             action.setChecked(True)
 
             action = menu.addAction("Zoom")
             action.setActionGroup(group)
             action.setCheckable(True)
             action.toggled.connect(
-                lambda: self.setMouseMode(self.MouseMode.Rect))
+                lambda: self.__setMouseMode(self.MouseMode.Rect))
 
             self._mouse_mode_menu = menu
 
-        if self._cross_cursor_enabled:
-            # ---
-            action = root.addAction("Cross Cursor")
-            action.setCheckable(True)
-            action.triggered.connect(self.cross_cursor_toggled_sgn)
-
         return root
 
-    def extendContextMenu(self) -> QMenu:
-        return self._menu.addMenu()
+    def extendContextMenu(self, label: str) -> QMenu:
+        return self._menu.addMenu(label)
 
     def extendContextMenuAction(self, label: str) -> QAction:
         return self._menu.addAction(label)
 
-    def setMouseModeOff(self):
-        self._mouse_mode_menu.actions()[self.MouseMode.Off].setChecked(True)
+    def setMouseMode(self, mode: int) -> None:
+        self._mouse_mode_menu.actions()[mode].setChecked(True)
+
+    def __setMouseMode(self, mode: "Canvas.MouseMode"):
+        self._mouse_mode = mode
 
     def _createSelectionRect(self):
         rect = QGraphicsRectItem(0, 0, 1, 1)
@@ -210,9 +207,6 @@ class Canvas(QGraphicsWidget):
         rect.setZValue(self._Z_SELECTION_RECT)
         rect.hide()
         return rect
-
-    def setMouseMode(self, mode: "Canvas.MouseMode"):
-        self._mouse_mode = mode
 
     def addItem(self, item: QGraphicsItem, *, ignore_bounds=False):
         """Add a QGraphicsItem to this view."""
@@ -223,6 +217,9 @@ class Canvas(QGraphicsWidget):
 
         if hasattr(item, "setCanvas"):
             item.setCanvas(self)
+
+        if isinstance(item, MouseCursorItem):
+            item.setZValue(self._Z_MOUSE_CURSOR)
 
     def removeItem(self, item: QGraphicsItem) -> None:
         self._proxy.removeItem(item)
@@ -505,6 +502,15 @@ class Canvas(QGraphicsWidget):
         self.setTargetRange(rect.adjusted(l.dx(), l.dy(), l.dx(), l.dy()),
                             add_padding=False)
 
+    def hoverEvent(self, ev: HoverEvent) -> None:
+        if ev.isExit():
+            self.mouse_hovering_toggled_sgn.emit(False)
+        else:
+            if ev.isEnter():
+                self.mouse_hovering_toggled_sgn.emit(True)
+            pos = self.mapToView(ev.pos())
+            self.mouse_moved_sgn.emit(pos)
+
     def mouseDragEvent(self, ev: MouseDragEvent):
         if self._auto_range_x_locked and self._auto_range_y_locked:
             return
@@ -574,6 +580,7 @@ class Canvas(QGraphicsWidget):
         m.translate(-center.x(), -center.y())
 
         self._proxy.setTransform(m)
+        self.transform_changed_sgn.emit()
 
     def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton:
@@ -584,14 +591,6 @@ class Canvas(QGraphicsWidget):
         """Override."""
         self._updateAll()
         self._proxy.prepareGeometryChange()
-
-    def onCrossToggled(self, state: bool):
-        if state:
-            self._v_line.show()
-            self._h_line.show()
-        else:
-            self._v_line.hide()
-            self._h_line.hide()
 
     def close(self) -> None:
         """Override."""
