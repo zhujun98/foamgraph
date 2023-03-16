@@ -14,8 +14,7 @@ from ..backend.QtWidgets import QGraphicsGridLayout, QSizePolicy
 
 from ..aesthetics import FColor
 from ..graphics_item import (
-    FiniteLineMouseCursorItem, MouseCursorItem, MouseCursorStyle,
-    InfiniteLineMouseCursorItem
+    CrossMouseCursorItem, MouseCursorItem, MouseCursorStyle
 )
 from .canvas import Canvas
 from .graphics_widget import GraphicsWidget
@@ -23,7 +22,11 @@ from .label_widget import LabelWidget
 
 
 class PlotWidget(GraphicsWidget):
-    """2D plot widget for displaying graphs or an image."""
+    """2D plot widget for displaying graphs or an image.
+
+    It contains a `Canvas`, up to four `AxisItem`s, a `LabelWidget` to
+    display title and a `MouseCursorItem`.
+    """
 
     _TITLE_LOC = (0, 1)
     _CANVAS_LOC = (1, 1)
@@ -40,15 +43,13 @@ class PlotWidget(GraphicsWidget):
                            QSizePolicy.Policy.Expanding)
 
         self._canvas = Canvas(parent=self)
-        self._mouse_cursor = None
 
         self._axes = {}
         self._title = LabelWidget('')
 
         self._layout = QGraphicsGridLayout()
 
-        self._mouse_cursor_enable_action = None
-        self._mouse_cursor_style_menu = None
+        self._mouse_cursor = None
 
     def _initUI(self) -> None:
         layout = self._layout
@@ -81,51 +82,56 @@ class PlotWidget(GraphicsWidget):
         self._initAxisItems()
         self.setTitle()
 
-        self._extendContextMenu()
+        self._extendCanvasContextMenu()
 
     def _initConnections(self) -> None:
-        self._canvas.transform_changed_sgn.connect(
-            self._onCanvasTransformChanged)
+        ...
 
-    def _extendContextMenu(self):
+    def _extendCanvasContextMenu(self):
         menu = self._canvas.extendContextMenu("Cursor")
+        menu.setObjectName("Cursor")
 
-        action = menu.addAction("Enable")
+        action = menu.addAction("Show")
+        action.setObjectName("Cursor_Show")
         action.setCheckable(True)
         action.toggled.connect(self._onMouseCursorToggled)
-        self._mouse_cursor_enable_action = action
 
         style_menu = menu.addMenu("Style")
+        style_menu.setObjectName("Cursor_Style")
         group = QActionGroup(style_menu)
 
         action = style_menu.addAction("Simple")
-        assert (len(group.actions()) == MouseCursorStyle.Simple)
+        action.setObjectName("Cursor_Style_Simple")
         action.setActionGroup(group)
         action.setCheckable(True)
         action.toggled.connect(lambda x: self._createMouseCursor(
             MouseCursorStyle.Simple, x))
 
         action = style_menu.addAction("Cross")
-        assert (len(group.actions()) == MouseCursorStyle.Cross)
+        action.setObjectName("Cursor_Style_Cross")
         action.setActionGroup(group)
         action.setCheckable(True)
         action.toggled.connect(lambda x: self._createMouseCursor(
             MouseCursorStyle.Cross, x))
 
         action = style_menu.addAction("Infinite Cross")
-        assert (len(group.actions()) == MouseCursorStyle.InfiniteCross)
+        action.setObjectName("Cursor_Style_InfiniteCross")
         action.setActionGroup(group)
         action.setCheckable(True)
         action.toggled.connect(lambda x: self._createMouseCursor(
             MouseCursorStyle.InfiniteCross, x))
 
-        self._mouse_cursor_style_menu = style_menu
-
     def _initAxisItems(self):
         ...
 
     def _setMouseCursorStyle(self, style: int) -> None:
-        self._mouse_cursor_style_menu.actions()[style].setChecked(True)
+        if style == MouseCursorStyle.Simple:
+            action = "Cursor_Style_Simple"
+        elif style == MouseCursorStyle.Cross:
+            action = "Cursor_Style_Cross"
+        else:  # style == MouseCursorStyle.InfiniteCross:
+            action = "Cursor_Style_InfiniteCross"
+        self._canvas.getMenuAction(action).setChecked(True)
 
     def _createMouseCursor(self, style: int, state: bool = True):
         if not state:
@@ -135,23 +141,27 @@ class PlotWidget(GraphicsWidget):
             self._canvas.removeItem(self._mouse_cursor)
 
         if style == MouseCursorStyle.Simple:
-            cursor = MouseCursorItem()
+            cursor = MouseCursorItem(parent=self)
         elif style == MouseCursorStyle.Cross:
-            cursor = FiniteLineMouseCursorItem(40)
+            cursor = CrossMouseCursorItem(40, parent=self)
         else:
-            cursor = InfiniteLineMouseCursorItem()
+            cursor = CrossMouseCursorItem(-1, parent=self)
         cursor.setPen(FColor.mkPen("Magenta"))
         self._mouse_cursor = cursor
 
-        self._canvas.addItem(cursor, ignore_bounds=True)
-        if self._mouse_cursor_enable_action.isChecked():
+        # Mouse cursor should not be added to the Canvas because: when the view
+        # range of the canvas changed, the mouse cursor should not move. Instead,
+        # its label should get updated.
+
+        cursor_show_act = self._canvas.getMenuAction("Cursor_Show")
+        if cursor_show_act.isChecked():
             # initialize connections
             self._onMouseCursorToggled(True)
         else:
             # When a new cursor style is selected, we can assume that the user
             # wants to show it immediately. We also need the following line for
             # initializing signal-slot connections.
-            self._mouse_cursor_enable_action.setChecked(True)
+            cursor_show_act.setChecked(True)
 
     def _onMouseCursorToggled(self, state: bool):
         if state:
@@ -159,20 +169,26 @@ class PlotWidget(GraphicsWidget):
             self._canvas.mouse_moved_sgn.connect(self._onMouseCursorMoved)
             self._canvas.mouse_hovering_toggled_sgn.connect(
                 self._mouse_cursor.setVisible)
+            self._canvas.transform_changed_sgn.connect(
+                self._updateMouseCursorLabel)
         else:
             self._mouse_cursor.hide()
             self._canvas.mouse_moved_sgn.disconnect(self._onMouseCursorMoved)
             self._canvas.mouse_hovering_toggled_sgn.disconnect(
                 self._mouse_cursor.setVisible)
+            self._canvas.transform_changed_sgn.disconnect(
+                self._updateMouseCursorLabel)
 
     def _onMouseCursorMoved(self, pos: QPointF) -> None:
+        pos = self._canvas.mapFromViewToItem(self, pos)
         self._mouse_cursor.setPos(pos)
 
-    def _onCanvasTransformChanged(self) -> None:
-        self._mouse_cursor.updateBoundingRect()
+    @abstractmethod
+    def _updateMouseCursorLabel(self) -> None:
+        raise NotImplementedError
 
     @abstractmethod
-    def clearData(self):
+    def clearData(self) -> None:
         raise NotImplementedError
 
     def addItem(self, item) -> None:

@@ -2,8 +2,8 @@ import numpy as np
 
 from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 from ..backend.QtGui import (
-    QGraphicsTextItem, QGraphicsSceneResizeEvent, QGraphicsSceneWheelEvent, QPen,
-    QPicture, QPainter
+    QAction, QGraphicsTextItem, QGraphicsSceneResizeEvent,
+    QGraphicsSceneWheelEvent, QPen, QPicture, QPainter
 )
 from ..backend.QtWidgets import (
     QCheckBox, QGridLayout, QMenu, QWidget, QWidgetAction
@@ -89,31 +89,38 @@ class AxisWidget(GraphicsWidget):
 
         self._vb = None
 
-        self._menu = None
-        self._auto_range_action = None
-        self._invert_action = None
-        self._show_grid_action = None
-        self.initMenu()
+        self._menu = self.initMenu()
+        self._auto_range_act = self.getMenuAction("AutoRange")
+        self._invert_axis_act = self.getMenuAction("InvertAxis")
+        self._show_grid_act = self.getMenuAction("ShowGrid")
+        self._log_scale_act = self.getMenuAction("LogScale")
 
     def initMenu(self):
         menu = QMenu()
-        self._auto_range_action = menu.addAction("Auto Range")
-        self._auto_range_action.setCheckable(True)
-        self._invert_action = menu.addAction("Invert Axis")
-        self._invert_action.setCheckable(True)
+        action = menu.addAction("Auto Range")
+        action.setObjectName("AutoRange")
+        action.setCheckable(True)
 
-        self._show_grid_action = menu.addAction("Show Grid")
-        self._show_grid_action.setCheckable(True)
-        self._show_grid_action.triggered.connect(self.onShowGridToggled)
+        action = menu.addAction("Invert Axis")
+        action.setObjectName("InvertAxis")
+        action.setCheckable(True)
+
+        action = menu.addAction("Show Grid")
+        action.setObjectName("ShowGrid")
+        action.setCheckable(True)
+        action.toggled.connect(self.onShowGridToggled)
 
         action = menu.addAction("Log Scale")
+        action.setObjectName("LogScale")
         action.setCheckable(True)
-        action.triggered.connect(self.onLogScaleToggled)
+        action.toggled.connect(self.onLogScaleToggled)
 
-        self._menu = menu
+        return menu
 
-    @property
-    def log_scale(self):
+    def getMenuAction(self, name: str) -> QAction:
+        return self._menu.findChild(QAction, name)
+
+    def logScale(self) -> bool:
         return self._log_scale
 
     def onShowGridToggled(self):
@@ -293,29 +300,27 @@ class AxisWidget(GraphicsWidget):
 
         self._vb = canvas
         if self._orientation == Qt.Orientation.Vertical:
-            self._auto_range_action.triggered.connect(
+            self._auto_range_act.triggered.connect(
                 lambda s: canvas.enableAutoRangeY(s))
-            self._invert_action.triggered.connect(canvas.invertY)
+            self._invert_axis_act.triggered.connect(canvas.invertY)
 
             canvas.auto_range_y_toggled_sgn.connect(
-                self._auto_range_action.setChecked)
+                self._auto_range_act.setChecked)
             canvas.y_link_state_toggled_sgn.connect(
-                self._auto_range_action.setEnabled)
+                self._auto_range_act.setEnabled)
             canvas.y_range_changed_sgn.connect(self.onCanvasChanged)
 
         else:
-            self._auto_range_action.triggered.connect(
+            self._auto_range_act.triggered.connect(
                 lambda s: canvas.enableAutoRangeX(s))
-            self._invert_action.triggered.connect(canvas.invertX)
+            self._invert_axis_act.triggered.connect(canvas.invertX)
 
-            canvas.auto_range_x_toggled_sgn.connect(
-                self._auto_range_action.setChecked)
-            canvas.x_link_state_toggled_sgn.connect(
-                self._auto_range_action.setEnabled)
+            canvas.auto_range_x_toggled_sgn.connect(self._auto_range_act.setChecked)
+            canvas.x_link_state_toggled_sgn.connect(self._auto_range_act.setEnabled)
             canvas.x_range_changed_sgn.connect(self.onCanvasChanged)
 
-        self._auto_range_action.setChecked(True)
-        self._auto_range_action.triggered.emit(True)
+        self._auto_range_act.setChecked(True)
+        self._auto_range_act.triggered.emit(True)
 
     def onCanvasChanged(self) -> None:
         rect = self._vb.graphRect()
@@ -324,7 +329,7 @@ class AxisWidget(GraphicsWidget):
         else:
             vmin, vmax = rect.left(), rect.right()
 
-        if self._invert_action.isChecked():
+        if self._invert_axis_act.isChecked():
             self.setRange(vmax, vmin)
         else:
             self.setRange(vmin, vmax)
@@ -332,7 +337,7 @@ class AxisWidget(GraphicsWidget):
     def boundingRect(self) -> QRectF:
         """Override."""
         canvas = self._vb
-        if canvas is None or not self._show_grid_action.isChecked():
+        if canvas is None or not self._show_grid_act.isChecked():
             rect = self.mapRectFromParent(self.geometry())
             # extend rect if ticks go in negative direction
             # also extend to account for text that flows past the edges
@@ -548,7 +553,7 @@ class AxisWidget(GraphicsWidget):
         bounds = self.mapRectFromParent(self.geometry())
 
         canvas = self._vb
-        if canvas is None or not self._show_grid_action.isChecked():
+        if canvas is None or not self._show_grid_act.isChecked():
             tickBounds = bounds
         else:
             tickBounds = canvas.mapRectToItem(self, canvas.boundingRect())
@@ -632,7 +637,7 @@ class AxisWidget(GraphicsWidget):
             tickLength = self._tick_length / ((i*0.5)+1.0)
 
             lineAlpha = 255 / (i+1)
-            if self._show_grid_action.isChecked():
+            if self._show_grid_act.isChecked():
                 lineAlpha *= 160 / 255. * np.clip((0.05 * lengthInPixels / (len(ticks)+1)), 0., 1.)
 
             for v in ticks:
@@ -647,7 +652,7 @@ class AxisWidget(GraphicsWidget):
                 p2 = [x, x]
                 p1[axis] = tickStart
                 p2[axis] = tickStop
-                if not self._show_grid_action.isChecked():
+                if not self._show_grid_act.isChecked():
                     p2[axis] += tickLength * tickDir
                 tickPen = self._tick_pen
                 color = tickPen.color()

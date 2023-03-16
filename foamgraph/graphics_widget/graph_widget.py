@@ -38,7 +38,7 @@ class GraphWidget(PlotWidget):
         super()._initConnections()
         self._canvas.setMouseMode(self._canvas.MouseMode.Pan)
         self._setMouseCursorStyle(MouseCursorStyle.Cross)
-        self._mouse_cursor_enable_action.setChecked(False)
+        self._canvas.getMenuAction("Cursor_Show").setChecked(False)
 
     def _initAxisItems(self):
         """Override."""
@@ -69,8 +69,16 @@ class GraphWidget(PlotWidget):
     def _onMouseCursorMoved(self, pos: QPointF) -> None:
         """Override."""
         super()._onMouseCursorMoved(pos)
-        label = f"    {pos.x():.1f}, {pos.y():.1f}"
-        self._mouse_cursor.setLabel(label)
+        self._setMouseCursorLabel(pos.x(), pos.y())
+
+    def _updateMouseCursorLabel(self) -> None:
+        """Override."""
+        pos = self._mouse_cursor.pos()
+        pos = self._canvas.mapFromItemToView(self, pos)
+        self._setMouseCursorLabel(pos.x(), pos.y())
+
+    def _setMouseCursorLabel(self, x: float, y: float) -> None:
+        self._mouse_cursor.setLabel(f"    {x:.1f}, {y:.1f}")
 
     def clearData(self) -> None:
         """Override."""
@@ -112,15 +120,15 @@ class GraphWidget(PlotWidget):
 
         if isinstance(item, PlotItem):
             if y2:
-                if self._axes['bottom'].log_scale:
+                if self._axes['bottom'].logScale():
                     item.setLogX(True)
 
                 self._plot_items_y2[item] = None
             else:
-                if self._axes['bottom'].log_scale:
+                if self._axes['bottom'].logScale():
                     item.setLogX(True)
 
-                if self._axes['left'].log_scale:
+                if self._axes['left'].logScale():
                     item.setLogY(True)
 
                 self._plot_items[item] = None

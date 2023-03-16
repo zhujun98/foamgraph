@@ -18,7 +18,7 @@ class _Config(abc.Mapping):
         # color map in contour plots, valid options are: thermal, flame,
         # yellowy, bipolar, spectrum, cyclic, greyclip, grey, viridis,
         # inferno, plasma, magma
-        "COLOR_MAP": 'plasma',
+        "COLOR_MAP": 'plasma'
     }
 
     def __init__(self):

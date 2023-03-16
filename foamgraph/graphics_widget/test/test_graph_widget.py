@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import patch
 
-from foamgraph.backend.QtCore import QPointF
-
 from foamgraph import mkQApp
+from foamgraph.backend.QtCore import QPoint, QPointF, Qt
 from foamgraph.graphics_item import (
-    BarPlotItem, CurvePlotItem, ErrorbarPlotItem, RectROI, ScatterPlotItem
+    BarPlotItem, CurvePlotItem, ErrorbarPlotItem, CrossMouseCursorItem,
+    MouseCursorItem, RectROI, ScatterPlotItem
 )
 from foamgraph.graphics_widget import (
     AxisWidget, LabelWidget, LegendWidget, GraphWidget
@@ -183,81 +183,72 @@ def test_plot_item_manipulation(gwidget):
     assert len(gwidget._legend._items) == 0
 
 
-def test_context_menu():
-    ...
-    # area = self._area
-    # event = object()
-    # menus = self._area._menus
-    #
-    # self.assertEqual(3, len(menus))
-    # self.assertEqual("Meter", menus[0].title())
-    # self.assertEqual("Grid", menus[1].title())
-    # self.assertEqual("Transform", menus[2].title())
-    #
-    # # test "Meter" actions
-    # meter_actions = menus[0].actions()
-    # self.assertFalse(area._show_meter)
-    # self.assertFalse(area._meter.isVisible())
-    # spy = QSignalSpy(area.cross_toggled_sgn)
-    # meter_actions[0].defaultWidget().setChecked(True)
-    # self.assertTrue(area._show_meter)
-    # self.assertTrue(area._meter.isVisible())
-    # self.assertEqual(1, len(spy))
-    # meter_actions[0].defaultWidget().setChecked(False)
-    # self.assertFalse(area._show_meter)
-    # self.assertFalse(area._meter.isVisible())
-    # self.assertEqual(2, len(spy))
-    #
-    # # test "Grid" actions
-    # grid_actions = menus[1].actions()
-    # alpha = area._grid_opacity_sld.value()
-    # grid_actions[0].defaultWidget().setChecked(True)
-    # self.assertEqual(alpha, area.getAxis("bottom").grid)
-    # grid_actions[1].defaultWidget().setChecked(True)
-    # self.assertEqual(alpha, area.getAxis("left").grid)
-    #
-    # # test "Transform" actions
-    # plot_item = CurvePlotItem()
-    # plot_item2 = ScatterPlotItem()
-    # area.addItem(plot_item)
-    # area.addItem(plot_item2, y2=True)
-    # transform_actions = menus[2].actions()
-    #
-    # with patch.object(plot_item, "updateGraph") as mocked:
-    #     with patch.object(plot_item2, "updateGraph") as mocked2:
-    #         transform_actions[0].defaultWidget().setChecked(True)
-    #         self.assertTrue(area.getAxis("bottom").logMode)
-    #         # self.assertTrue(area.getAxis("top").logMode)
-    #         self.assertTrue(plot_item._log_x_mode)
-    #         self.assertTrue(plot_item2._log_x_mode)
-    #         mocked.assert_called_once()
-    #         mocked2.assert_called_once()
-    #
-    #         plot_item3 = CurvePlotItem()
-    #         plot_item4 = ScatterPlotItem()
-    #         area.addItem(plot_item3)
-    #         area.addItem(plot_item4, y2=True)
-    #         self.assertTrue(plot_item3._log_x_mode)
-    #         self.assertTrue(plot_item4._log_x_mode)
-    #
-    # with patch.object(plot_item, "updateGraph") as mocked:
-    #     with patch.object(plot_item2, "updateGraph") as mocked2:
-    #         transform_actions[1].defaultWidget().setChecked(True)
-    #         self.assertTrue(area.getAxis("left").logMode)
-    #         # self.assertTrue(area.getAxis("right").logMode)
-    #         self.assertTrue(plot_item._log_y_mode)
-    #         self.assertFalse(plot_item2._log_y_mode)
-    #         mocked.assert_called_once()
-    #         mocked2.assert_not_called()
-    #
-    #         plot_item5 = CurvePlotItem()
-    #         plot_item6 = ScatterPlotItem()
-    #         area.addItem(plot_item5)
-    #         area.addItem(plot_item6, y2=True)
-    #         self.assertTrue(plot_item5._log_y_mode)
-    #         self.assertFalse(plot_item6._log_y_mode)
-    #
-    # another_area = PlotWidget(
-    #     enable_meter=False, enable_transform=False, enable_grid=False)
-    # menus = another_area._menus
-    # self.assertEqual(0, len(menus))
+def test_mouse_cursor_context_menu(gwidget):
+    canvas = gwidget._canvas
+    cursor_show_act = canvas.getMenuAction("Cursor_Show")
+
+    assert not cursor_show_act.isChecked()
+    assert canvas.getMenuAction("Cursor_Style_Cross").isChecked()
+    assert isinstance(gwidget._mouse_cursor, CrossMouseCursorItem)
+    assert not gwidget._mouse_cursor.isVisible()
+
+    canvas.getMenuAction("Cursor_Style_Simple").trigger()
+    assert cursor_show_act.isChecked()
+    assert isinstance(gwidget._mouse_cursor, MouseCursorItem)
+    assert not hasattr(gwidget._mouse_cursor, "_v_line")
+    assert gwidget._mouse_cursor.isVisible()
+
+    canvas.getMenuAction("Cursor_Style_InfiniteCross").trigger()
+    assert isinstance(gwidget._mouse_cursor, CrossMouseCursorItem)
+
+    cursor_show_act.trigger()
+    assert not gwidget._mouse_cursor.isVisible()
+
+
+def test_log_scale_context_menu(gwidget):
+    x_axis = gwidget._axes["bottom"]
+    y_axis = gwidget._axes["left"]
+    y2_axis = gwidget._axes["right"]
+    log_x_act = x_axis.getMenuAction("LogScale")
+    log_y_act = y_axis.getMenuAction("LogScale")
+    log_y2_act = y2_axis.getMenuAction("LogScale")
+
+    plot_item1 = CurvePlotItem()
+    plot_item2 = ScatterPlotItem()
+    plot_item3 = BarPlotItem()
+    gwidget.addItem(plot_item1)
+    gwidget.addItem(plot_item2)
+    gwidget.addItem(plot_item3, y2=True)
+    with patch.object(plot_item1, "updateGraph") as mocked1:
+        with patch.object(plot_item2, "updateGraph") as mocked2:
+            with patch.object(plot_item3, "updateGraph") as mocked3:
+
+                assert not x_axis.logScale()
+                assert not y_axis.logScale()
+                assert not y2_axis.logScale()
+
+                log_x_act.setChecked(True)
+                assert x_axis.logScale()
+                assert not y_axis.logScale()
+                mocked1.assert_called_once()
+                mocked2.assert_called_once()
+                mocked3.assert_called_once()
+                mocked1.reset_mock()
+                mocked2.reset_mock()
+                mocked3.reset_mock()
+
+                log_y_act.setChecked(True)
+                assert x_axis.logScale()
+                assert y_axis.logScale()
+                assert not y2_axis.logScale()
+                mocked1.assert_called_once()
+                mocked2.assert_called_once()
+                mocked3.assert_not_called()
+                mocked1.reset_mock()
+                mocked2.reset_mock()
+
+                log_y2_act.setChecked(True)
+                assert y2_axis.logScale()
+                mocked1.assert_not_called()
+                mocked2.assert_not_called()
+                mocked3.assert_called_once()

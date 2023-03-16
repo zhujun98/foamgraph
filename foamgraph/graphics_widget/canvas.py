@@ -144,7 +144,6 @@ class Canvas(QGraphicsWidget):
         self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding,
                                        QSizePolicy.Policy.Expanding))
 
-        self._mouse_mode_menu = None
         self._menu = self._createContextMenu()
 
         self._proxy = self.CanvasProxy(self)
@@ -157,21 +156,25 @@ class Canvas(QGraphicsWidget):
         root = QMenu()
 
         action = root.addAction("View All")
+        action.setObjectName("ViewAll")
         action.triggered.connect(lambda: self.setTargetRange(
             self._proxy.viewRect(), disable_auto_range=True))
 
         # ---
         if not self._auto_range_x_locked and not self._auto_range_y_locked:
             menu = root.addMenu("Mouse Mode")
+            menu.setObjectName("MouseMode")
             group = QActionGroup(menu)
 
             action = menu.addAction("Off")
+            action.setObjectName("MouseMode_Off")
             action.setActionGroup(group)
             action.setCheckable(True)
             action.toggled.connect(
                 lambda: self.__setMouseMode(self.MouseMode.Off))
 
             action = menu.addAction("Pan")
+            action.setObjectName("MouseMode_Pan")
             action.setActionGroup(group)
             action.setCheckable(True)
             action.toggled.connect(
@@ -179,14 +182,19 @@ class Canvas(QGraphicsWidget):
             action.setChecked(True)
 
             action = menu.addAction("Zoom")
+            action.setObjectName("MouseMode_Zoom")
             action.setActionGroup(group)
             action.setCheckable(True)
             action.toggled.connect(
                 lambda: self.__setMouseMode(self.MouseMode.Rect))
 
-            self._mouse_mode_menu = menu
-
         return root
+
+    def getMenu(self, name: str) -> QMenu:
+        return self._menu.findChild(QMenu, name)
+
+    def getMenuAction(self, name: str) -> QAction:
+        return self._menu.findChild(QAction, name)
 
     def extendContextMenu(self, label: str) -> QMenu:
         return self._menu.addMenu(label)
@@ -195,7 +203,8 @@ class Canvas(QGraphicsWidget):
         return self._menu.addAction(label)
 
     def setMouseMode(self, mode: int) -> None:
-        self._mouse_mode_menu.actions()[mode].setChecked(True)
+        ...
+        # self.getMenu("Mouse Mode").actions()[mode].setChecked(True)
 
     def __setMouseMode(self, mode: "Canvas.MouseMode"):
         self._mouse_mode = mode

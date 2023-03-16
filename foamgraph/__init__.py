@@ -6,11 +6,7 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 from .backend import QtCore, QtGui, QtWidgets
-from .backend.QtWidgets import QApplication
 
-from .pyqtgraph_be import setConfigOptions
-
-from .config import config
 from .scenes import AbstractScene
 from .aesthetics import FColor, createIconButton
 from .graph_view import (
@@ -21,18 +17,12 @@ from .ctrl_widgets import (
     SmartIdLineEdit, SmartSliceLineEdit
 )
 
-setConfigOptions(
-    imageAxisOrder="row-major",
-    foreground=config["FOREGROUND_COLOR"],
-    background=config["BACKGROUND_COLOR"],
-)
-
 
 def mkQApp(args=None):
-    app = QApplication.instance()
+    app = QtGui.QApplication.instance()
     if app is None:
         if args is None:
-            return QApplication([])
-        return QApplication(args)
+            return QtGui.QApplication([])
+        return QtGui.QApplication(args)
 
     return app
