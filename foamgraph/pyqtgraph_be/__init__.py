@@ -48,64 +48,6 @@ def getConfigOption(opt):
     return CONFIG_OPTIONS[opt]
 
 
-def systemInfo():
-    print("sys.platform: %s" % sys.platform)
-    print("sys.version: %s" % sys.version)
-    from .Qt import VERSION_INFO
-    print("qt bindings: %s" % VERSION_INFO)
-    
-    global __version__
-    rev = None
-    if __version__ is None:  ## this code was probably checked out from bzr; look up the last-revision file
-        lastRevFile = os.path.join(os.path.dirname(__file__), '..', '.bzr', 'branch', 'last-revision')
-        if os.path.exists(lastRevFile):
-            with open(lastRevFile, 'r') as fd:
-                rev = fd.read().strip()
-    
-    print("pyqtgraph: %s; %s" % (__version__, rev))
-    print("config:")
-    import pprint
-    pprint.pprint(CONFIG_OPTIONS)
-
-## Rename orphaned .pyc files. This is *probably* safe :)
-## We only do this if __version__ is None, indicating the code was probably pulled
-## from the repository. 
-def renamePyc(startDir):
-    ### Used to rename orphaned .pyc files
-    ### When a python file changes its location in the repository, usually the .pyc file
-    ### is left behind, possibly causing mysterious and difficult to track bugs. 
-
-    ### Note that this is no longer necessary for python 3.2; from PEP 3147:
-    ### "If the py source file is missing, the pyc file inside __pycache__ will be ignored. 
-    ### This eliminates the problem of accidental stale pyc file imports."
-    
-    printed = False
-    startDir = os.path.abspath(startDir)
-    for path, dirs, files in os.walk(startDir):
-        if '__pycache__' in path:
-            continue
-        for f in files:
-            fileName = os.path.join(path, f)
-            base, ext = os.path.splitext(fileName)
-            py = base + ".py"
-            if ext == '.pyc' and not os.path.isfile(py):
-                if not printed:
-                    print("NOTE: Renaming orphaned .pyc files:")
-                    printed = True
-                n = 1
-                while True:
-                    name2 = fileName + ".renamed%d" % n
-                    if not os.path.exists(name2):
-                        break
-                    n += 1
-                print("  " + fileName + "  ==>")
-                print("  " + name2)
-                os.rename(fileName, name2)
-                
-path = os.path.split(__file__)[0]
-if __version__ is None and not hasattr(sys, 'frozen') and sys.version_info[0] == 2: ## If we are frozen, there's a good chance we don't have the original .py files anymore.
-    renamePyc(path)
-
 from .Point import Point
 from .functions import *
 from .ptime import time
