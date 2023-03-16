@@ -5,7 +5,7 @@ import numpy as np
 from foamgraph.backend.QtCore import (
     QByteArray, QDataStream, QIODevice, QPointF, QRectF
 )
-from foamgraph.graphics_item.plot_item import CurvePlotItem
+from foamgraph.graphics_item import CurvePlotItem
 
 from foamgraph.test import visualize
 

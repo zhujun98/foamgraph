@@ -2,8 +2,8 @@ import pytest
 
 import numpy as np
 
-from foamgraph.graphics_item.plot_item import ScatterPlotItem
 from foamgraph.aesthetics import FSymbol
+from foamgraph.graphics_item import ScatterPlotItem
 
 from foamgraph.test import visualize
 

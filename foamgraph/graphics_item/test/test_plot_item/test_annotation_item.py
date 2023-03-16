@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 from foamgraph.backend.QtCore import QPointF, QRectF
-from foamgraph.graphics_item.plot_item import AnnotationItem
+from foamgraph.graphics_item import AnnotationItem
 
 from foamgraph.test import visualize
 

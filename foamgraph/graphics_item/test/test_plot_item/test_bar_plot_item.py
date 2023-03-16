@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 from foamgraph.backend.QtCore import QRectF
-from foamgraph.graphics_item.plot_item import BarPlotItem
+from foamgraph.graphics_item import BarPlotItem
 
 from foamgraph.test import visualize
 

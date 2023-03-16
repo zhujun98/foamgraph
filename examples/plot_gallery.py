@@ -144,9 +144,8 @@ class LinePlotWithAnnotation(GraphView):
         self.setTitle('Line plot with peak annotation')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.addCurvePlot(label="Data", pen=FColor.mkPen('k'))
+        self._plot = self.addCurvePlot(pen=FColor.mkPen('k'))
         self._annotation = self.addAnnotation()
-        self.addLegend()
 
     def updateF(self, data):
         """Override."""
