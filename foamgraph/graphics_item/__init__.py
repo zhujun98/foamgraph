@@ -1,7 +1,6 @@
 from .arrow_item import ArrowItem
 from .mouse_cursor_item import (
-    FiniteLineMouseCursorItem, MouseCursorItem, MouseCursorStyle,
-    InfiniteLineMouseCursorItem
+    CrossMouseCursorItem, MouseCursorItem, MouseCursorStyle
 )
 from .graphics_item import GraphicsItem
 from .image_item import ImageItem

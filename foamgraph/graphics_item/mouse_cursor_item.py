@@ -39,50 +39,26 @@ class MouseCursorItem(QGraphicsObject):
 
     def boundingRect(self) -> None:
         """Override."""
-        return QRectF(0, 0, 100, 100)
+        return QRectF()
 
     def paint(self, p, *args) -> None:
         """Override."""
         ...
 
 
-class FiniteLineMouseCursorItem(MouseCursorItem):
-    """A mouse cursor item with a finite-line-cross as the cursor."""
+class CrossMouseCursorItem(MouseCursorItem):
+    """A mouse cursor item with a cross as the cursor."""
     def __init__(self, length: float = 10, *, parent=None):
         super().__init__(parent=parent)
 
-        hl = length / 2
-        self._v_line = QGraphicsLineItem(0, -hl, 0, hl, parent=self)
-        self._h_line = QGraphicsLineItem(-hl, 0, hl, 0, parent=self)
+        if length > 0:
+            hh = hw = length / 2
+        else:
+            rect = QGuiApplication.primaryScreen().geometry()
+            hw, hh = rect.width(), rect.height()
 
-    # def setPos(self, pos: QPointF) -> None:
-    #     """Override."""
-    #     super().setPos(pos)
-    #     print(pos)
-    #     pos = self.mapFromParent(pos)
-    #     print(pos)
-    #     self._label.setPos(pos)
-    #
-    #     hl = self._length / 2
-    #     self._v_line.setLine(pos.x(), pos.y() - hl, pos.x(), pos.y() + hl)
-    #     self._h_line.setLine(pos.x() - hl, pos.y(), pos.x() + hl, pos.y())
-
-    def setPen(self, pen: QPen) -> None:
-        """Override."""
-        super().setPen(pen)
-        self._v_line.setPen(pen)
-        self._h_line.setPen(pen)
-
-
-class InfiniteLineMouseCursorItem(MouseCursorItem):
-    """A mouse cursor item with an infinite-line-cross as the cursor."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        rect = QGuiApplication.primaryScreen().geometry()
-        w, h = rect.width(), rect.height()
-        self._v_line = QGraphicsLineItem(0, -h, 0, h, parent=self)
-        self._h_line = QGraphicsLineItem(-w, 0, w, 0, parent=self)
+        self._v_line = QGraphicsLineItem(0, -hh, 0, hh, parent=self)
+        self._h_line = QGraphicsLineItem(-hw, 0, hw, 0, parent=self)
 
     def setPen(self, pen: QPen) -> None:
         """Override."""

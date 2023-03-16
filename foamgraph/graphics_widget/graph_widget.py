@@ -38,7 +38,7 @@ class GraphWidget(PlotWidget):
         super()._initConnections()
         self._canvas.setMouseMode(self._canvas.MouseMode.Pan)
         self._setMouseCursorStyle(MouseCursorStyle.Cross)
-        self._mouse_cursor_enable_action.setChecked(False)
+        self._canvas.getMenuAction("Cursor_Show").setChecked(False)
 
     def _initAxisItems(self):
         """Override."""
@@ -120,15 +120,15 @@ class GraphWidget(PlotWidget):
 
         if isinstance(item, PlotItem):
             if y2:
-                if self._axes['bottom'].log_scale:
+                if self._axes['bottom'].logScale():
                     item.setLogX(True)
 
                 self._plot_items_y2[item] = None
             else:
-                if self._axes['bottom'].log_scale:
+                if self._axes['bottom'].logScale():
                     item.setLogX(True)
 
-                if self._axes['left'].log_scale:
+                if self._axes['left'].logScale():
                     item.setLogY(True)
 
                 self._plot_items[item] = None

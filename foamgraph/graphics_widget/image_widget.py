@@ -41,7 +41,7 @@ class ImageWidget(PlotWidget):
         super()._initConnections()
         self._canvas.setMouseMode(self._canvas.MouseMode.Off)
         self._setMouseCursorStyle(MouseCursorStyle.Simple)
-        self._mouse_cursor_enable_action.setChecked(False)
+        self._canvas.getMenuAction("Cursor_Show").setChecked(False)
 
     def imageItem(self):
         return self._image_item

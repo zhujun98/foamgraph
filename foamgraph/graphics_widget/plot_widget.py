@@ -14,8 +14,7 @@ from ..backend.QtWidgets import QGraphicsGridLayout, QSizePolicy
 
 from ..aesthetics import FColor
 from ..graphics_item import (
-    FiniteLineMouseCursorItem, MouseCursorItem, MouseCursorStyle,
-    InfiniteLineMouseCursorItem
+    CrossMouseCursorItem, MouseCursorItem, MouseCursorStyle
 )
 from .canvas import Canvas
 from .graphics_widget import GraphicsWidget
@@ -51,8 +50,6 @@ class PlotWidget(GraphicsWidget):
         self._layout = QGraphicsGridLayout()
 
         self._mouse_cursor = None
-        self._mouse_cursor_enable_action = None
-        self._mouse_cursor_style_menu = None
 
     def _initUI(self) -> None:
         layout = self._layout
@@ -85,50 +82,56 @@ class PlotWidget(GraphicsWidget):
         self._initAxisItems()
         self.setTitle()
 
-        self._extendContextMenu()
+        self._extendCanvasContextMenu()
 
     def _initConnections(self) -> None:
         ...
 
-    def _extendContextMenu(self):
+    def _extendCanvasContextMenu(self):
         menu = self._canvas.extendContextMenu("Cursor")
+        menu.setObjectName("Cursor")
 
-        action = menu.addAction("Enable")
+        action = menu.addAction("Show")
+        action.setObjectName("Cursor_Show")
         action.setCheckable(True)
         action.toggled.connect(self._onMouseCursorToggled)
-        self._mouse_cursor_enable_action = action
 
         style_menu = menu.addMenu("Style")
+        style_menu.setObjectName("Cursor_Style")
         group = QActionGroup(style_menu)
 
         action = style_menu.addAction("Simple")
-        assert (len(group.actions()) == MouseCursorStyle.Simple)
+        action.setObjectName("Cursor_Style_Simple")
         action.setActionGroup(group)
         action.setCheckable(True)
         action.toggled.connect(lambda x: self._createMouseCursor(
             MouseCursorStyle.Simple, x))
 
         action = style_menu.addAction("Cross")
-        assert (len(group.actions()) == MouseCursorStyle.Cross)
+        action.setObjectName("Cursor_Style_Cross")
         action.setActionGroup(group)
         action.setCheckable(True)
         action.toggled.connect(lambda x: self._createMouseCursor(
             MouseCursorStyle.Cross, x))
 
         action = style_menu.addAction("Infinite Cross")
-        assert (len(group.actions()) == MouseCursorStyle.InfiniteCross)
+        action.setObjectName("Cursor_Style_InfiniteCross")
         action.setActionGroup(group)
         action.setCheckable(True)
         action.toggled.connect(lambda x: self._createMouseCursor(
             MouseCursorStyle.InfiniteCross, x))
 
-        self._mouse_cursor_style_menu = style_menu
-
     def _initAxisItems(self):
         ...
 
     def _setMouseCursorStyle(self, style: int) -> None:
-        self._mouse_cursor_style_menu.actions()[style].setChecked(True)
+        if style == MouseCursorStyle.Simple:
+            action = "Cursor_Style_Simple"
+        elif style == MouseCursorStyle.Cross:
+            action = "Cursor_Style_Cross"
+        else:  # style == MouseCursorStyle.InfiniteCross:
+            action = "Cursor_Style_InfiniteCross"
+        self._canvas.getMenuAction(action).setChecked(True)
 
     def _createMouseCursor(self, style: int, state: bool = True):
         if not state:
@@ -140,9 +143,9 @@ class PlotWidget(GraphicsWidget):
         if style == MouseCursorStyle.Simple:
             cursor = MouseCursorItem(parent=self)
         elif style == MouseCursorStyle.Cross:
-            cursor = FiniteLineMouseCursorItem(40, parent=self)
+            cursor = CrossMouseCursorItem(40, parent=self)
         else:
-            cursor = InfiniteLineMouseCursorItem(parent=self)
+            cursor = CrossMouseCursorItem(-1, parent=self)
         cursor.setPen(FColor.mkPen("Magenta"))
         self._mouse_cursor = cursor
 
@@ -150,14 +153,15 @@ class PlotWidget(GraphicsWidget):
         # range of the canvas changed, the mouse cursor should not move. Instead,
         # its label should get updated.
 
-        if self._mouse_cursor_enable_action.isChecked():
+        cursor_show_act = self._canvas.getMenuAction("Cursor_Show")
+        if cursor_show_act.isChecked():
             # initialize connections
             self._onMouseCursorToggled(True)
         else:
             # When a new cursor style is selected, we can assume that the user
             # wants to show it immediately. We also need the following line for
             # initializing signal-slot connections.
-            self._mouse_cursor_enable_action.setChecked(True)
+            cursor_show_act.setChecked(True)
 
     def _onMouseCursorToggled(self, state: bool):
         if state:
