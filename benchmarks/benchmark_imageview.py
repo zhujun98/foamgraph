@@ -19,13 +19,13 @@ app = mkQApp()
 
 
 class BenchmarkImageViewSpeed:
-    def __init__(self, *, pyqtgraph=False):
+    def __init__(self, dtype, *, pyqtgraph=False, grayscale=False):
         self._dt = deque(maxlen=60)
 
         self._timer = QTimer()
         self._timer.timeout.connect(self.update)
 
-        self._data = np.random.normal(size=(50, 1024, 1280))
+        self._data = np.random.normal(size=(50, 1024, 1280)).astype(dtype)
         self._prev_t = None
         self._count = 0
         self._fps = None
@@ -33,8 +33,12 @@ class BenchmarkImageViewSpeed:
         if pyqtgraph:
             import pyqtgraph as pg
             self._view = pg.ImageView()
+            if not grayscale:
+                self._view.ui.histogram.gradient.loadPreset("plasma")
         else:
             self._view = ImageView()
+            if grayscale:
+                self._view.setColorMap("grey")
         self._view.show()
 
     def start(self):
@@ -68,11 +72,25 @@ class BenchmarkImageViewSpeed:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--pyqtgraph', action='store_true')
+    parser.add_argument('--grayscale', action='store_true')
+    parser.add_argument('--dtype', type=str, default='float')
     parser.add_argument('--timeout', type=int, default=6,
                         help="Run time in seconds")
     args = parser.parse_args()
 
-    bench = BenchmarkImageViewSpeed(pyqtgraph=args.pyqtgraph)
+    dtype = args.dtype
+    if dtype == 'double':
+        dtype = np.float64
+    elif dtype == 'float':
+        dtype = np.float32
+    elif dtype == 'uint16':
+        dtype = np.uint16
+    else:
+        raise ValueError(f"Unknown image dtype: {dtype}")
+
+    bench = BenchmarkImageViewSpeed(dtype,
+                                    pyqtgraph=args.pyqtgraph,
+                                    grayscale=args.grayscale)
     bench.start()
 
     timer = QTimer()

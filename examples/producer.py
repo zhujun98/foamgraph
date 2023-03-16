@@ -178,12 +178,14 @@ class ImageData:
         return xc, yc, 0.2 * self._max_v * np.exp(-0.5 * (xx ** 2 / (w / 8) ** 2 + yy ** 2 / (h / 8) ** 2))
 
     def next(self):
+        v0 = self._counter % self._max_v
         self._counter += 1
 
-        data = (self._counter % self._max_v) * np.random.random((self._h, self._w))
+        data = v0 * np.random.random((self._h, self._w))
+        if v0 != 0:
+            xc, yc, spot = self._spot
+            data[yc:yc + spot.shape[0], xc:xc + spot.shape[1]] += spot
 
-        xc, yc, spot = self._spot
-        data[yc:yc + spot.shape[0], xc:xc + spot.shape[1]] += spot
         return {'data': data}
 
 

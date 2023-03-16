@@ -1,1 +1,1 @@
-from foamgraph.graphics_widget import ImageColormapEditor
+from foamgraph.graphics_widget import ColormapController

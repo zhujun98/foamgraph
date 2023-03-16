@@ -11,13 +11,17 @@ from ..backend.QtCore import QPointF, Qt
 
 from ..graphics_item import ImageItem, RectROI, MouseCursorStyle
 from .axis_widget import AxisWidget
-from .image_colormap_editor import ImageColormapEditor
+from .colormap_controller import ColormapController
 from .plot_widget import PlotWidget
 
 
 class ImageWidget(PlotWidget):
-    """PlotWidget for displaying an image."""
+    """PlotWidget for displaying an image.
 
+    It contains a :class:`Canvas`, a :class:`ColormapController`, a
+    :class"`LabelWidget` for displaying the title and a
+    :class:`MouseCursorItem`.
+    """
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -26,7 +30,7 @@ class ImageWidget(PlotWidget):
 
         self._rois = []
 
-        self._cmap_editor = ImageColormapEditor(self._image_item)
+        self._cmap_controller = ColormapController(self._image_item)
 
         self._initUI()
         self._initConnections()
@@ -34,7 +38,7 @@ class ImageWidget(PlotWidget):
     def _initUI(self) -> None:
         """Override."""
         super()._initUI()
-        self._layout.addItem(self._cmap_editor, 1, 2)
+        self._layout.addItem(self._cmap_controller, 1, 2)
 
     def _initConnections(self) -> None:
         """Override."""
@@ -62,6 +66,9 @@ class ImageWidget(PlotWidget):
 
     def setImage(self, *args, **kwargs):
         self._image_item.setData(*args, **kwargs)
+
+    def setColorMap(self, *args, **kwargs):
+        self._cmap_controller.setColorMap(*args, **kwargs)
 
     def clearData(self) -> None:
         """Override."""

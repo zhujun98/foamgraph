@@ -5,16 +5,14 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from collections.abc import Callable
 from typing import Optional
 
 import numpy as np
 
-from ..backend.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF, Qt
+from ..backend.QtCore import pyqtSignal, pyqtSlot, QLineF, QPointF, QRectF, Qt
+from ..backend.QtGui import QImage
 
-from ..pyqtgraph_be import Point
-from ..pyqtgraph_be import functions as fn
-
+from ..aesthetics import ColorMap
 from ..algorithm import quick_min_max
 from .graphics_item import GraphicsObject
 
@@ -24,70 +22,58 @@ class ImageItem(GraphicsObject):
 
     image_changed_sgn = pyqtSignal()
 
-    def __init__(self, image=None, *, parent=None):
+    def __init__(self, data: Optional[np.ndarray] = None, *, parent=None):
         super().__init__(parent=parent)
 
         self._data = None   # original image data
-        self._image = None  # rendered image for display
+        self._qimage = None  # rendered image for display
+        self._buffer = None
 
-        self._levels = (0, 1)  # [min, max]
+        self._v_min = 0
+        self._v_max = 0
         self._auto_level_quantile = 0.99
+        self._cmap = None
         self._lut = None
 
-        # In some cases, a modified lookup table is used to handle both
-        # rescaling and LUT more efficiently
-        self._fast_lut = None
+        self.setData(data, auto_levels=True)
 
-        self.setData(image, auto_levels=True)
-
-    def setLevels(self, levels):
-        """Set image colormap scaling levels.
-
-        :param tuple levels: (min, max).
-        """
-        if self._levels != levels:
-            self._levels = levels
-            self._fast_lut = None
+    def setLevels(self, v_min: float, v_max: float):
+        """Set image colormap scaling levels."""
+        if self._v_min != v_min or self._v_max != v_max:
+            self._v_min = v_min
+            self._v_max = v_max
             self._prepareForRender()
 
-    def levels(self) -> tuple:
-        return self._levels
+    def levels(self) -> tuple[float, float]:
+        return self._v_min, self._v_max
 
-    def setLookupTable(self, lut, update=True) -> None:
-        if lut is not self._lut:
-            self._lut = lut
-            self._fast_lut = None
-            if update:
-                self._prepareForRender()
+    def setColormap(self, cmap: ColorMap):
+        self._cmap = cmap
+        self._lut = None
+        self._prepareForRender()
 
     def _prepareForRender(self):
-        self._image = None
+        self._qimage = None
         self.update()
-
-    def updateGraph(self):
-        self._data = None
-        self._image = None
-        self.prepareGeometryChange()
-        self.informViewBoundsChanged()
 
     def clearData(self):
         self.setData(None)
 
     def _parseImageData(self, data):
-        shape_changed = False
-        dtype_changed = False
         if not isinstance(data, np.ndarray):
             raise TypeError("Image data must be a numpy.ndarray!")
 
         if data.ndim != 2:
             raise ValueError("Image data must be 2 dimensional!")
 
+        shape_changed = False
+        dtype_changed = False
         if self._data is None:
             shape_changed = True
             dtype_changed = True
         elif data.shape != self._data.shape:
             shape_changed = True
-        elif data.dtype != self._data.shape:
+        elif data.dtype != self._data.dtype:
             dtype_changed = True
 
         self._data = data
@@ -104,7 +90,7 @@ class ImageItem(GraphicsObject):
             self.informViewBoundsChanged()
 
         if auto_levels:
-            self._levels = quick_min_max(
+            self._v_min, self._v_max = quick_min_max(
                 self._data, q=self._auto_level_quantile)
 
         self._prepareForRender()
@@ -114,81 +100,66 @@ class ImageItem(GraphicsObject):
     def dataAt(self, x: int, y: int) -> float:
         return self._data[y, x]
 
-    def render(self):
+    def _generateLookUpTable(self):
+        n = 256 if self._data.dtype == np.uint8 else 512
+        self._lut = self._cmap.getLookUpTable(n)
+
+    @staticmethod
+    def scaleForDisplay(data, v_min: float, v_max: float, num_colors: int):
+        data = data.copy()
+        data -= v_min
+        data *= num_colors / (v_max - v_min)
+        data = np.clip(data, 0, num_colors - 1)
+        return data.astype(np.min_scalar_type(num_colors - 1))
+
+    @staticmethod
+    def arrayToQImage(arr: np.ndarray, fmt: QImage.Format):
+        h, w = arr.shape[:2]
+        qimg = QImage(arr.ctypes.data, w, h, arr.strides[0], fmt)
+        return qimg
+
+    def _process_f(self):
+        num_colors = self._lut.shape[0]
+
+        v_min, v_max = self._v_min, self._v_max
+        if v_min == v_max:
+            v_max = np.nextafter(v_max, 2 * v_max)
+        scaled = self.scaleForDisplay(self._data, v_min, v_max, num_colors)
+
+        data = np.take(self._lut, scaled, axis=0)
+
+        order = [2, 1, 0, 3]
+        for i in range(0, data.shape[2]):
+            self._buffer[..., i] = data[..., order[i]]
+
+    def _render(self):
         """Convert data to QImage for displaying."""
-        if self._data is None or self._data.size == 0:
+        data = self._data
+        if data is None or data.size == 0:
             return
 
-        # Request a lookup table
-        if isinstance(self._lut, Callable):
-            lut = self._lut(self._data)
+        if self._lut is None:
+            self._generateLookUpTable()
+
+        if self._buffer is None or self._buffer.shape[:2] != data.shape[:2]:
+            self._buffer = np.empty(data.shape[:2] + (4,), dtype=np.uint8)
+
+        if data.dtype.kind == 'f':
+            self._process_f()
         else:
-            lut = self._lut
+            raise NotImplementedError
 
-        # Downsample
-
-        # reduce dimensions of image based on screen resolution
-        o = self.mapToDevice(QPointF(0, 0))
-        x = self.mapToDevice(QPointF(1, 0))
-        y = self.mapToDevice(QPointF(0, 1))
-
-        # Check if graphics view is too small to render anything
-        if o is None or x is None or y is None:
-            return
-
-        w = Point(x-o).length()
-        h = Point(y-o).length()
-        if w == 0 or h == 0:
-            self._image = None
-            return
-
-        xds = max(1, int(1.0 / w))
-        yds = max(1, int(1.0 / h))
-        # TODO: replace fn.downsample
-        image = fn.downsample(self._data, xds, axis=1)
-        image = fn.downsample(image, yds, axis=0)
-
-        # Check if downsampling reduced the image size to zero due to inf values.
-        if image.size == 0:
-            return
-
-        # if the image data is a small int, then we can combine levels + lut
-        # into a single lut for better performance
-        levels = self._levels
-        if levels is not None and image.dtype in (np.ubyte, np.uint16):
-            if self._fast_lut is None:
-                eflsize = 2**(image.itemsize*8)
-                ind = np.arange(eflsize)
-                minlev, maxlev = levels
-                levdiff = maxlev - minlev
-                # avoid division by 0
-                levdiff = 1 if levdiff == 0 else levdiff
-                if lut is None:
-                    efflut = fn.rescaleData(
-                        ind, scale=255./levdiff, offset=minlev, dtype=np.ubyte)
-                else:
-                    lutdtype = np.min_scalar_type(lut.shape[0]-1)
-                    efflut = fn.rescaleData(
-                        ind, scale=(lut.shape[0]-1)/levdiff,
-                        offset=minlev, dtype=lutdtype, clip=(0, lut.shape[0]-1))
-                    efflut = lut[efflut]
-
-                self._fast_lut = efflut
-            lut = self._fast_lut
-            levels = None
-
-        # TODO: replace fn.makeARGB and fn.makeQImage
-        argb, alpha = fn.makeARGB(image, lut=lut, levels=levels)
-        self._image = fn.makeQImage(argb, alpha, transpose=False)
+        self._qimage = self.arrayToQImage(
+            self._buffer, QImage.Format.Format_ARGB32)
 
     def paint(self, p, *args) -> None:
         """Override."""
-        if self._image is None:
-            self.render()
-            if self._image is None:
+        if self._qimage is None:
+            self._render()
+            if self._qimage is None:
                 return
 
-        p.drawImage(QRectF(0, 0, *self._data.shape[::-1]), self._image)
+        p.drawImage(QRectF(0, 0, *self._data.shape[::-1]), self._qimage)
 
     def histogram(self):
         """Return estimated histogram of image pixels.
@@ -225,7 +196,6 @@ class ImageItem(GraphicsObject):
             bins = np.linspace(lb, ub, n_bins)
 
         hist, bin_edges = np.histogram(sliced_data, bins=bins)
-
         return hist, (bin_edges[:-1] + bin_edges[1:]) / 2.
 
     def boundingRect(self) -> QRectF:
