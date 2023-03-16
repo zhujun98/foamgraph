@@ -75,7 +75,12 @@ class ImageWidget(PlotWidget):
             v = self._image_item.dataAt(x, y)
             self._mouse_cursor.setLabel(f"    {x}, {y}, {v:.1f}")
         else:
-            self._mouse_cursor.setLabel(f"    {x}, {y}")
+            self._mouse_cursor.setLabel("")
+
+    def _updateMouseCursorLabel(self) -> None:
+        """Override."""
+        # image size could change
+        ...
 
     def _initAxisItems(self):
         """Override."""

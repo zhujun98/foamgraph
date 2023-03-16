@@ -11,8 +11,8 @@ import os, sys
 CONFIG_OPTIONS = {
     'leftButtonPan': True,  ## if false, left button drags a rubber band for zooming in viewbox
     # foreground/background take any arguments to the 'mkColor' in /pyqtgraph/functions.py
-    'foreground': 'd',  ## default foreground color for axes, labels, etc.
-    'background': 'k',        ## default background for GraphicsWidget
+    # 'foreground': 'd',  ## default foreground color for axes, labels, etc.
+    # 'background': 'k',        ## default background for GraphicsWidget
     'antialias': False,
     'editorCommand': None,  ## command used to invoke code editor from ConsoleWidgets
     'useWeave': False,       ## Use weave to speed up some operations, if it is available

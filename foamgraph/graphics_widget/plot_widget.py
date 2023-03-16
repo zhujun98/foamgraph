@@ -23,7 +23,11 @@ from .label_widget import LabelWidget
 
 
 class PlotWidget(GraphicsWidget):
-    """2D plot widget for displaying graphs or an image."""
+    """2D plot widget for displaying graphs or an image.
+
+    It contains a `Canvas`, up to four `AxisItem`s, a `LabelWidget` to
+    display title and a `MouseCursorItem`.
+    """
 
     _TITLE_LOC = (0, 1)
     _CANVAS_LOC = (1, 1)
@@ -40,13 +44,13 @@ class PlotWidget(GraphicsWidget):
                            QSizePolicy.Policy.Expanding)
 
         self._canvas = Canvas(parent=self)
-        self._mouse_cursor = None
 
         self._axes = {}
         self._title = LabelWidget('')
 
         self._layout = QGraphicsGridLayout()
 
+        self._mouse_cursor = None
         self._mouse_cursor_enable_action = None
         self._mouse_cursor_style_menu = None
 
@@ -84,8 +88,7 @@ class PlotWidget(GraphicsWidget):
         self._extendContextMenu()
 
     def _initConnections(self) -> None:
-        self._canvas.transform_changed_sgn.connect(
-            self._onCanvasTransformChanged)
+        ...
 
     def _extendContextMenu(self):
         menu = self._canvas.extendContextMenu("Cursor")
@@ -135,15 +138,18 @@ class PlotWidget(GraphicsWidget):
             self._canvas.removeItem(self._mouse_cursor)
 
         if style == MouseCursorStyle.Simple:
-            cursor = MouseCursorItem()
+            cursor = MouseCursorItem(parent=self)
         elif style == MouseCursorStyle.Cross:
-            cursor = FiniteLineMouseCursorItem(40)
+            cursor = FiniteLineMouseCursorItem(40, parent=self)
         else:
-            cursor = InfiniteLineMouseCursorItem()
+            cursor = InfiniteLineMouseCursorItem(parent=self)
         cursor.setPen(FColor.mkPen("Magenta"))
         self._mouse_cursor = cursor
 
-        self._canvas.addItem(cursor, ignore_bounds=True)
+        # Mouse cursor should not be added to the Canvas because: when the view
+        # range of the canvas changed, the mouse cursor should not move. Instead,
+        # its label should get updated.
+
         if self._mouse_cursor_enable_action.isChecked():
             # initialize connections
             self._onMouseCursorToggled(True)
@@ -159,20 +165,26 @@ class PlotWidget(GraphicsWidget):
             self._canvas.mouse_moved_sgn.connect(self._onMouseCursorMoved)
             self._canvas.mouse_hovering_toggled_sgn.connect(
                 self._mouse_cursor.setVisible)
+            self._canvas.transform_changed_sgn.connect(
+                self._updateMouseCursorLabel)
         else:
             self._mouse_cursor.hide()
             self._canvas.mouse_moved_sgn.disconnect(self._onMouseCursorMoved)
             self._canvas.mouse_hovering_toggled_sgn.disconnect(
                 self._mouse_cursor.setVisible)
+            self._canvas.transform_changed_sgn.disconnect(
+                self._updateMouseCursorLabel)
 
     def _onMouseCursorMoved(self, pos: QPointF) -> None:
+        pos = self._canvas.mapFromViewToItem(self, pos)
         self._mouse_cursor.setPos(pos)
 
-    def _onCanvasTransformChanged(self) -> None:
-        self._mouse_cursor.updateBoundingRect()
+    @abstractmethod
+    def _updateMouseCursorLabel(self) -> None:
+        raise NotImplementedError
 
     @abstractmethod
-    def clearData(self):
+    def clearData(self) -> None:
         raise NotImplementedError
 
     def addItem(self, item) -> None:

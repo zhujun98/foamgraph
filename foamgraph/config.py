@@ -7,6 +7,26 @@ Author: Jun Zhu
 """
 from collections import abc
 
+from .backend.QtWidgets import QApplication
+
+
+def mkQApp(args=None):
+    app = QApplication.instance()
+    if app is None:
+        if args is None:
+            return QApplication([])
+        return QApplication(args)
+
+    return app
+
+
+app = mkQApp()
+
+
+def _get_screen_geometry():
+    geom = app.desktop().screenGeometry()
+    return geom.width(), geom.height()
+
 
 class _Config(abc.Mapping):
     """Readonly config."""
@@ -19,6 +39,7 @@ class _Config(abc.Mapping):
         # yellowy, bipolar, spectrum, cyclic, greyclip, grey, viridis,
         # inferno, plasma, magma
         "COLOR_MAP": 'plasma',
+        "SCREEN_GEOMETRY": _get_screen_geometry()
     }
 
     def __init__(self):
