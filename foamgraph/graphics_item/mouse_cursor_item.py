@@ -8,11 +8,10 @@ Author: Jun Zhu
 from enum import IntEnum
 
 from ..backend.QtCore import QPointF, QRectF
-from ..backend.QtGui import QPen
+from ..backend.QtGui import QGuiApplication, QPen
 from ..backend.QtWidgets import (
     QGraphicsLineItem, QGraphicsObject, QGraphicsTextItem
 )
-from ..config import config
 
 
 class MouseCursorStyle(IntEnum):
@@ -80,7 +79,8 @@ class InfiniteLineMouseCursorItem(MouseCursorItem):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        w, h = config["SCREEN_GEOMETRY"]
+        rect = QGuiApplication.primaryScreen().geometry()
+        w, h = rect.width(), rect.height()
         self._v_line = QGraphicsLineItem(0, -h, 0, h, parent=self)
         self._h_line = QGraphicsLineItem(-w, 0, w, 0, parent=self)
 

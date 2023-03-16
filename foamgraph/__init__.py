@@ -7,7 +7,6 @@ Author: Jun Zhu
 """
 from .backend import QtCore, QtGui, QtWidgets
 
-from .config import mkQApp
 from .scenes import AbstractScene
 from .aesthetics import FColor, createIconButton
 from .graph_view import (
@@ -17,3 +16,13 @@ from .ctrl_widgets import (
     SmartLineEdit, SmartStringLineEdit, SmartBoundaryLineEdit,
     SmartIdLineEdit, SmartSliceLineEdit
 )
+
+
+def mkQApp(args=None):
+    app = QtGui.QApplication.instance()
+    if app is None:
+        if args is None:
+            return QtGui.QApplication([])
+        return QtGui.QApplication(args)
+
+    return app
