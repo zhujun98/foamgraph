@@ -144,9 +144,8 @@ class LinePlotWithAnnotation(GraphView):
         self.setTitle('Line plot with peak annotation')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.addCurvePlot(label="Data", pen=FColor.mkPen('k'))
+        self._plot = self.addCurvePlot(pen=FColor.mkPen('k'))
         self._annotation = self.addAnnotation()
-        self.addLegend()
 
     def updateF(self, data):
         """Override."""
@@ -154,6 +153,22 @@ class LinePlotWithAnnotation(GraphView):
         x, y, peaks = data['x'], data['y'], data['peaks']
         self._plot.setData(x, y)
         self._annotation.setData(x[peaks], y[peaks], annotations=x[peaks])
+
+
+class CandlestickPlot(GraphView):
+    def __init__(self, *, parent=None):
+        super().__init__(parent=parent)
+
+        self.setTitle('Candlestick plot')
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
+
+        self._plot = self.addCandlestickPlot()
+
+    def updateF(self, data):
+        """Override."""
+        data = data['candlestick']
+        self._plot.setData(data['x'], data['y_start'], data['y_end'],
+                           data['y_min'], data['y_max'])
 
 
 class PlotGalleryScene(AbstractScene):
@@ -172,7 +187,8 @@ class PlotGalleryScene(AbstractScene):
             ErrorbarPlot(parent=self),
             MultiLinePlot(parent=self),
             DoubleYPlot(parent=self),
-            LinePlotWithAnnotation(parent=self)
+            LinePlotWithAnnotation(parent=self),
+            CandlestickPlot(parent=self)
         ]
 
         self.initUI()
@@ -192,7 +208,8 @@ class PlotGalleryScene(AbstractScene):
         for i in range(rows):
             for j in range(cols):
                 layout.addWidget(self._plots[cols * i + j], i, j)
-        layout.addWidget(self._plots[-1], 2, 0)
+        layout.addWidget(self._plots[-2], 2, 0)
+        layout.addWidget(self._plots[-1], 2, 1)
 
         self._cw = QFrame()
         self._cw.setLayout(layout)

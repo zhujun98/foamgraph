@@ -2,8 +2,8 @@ import pytest
 
 import numpy as np
 
-from foamgraph.graphics_item.plot_item import ScatterPlotItem
 from foamgraph.aesthetics import FSymbol
+from foamgraph.graphics_item import ScatterPlotItem
 
 from foamgraph.test import visualize
 
@@ -28,39 +28,37 @@ def item(view):
     return item
 
 
-def test_item(view, item):
-    dtype = float
-    x = np.arange(10).astype(dtype)
-    y = x * 1.5
+def test_input_data_parsing(view):
+    x = y = np.arange(10).astype(float)
 
     # x and y are lists
-    item.setData(x.tolist(), y.tolist())
+    item = ScatterPlotItem(x.tolist(), y.tolist(), label="scatter")
+    view.addItem(item)
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
 
-    # x and y are numpy.arrays
-    item.setData(x, y)
-
-    visualize()
-
     # test different lengths
     with pytest.raises(ValueError, match="different lengths"):
-        item.setData(np.arange(2).astype(dtype), np.arange(3).astype(dtype))
+        item.setData(np.arange(2), np.arange(3))
+
+
+def test_log_mode(view, item):
+    x = np.arange(10).astype(float)
+    y = x * 1.5
+    item.setData(x, y)
+    visualize()
 
     # test log mode
     view._cw._onLogXScaleToggled(True)
-
     visualize()
 
     view._cw._onLogYScaleToggled(True)
-
     visualize()
 
     # clear data
     item.clearData()
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
-
     visualize()
 
 

@@ -28,22 +28,6 @@ class FailedImport(object):
         raise self.err
 
 
-def _isQObjectAlive(obj):
-    """An approximation of PyQt's isQObjectAlive().
-    """
-    try:
-        if hasattr(obj, 'parent'):
-            obj.parent()
-        elif hasattr(obj, 'parentItem'):
-            obj.parentItem()
-        else:
-            raise Exception("Cannot determine whether Qt object %s is still alive." % obj)
-    except RuntimeError:
-        return False
-    else:
-        return True
-
-
 # Make a loadUiType function like PyQt has
 
 # Credit:

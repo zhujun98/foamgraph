@@ -3,29 +3,38 @@ import pytest
 import numpy as np
 
 from foamgraph.backend.QtCore import QRectF
-from foamgraph.graphics_item.plot_item import BarPlotItem
+from foamgraph.graphics_item import BarPlotItem
 
 from foamgraph.test import visualize
 
 
-def test_bar_plot_item(view):
+def test_input_data_parsing(view):
     x = np.arange(10).astype(np.float32)
     y = x * 1.5
 
     # x and y are lists
     item = BarPlotItem(x.tolist(), y.tolist(), label='bar')
     view.addItem(item)
-    view.addLegend()
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
-
-    # x and y are numpy.arrays
-    item.setData(x, y)
-    visualize()
 
     # test different lengths
     with pytest.raises(ValueError, match="different lengths"):
         item.setData(np.arange(2), np.arange(3))
+
+
+@pytest.fixture
+def item(view):
+    item = view.addBarPlot(label="bar")
+    view.addLegend()
+    return item
+
+
+def test_log_mode(view, item):
+    x = np.arange(10).astype(np.float32)
+    y = x * 1.5
+    item.setData(x, y)
+    visualize()
 
     # test log mode
     view._cw._onLogXScaleToggled(True)

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 
 from foamgraph import mkQApp, GraphView, TimedGraphView
-from foamgraph.graphics_item.plot_item import AnnotationItem, ErrorbarPlotItem
+from foamgraph.graphics_item import AnnotationItem, ErrorbarPlotItem
 
 from foamgraph.test import visualize
 
