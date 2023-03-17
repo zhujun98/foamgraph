@@ -134,6 +134,30 @@ class MultiPeakData:
         }
 
 
+class StockPriceData:
+    def __init__(self, n: int):
+        self._x = np.arange(n)
+        self._y_start = np.random.normal(0, 10., n) + 20.
+        self._y_end = self._y_start + 20 * (np.random.random(n) - 0.5)
+        self._y_min = np.minimum(self._y_start, self._y_end)\
+                      - 10 * np.random.random(n)
+        self._y_max = np.maximum(self._y_start, self._y_end)\
+                      + 10 * np.random.random(n)
+
+        self._counter = 0
+
+    def next(self):
+        if self._counter == len(self._x):
+            self._counter = 0
+        self._counter += 1
+
+        return {"x": self._x[:self._counter],
+                "y_start": self._y_start[:self._counter],
+                "y_end": self._y_end[:self._counter],
+                "y_min": self._y_min[:self._counter],
+                "y_max": self._y_max[:self._counter]}
+
+
 class ImageData:
     def __init__(self):
         self._shape = (1024, 768)
@@ -181,6 +205,7 @@ if __name__ == "__main__":
     multi_line_plot_data = MultiLinePlotData(1000)
     double_y_plot_data = DoubleYPlotData(100)
     multi_peak_data = MultiPeakData()
+    candlestick_plot_data = StockPriceData(100)
     image_data = ImageData()
     counter = 0
     while True:
@@ -195,6 +220,7 @@ if __name__ == "__main__":
             "multi-line": multi_line_plot_data.next(),
             "double-y": double_y_plot_data.next(),
             "multi-peak": multi_peak_data.next(),
+            "candlestick": candlestick_plot_data.next(),
             "image": image_data.next()
         }
 

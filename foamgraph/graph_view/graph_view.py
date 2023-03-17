@@ -11,8 +11,8 @@ from typing import final, Optional
 from ..backend.QtCore import QTimer
 
 from ..graphics_item import (
-    AnnotationItem, BarPlotItem, CurvePlotItem, ErrorbarPlotItem,
-    ScatterPlotItem
+    AnnotationItem, BarPlotItem, CandlestickPlotItem, CurvePlotItem,
+    ErrorbarPlotItem, ScatterPlotItem
 )
 from ..graphics_widget import GraphWidget
 from .graphics_view import GraphicsView
@@ -29,6 +29,12 @@ class GraphView(GraphicsView):
 
         self._cw = GraphWidget()
         self.setCentralWidget(self._cw)
+
+    def addCandlestickPlot(self, *args, y2=False, **kwargs):
+        """Add and return a :class:`CandlestickPlotItem`."""
+        item = CandlestickPlotItem(*args, **kwargs)
+        self._cw.addItem(item, y2=y2)
+        return item
 
     def addCurvePlot(self, *args, y2=False, **kwargs):
         """Add and return a :class:`CurvePlotItem`."""

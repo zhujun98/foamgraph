@@ -32,9 +32,17 @@ class CurvePlotItem(PlotItem):
 
         self.setData(x, y)
 
+    def _parseInputData(self, x, **kwargs):
+        """Override."""
+        x = self._parse_input(x)
+        y = self._parse_input(kwargs['y'], size=len(x))
+
+        # do not set data unless they pass the sanity check!
+        self._x, self._y = x, y
+
     def setData(self, x, y) -> None:
         """Override."""
-        self._parseInputData(x, y)
+        self._parseInputData(x, y=y)
         self.updateGraph()
 
     def clearData(self) -> None:

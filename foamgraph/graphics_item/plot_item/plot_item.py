@@ -45,23 +45,23 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
     def clearData(self, *args, **kwargs) -> None:
         raise NotImplementedError
 
-    def _parseInputData(self, x, y, **kwargs):
-        """Convert input to np.array and apply shape check."""
+    @staticmethod
+    def _parse_input(x, *, size=None, default=None):
         if isinstance(x, list):
-            x = np.array(x)
-        elif x is None:
-            x = np.array([])
+            return np.array(x)
+        if x is None:
+            if default is None:
+                return np.array([])
+            return default
 
-        if isinstance(y, list):
-            y = np.array(y)
-        elif y is None:
-            y = np.array([])
-
-        if len(x) != len(y):
+        if size is not None and len(x) != size:
             raise ValueError("'x' and 'y' data have different lengths!")
+        return x
 
-        # do not set data unless they pass the sanity check!
-        self._x, self._y = x, y
+    @abstractmethod
+    def _parseInputData(self, x, **kwargs):
+        """Convert input to np.array and apply length check."""
+        raise NotImplementedError
 
     @abstractmethod
     def data(self):

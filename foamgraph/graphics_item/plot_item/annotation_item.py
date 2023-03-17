@@ -59,6 +59,17 @@ class AnnotationItem(PlotItem):
             item.setDefaultTextColor(self._color)
         self.update()
 
+    def _parseInputData(self, x, **kwargs):
+        """Override."""
+        x = self._parse_input(x)
+
+        size = len(x)
+        y = self._parse_input(kwargs['y'], size=size)
+        annotations = self._parse_input(kwargs['annotations'], size=size)
+
+        # do not set data unless they pass the sanity check!
+        self._x, self._y, self._annotations = x, y, annotations
+
     def setData(self, x, y, annotations) -> None:
         """Override.
 
@@ -66,7 +77,7 @@ class AnnotationItem(PlotItem):
         :param y: y coordinates of the annotated points.
         :param annotations: displayed texts of the annotations.
         """
-        self._parseInputData(x, y, annotations=annotations)
+        self._parseInputData(x, y=y, annotations=annotations)
         self._updateTextItems(annotations)
         self.updateGraph()
 
@@ -77,19 +88,6 @@ class AnnotationItem(PlotItem):
     def data(self):
         """Override."""
         return self._x, self._y
-
-    def _parseInputData(self, x, y, **kwargs):
-        """Override."""
-        super()._parseInputData(x, y)
-
-        annotations = kwargs.get("annotations")
-        if isinstance(annotations, list):
-            annotations = np.array(annotations)
-        elif annotations is None:
-            annotations = self._x
-        if len(self._x) != len(annotations):
-            raise ValueError("Annotations have different lengths!")
-        self._annotations = annotations
 
     def _updateTextItems(self, annotations):
         for i in range(len(self._items), len(self._x)):

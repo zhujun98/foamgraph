@@ -7,8 +7,6 @@ Author: Jun Zhu
 """
 from typing import Optional
 
-import numpy as np
-
 from ...backend.QtGui import QPainter, QPainterPath
 from ...aesthetics import FColor
 from .plot_item import PlotItem
@@ -36,9 +34,21 @@ class ErrorbarPlotItem(PlotItem):
 
         self.setData(x, y, y_min=y_min, y_max=y_max)
 
+    def _parseInputData(self, x, **kwargs):
+        """Override."""
+        x = self._parse_input(x)
+
+        size = len(x)
+        y = self._parse_input(kwargs['y'], size=size)
+        y_min = self._parse_input(kwargs['y_min'], size=size, default=y)
+        y_max = self._parse_input(kwargs['y_max'], size=size, default=y)
+
+        # do not set data unless they pass the sanity check!
+        self._x, self._y, self._y_min, self._y_max = x, y, y_min, y_max
+
     def setData(self, x, y, y_min=None, y_max=None, beam=None) -> None:
         """Override."""
-        self._parseInputData(x, y, y_min=y_min, y_max=y_max)
+        self._parseInputData(x, y=y, y_min=y_min, y_max=y_max)
 
         if beam is not None:
             # keep the default beam if not specified
@@ -49,41 +59,6 @@ class ErrorbarPlotItem(PlotItem):
     def clearData(self) -> None:
         """Override."""
         self.setData([], [])
-
-    def _parseInputData(self, x, y, **kwargs):
-        """Override."""
-        if isinstance(x, list):
-            x = np.array(x)
-        elif x is None:
-            x = np.array([])
-
-        if isinstance(y, list):
-            y = np.array(y)
-        elif y is None:
-            y = np.array([])
-
-        if len(x) != len(y):
-            raise ValueError("'x' and 'y' data have different lengths!")
-
-        y_min = kwargs.get('y_min', None)
-        if isinstance(y_min, list):
-            y_min = np.array(y_min)
-        elif y_min is None:
-            y_min = y
-
-        y_max = kwargs.get('y_max', None)
-        if isinstance(y_max, list):
-            y_max = np.array(y_max)
-        elif y_max is None:
-            y_max = y
-
-        if not len(y) == len(y_min) == len(y_max):
-            raise ValueError(
-                "'y_min' and 'y_max' data have different lengths!")
-
-        # do not set data unless they pass the sanity check!
-        self._x, self._y = x, y
-        self._y_min, self._y_max = y_min, y_max
 
     def data(self):
         """Override."""
