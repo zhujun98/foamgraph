@@ -45,24 +45,27 @@ def test_array2path(item):
     assert buf.readInt32() == 0
 
 
+def test_input_data_parsing(view):
+    x = y = np.arange(10).astype(float)
+
+    # x and y are lists
+    item = CurvePlotItem(x.tolist(), y.tolist(), label="curve")
+    view.addItem(item)
+    assert isinstance(item._x, np.ndarray)
+    assert isinstance(item._y, np.ndarray)
+
+    # test different lengths
+    with pytest.raises(ValueError, match="different lengths"):
+        item.setData(np.arange(2), np.arange(3))
+
+
 @pytest.mark.parametrize("dtype", [float, np.int64, np.uint16])
 def test_item(dtype, view, item):
     x = np.arange(10).astype(dtype)
     y = x * 1.5
-
-    # x and y are lists
-    item.setData(x.tolist(), y.tolist())
-    assert isinstance(item._x, np.ndarray)
-    assert isinstance(item._y, np.ndarray)
-
-    # x and y are numpy.arrays
     item.setData(x, y)
     if dtype == float:
         visualize()
-
-    # test different lengths
-    with pytest.raises(ValueError, match="different lengths"):
-        item.setData(np.arange(2).astype(dtype), np.arange(3).astype(dtype))
 
     # test log mode
     view._cw._onLogXScaleToggled(True)

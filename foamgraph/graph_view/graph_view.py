@@ -60,9 +60,9 @@ class GraphView(GraphicsView):
         self._cw.addItem(item, y2=y2)
         return item
 
-    def addAnnotation(self):
-        item = AnnotationItem()
-        self._cw.addItem(item)
+    def addAnnotation(self, *args, y2=False, **kwargs):
+        item = AnnotationItem(*args, **kwargs)
+        self._cw.addItem(item, y2=y2)
         return item
 
     def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):

@@ -17,8 +17,9 @@ from .plot_item import PlotItem
 class AnnotationItem(PlotItem):
     """Add annotation to a plot."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, x=None, y=None, annotations=None, *, label=None):
+        """Initialization."""
+        super().__init__(label=label)
 
         self._x = None
         self._y = None
@@ -35,7 +36,7 @@ class AnnotationItem(PlotItem):
         self._color = None
         self.setColor(FColor.mkColor('b'))
 
-        self.setData(self._x, self._y, self._annotations)
+        self.setData(x, y, annotations)
 
     def setOffsetX(self, x: float) -> None:
         """Set x offset of text items with respect to annotated points."""
@@ -101,6 +102,9 @@ class AnnotationItem(PlotItem):
         self._items.append(item)
 
     def _mapOffsetToView(self):
+        if self.canvas() is None:
+            return self._offset_x, self._offset_y
+
         rect = self.canvas().mapSceneToView(
             QRectF(0, 0, self._offset_x, self._offset_y)).boundingRect()
         return (rect.width() if self._offset_x > 0 else -rect.width(),
@@ -109,6 +113,10 @@ class AnnotationItem(PlotItem):
     def _computePaddings(self):
         padding_x = self._items[np.argmax(self._x)].boundingRect().width()
         padding_y = self._items[np.argmax(self._y)].boundingRect().height()
+
+        if self.canvas() is None:
+            return padding_x, padding_y
+
         rect = self.canvas().mapSceneToView(
             QRectF(0, 0, padding_x, padding_y)).boundingRect()
         return rect.width(), rect.height()
@@ -120,12 +128,15 @@ class AnnotationItem(PlotItem):
 
         x, y = self.transformedData()
 
+        # TODO: maybe cache the value
         offset_x, offset_y = self._mapOffsetToView()
         for i in range(len(self._items)):
             self._items[i].setPos(x[i] + offset_x, y[i] + offset_y)
             self._items[i].setPlainText(str(self._annotations[i]))
 
+        # TODO: maybe cache the value
         padding_x, padding_y = self._computePaddings()
+
         x_min, x_max = np.min(x), np.max(x)
         y_min, y_max = np.min(y), np.max(y)
 

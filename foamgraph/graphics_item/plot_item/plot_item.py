@@ -48,11 +48,12 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
     @staticmethod
     def _parse_input(x, *, size=None, default=None):
         if isinstance(x, list):
-            return np.array(x)
-        if x is None:
+            x = np.array(x)
+        elif x is None:
             if default is None:
-                return np.array([])
-            return default
+                x = np.array([])
+            else:
+                x = default
 
         if size is not None and len(x) != size:
             raise ValueError("'x' and 'y' data have different lengths!")
