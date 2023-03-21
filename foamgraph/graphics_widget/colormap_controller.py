@@ -69,7 +69,7 @@ class ColormapController(GraphicsWidget):
 
         self._image_item.image_changed_sgn.connect(self.onImageChanged)
 
-        self._image_item.setLevels(*self._lri.region())
+        self._image_item.setLevels(self._lri.region())
         self.setColorMap(config["COLOR_MAP"])
 
     def _extendContextMenu(self):
@@ -86,7 +86,7 @@ class ColormapController(GraphicsWidget):
         self._image_item.setColorMap(self._cbar.colorMap())
 
     def onRegionChanged(self):
-        self._image_item.setLevels(*self._lri.region())
+        self._image_item.setLevels(self._lri.region())
         self.update()
 
     def onImageChanged(self):

@@ -5,6 +5,7 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from collections import namedtuple
 from typing import Optional
 
 import numpy as np
@@ -22,6 +23,8 @@ class ImageItem(GraphicsObject):
 
     image_changed_sgn = pyqtSignal()
 
+    Levels = namedtuple("Levels", ["min", "max"])
+
     def __init__(self, data: Optional[np.ndarray] = None, *, parent=None):
         super().__init__(parent=parent)
 
@@ -29,23 +32,21 @@ class ImageItem(GraphicsObject):
         self._qimage = None  # rendered image for display
         self._buffer = None
 
-        self._v_min = 0
-        self._v_max = 0
+        self._levels = self.Levels(0, 1)
         self._auto_level_quantile = 0.99
         self._cmap = None
         self._lut = None
 
         self.setData(data, auto_levels=True)
 
-    def setLevels(self, v_min: float, v_max: float):
+    def setLevels(self, levels: tuple[float, float]):
         """Set image colormap scaling levels."""
-        if self._v_min != v_min or self._v_max != v_max:
-            self._v_min = v_min
-            self._v_max = v_max
+        if self._levels != levels:
+            self._levels = self.Levels(*levels)
             self._prepareForRender()
 
-    def levels(self) -> tuple[float, float]:
-        return self._v_min, self._v_max
+    def levels(self) -> "ImageItem.Levels":
+        return self._levels
 
     def setColorMap(self, cmap: ColorMap):
         self._cmap = cmap
@@ -93,8 +94,8 @@ class ImageItem(GraphicsObject):
             self.informViewBoundsChanged()
 
         if auto_levels:
-            self._v_min, self._v_max = quick_min_max(
-                self._data, q=self._auto_level_quantile)
+            self._levels = self.Levels(*self.quick_min_max(
+                self._data, q=self._auto_level_quantile))
 
         self._prepareForRender()
 
@@ -127,7 +128,7 @@ class ImageItem(GraphicsObject):
 
     def _process_f(self):
         num_colors = self._lut.shape[0]
-        v_min, v_max = self._v_min, self._v_max
+        v_min, v_max = self._levels
         if v_min == v_max:
             v_max = np.nextafter(v_max, 2 * v_max)
 
