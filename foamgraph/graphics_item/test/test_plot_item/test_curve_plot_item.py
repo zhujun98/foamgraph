@@ -7,7 +7,7 @@ from foamgraph.backend.QtCore import (
 )
 from foamgraph.graphics_item import CurvePlotItem
 
-from foamgraph.test import visualize
+from foamgraph.test import processEvents
 
 
 @pytest.fixture
@@ -65,17 +65,17 @@ def test_item(dtype, view, item):
     y = x * 1.5
     item.setData(x, y)
     if dtype == float:
-        visualize()
+        processEvents()
 
     # test log mode
     view._cw._onLogXScaleToggled(True)
     if dtype == float:
-        visualize()
+        processEvents()
     assert item.boundingRect() == QRectF(0, 0, 1.0, 13.5)
 
     view._cw._onLogYScaleToggled(True)
     if dtype == float:
-        visualize()
+        processEvents()
 
     assert item.boundingRect().topLeft() == QPointF(0, 0)
     assert item.boundingRect().bottomRight().x() == 1.0
@@ -85,7 +85,7 @@ def test_item(dtype, view, item):
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
     if dtype == float:
-        visualize()
+        processEvents()
 
 
 @pytest.mark.parametrize("check_finite", [True, False])

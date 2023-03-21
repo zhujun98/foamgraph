@@ -2,12 +2,12 @@ import pytest
 
 from foamgraph import GraphView
 
-from foamgraph.test import visualize
+from foamgraph.test import processEvents
 
 
 @pytest.fixture(scope="function")
 def view():
     graph_view = GraphView()
-    if visualize():
-        graph_view.show()
+    graph_view.show()
+    processEvents()
     return graph_view

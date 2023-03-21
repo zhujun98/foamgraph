@@ -3,13 +3,11 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from foamgraph import mkQApp, GraphView, TimedGraphView
-from foamgraph.graphics_item import AnnotationItem, ErrorbarPlotItem
-
-from foamgraph.test import visualize
-
-
-app = mkQApp()
+from foamgraph import GraphView, TimedGraphView
+from foamgraph.graphics_item import (
+    AnnotationItem, CandlestickPlotItem, ErrorbarPlotItem
+)
+from foamgraph.test import processEvents
 
 
 @pytest.fixture
@@ -21,9 +19,8 @@ def graph_view_1():
     view.setTitle("GraphView test")
 
     view.addAnnotation()
-
-    if visualize():
-        view.show()
+    view.show()
+    processEvents()
     return view
 
 
@@ -34,6 +31,7 @@ def add_plot_items_1(graph_view_1):
     return [
         view.addCurvePlot(label="curve1"),
         view.addScatterPlot(label="scatter1"),
+        view.addCandlestickPlot(label="candlestick"),
         view.addBarPlot(label="bar2", y2=True),
         view.addErrorbarPlot(label="errorbar2", y2=True),
         view.addAnnotation()
@@ -44,8 +42,7 @@ def add_plot_items_1(graph_view_1):
 def graph_view_2():
     view = GraphView()
     view.setXYLabels("x label", "y label", y2="y2 label")
-    if visualize():
-        view.show()
+    view.show()
     return view
 
 
@@ -54,6 +51,7 @@ def add_plot_items_2(graph_view_2):
     view = graph_view_2  # add legend after plot items
     items = [
         view.addBarPlot(label="bar1"),
+        view.addCandlestickPlot(label="candlestick"),
         view.addErrorbarPlot(label="errorbar1"),
         view.addCurvePlot(label="curve2", y2=True),
         view.addScatterPlot(label="scatter2", y2=True),
@@ -107,34 +105,38 @@ class TestGraphView:
         view.showLegend()
         assert view._cw._legend.isVisible()
 
-    def test_plot1(self, graph_view_1, add_plot_items_1):
+    def test_set_data(self, graph_view_1, add_plot_items_1):
         view = graph_view_1
-        assert len(view._cw._canvas._proxy._items) == 4
+        assert len(view._cw._canvas._proxy._items) == 5
 
         plot_items = add_plot_items_1
         for i, plot in enumerate(plot_items):
             x = np.arange(20)
             y = np.random.rand(20)
-            y[-i-1:-1] = np.nan
+            # TODO: CI will report segfault with the following line
+            #       because of ScatterPlotItem.
+            # y[-i-1:-1] = np.nan
             if isinstance(plot, ErrorbarPlotItem):
                 plot.setData(x, y, y - 0.1, y + 0.1)
-            if isinstance(plot, AnnotationItem):
+            elif isinstance(plot, AnnotationItem):
                 plot.setData(x, y, x)
+            elif isinstance(plot, CandlestickPlotItem):
+                plot.setData(x, y - 0.1, y + 0.1, y - 0.2, y + 0.2)
             else:
                 plot.setData(x, y)
-            visualize()
+            processEvents()
 
         view._cw._onLogXScaleToggled(True)
-        visualize()
+        processEvents()
         view._cw._onLogYScaleToggled(True)
-        visualize()
+        processEvents()
 
         for plot in plot_items:
             plot.clearData()
-            visualize()
+            processEvents()
 
-    def test_plot2(self, graph_view_2, add_plot_items_2):
-        assert len(graph_view_2._cw._canvas._proxy._items) == 3
+    def test_set_data_with_nan(self, graph_view_2, add_plot_items_2):
+        assert len(graph_view_2._cw._canvas._proxy._items) == 4
 
         view = graph_view_2
         plot_items = add_plot_items_2
@@ -144,20 +146,22 @@ class TestGraphView:
             y[-i-1:-1] = np.nan
             if isinstance(plot, ErrorbarPlotItem):
                 plot.setData(x, y, y - 0.1, y + 0.1)
-            if isinstance(plot, AnnotationItem):
+            elif isinstance(plot, AnnotationItem):
                 plot.setData(x, y, x)
+            elif isinstance(plot, CandlestickPlotItem):
+                plot.setData(x, y - 0.1, y + 0.1, y - 0.2, y + 0.2)
             else:
                 plot.setData(x, y)
-            visualize()
+            processEvents()
 
         view._cw._onLogXScaleToggled(True)
-        visualize()
+        processEvents()
         view._cw._onLogYScaleToggled(True)
-        visualize()
+        processEvents()
 
         for plot in plot_items:
             plot.clearData()
-            visualize()
+            processEvents()
 
 
 class TestTimedPlotWidgetF:

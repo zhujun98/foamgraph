@@ -1,17 +1,14 @@
 import time
 
 from foamgraph import mkQApp
-
+from foamgraph.backend.QtCore import QEventLoop, QTimer
 
 app = mkQApp()
 
-# For debug
-_VISUALIZE = False
 
-
-def visualize(interval=0.5):
-    if _VISUALIZE:
-        app.processEvents()
-        time.sleep(interval)
-        return True
-    return False
+def processEvents(timeout=0.2):
+    for _ in range(2):
+        app.processEvents(
+            QEventLoop.ProcessEventsFlag.WaitForMoreEvents)
+        time.sleep(0.01)
+    time.sleep(timeout)

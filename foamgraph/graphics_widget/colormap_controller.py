@@ -65,7 +65,7 @@ class ColormapController(GraphicsWidget):
         self._lri.region_dragged_sgn.connect(
             lambda: self._auto_levels_action.setChecked(False))
 
-        self._cbar.colormap_changed_sgn.connect(self.onColormapChanged)
+        self._cbar.colormap_changed_sgn.connect(self.onColorMapChanged)
 
         self._image_item.image_changed_sgn.connect(self.onImageChanged)
 
@@ -82,8 +82,8 @@ class ColormapController(GraphicsWidget):
     def _onAutoLevelsToggled(self, state: bool) -> None:
         self._auto_levels = state
 
-    def onColormapChanged(self):
-        self._image_item.setColormap(self._cbar.colorMap())
+    def onColorMapChanged(self):
+        self._image_item.setColorMap(self._cbar.colorMap())
 
     def onRegionChanged(self):
         self._image_item.setLevels(*self._lri.region())

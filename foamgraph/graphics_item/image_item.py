@@ -47,7 +47,7 @@ class ImageItem(GraphicsObject):
     def levels(self) -> tuple[float, float]:
         return self._v_min, self._v_max
 
-    def setColormap(self, cmap: ColorMap):
+    def setColorMap(self, cmap: ColorMap):
         self._cmap = cmap
         self._lut = None
         self._prepareForRender()
@@ -66,8 +66,8 @@ class ImageItem(GraphicsObject):
         if data.ndim != 2:
             raise ValueError("Image data must be 2 dimensional!")
 
-        shape_changed = False
         dtype_changed = False
+        shape_changed = False
         if self._data is None:
             shape_changed = True
             dtype_changed = True
@@ -76,14 +76,17 @@ class ImageItem(GraphicsObject):
         elif data.dtype != self._data.dtype:
             dtype_changed = True
 
-        self._data = data
-        return shape_changed, dtype_changed
+        return dtype_changed, shape_changed
 
     def setData(self, data, *, auto_levels=False):
         if data is None:
             return
 
         shape_changed, dtype_changed = self._parseImageData(data)
+        self._data = data
+
+        if dtype_changed:
+            self._lut = None
 
         if shape_changed:
             self.prepareGeometryChange()
@@ -106,7 +109,11 @@ class ImageItem(GraphicsObject):
 
     @staticmethod
     def scaleForDisplay(data, v_min: float, v_max: float, num_colors: int):
-        data = data.copy()
+        if data.dtype.kind in 'iu':
+            # FIXME
+            data = data.astype(float)
+        else:
+            data = data.copy()
         data -= v_min
         data *= num_colors / (v_max - v_min)
         data = np.clip(data, 0, num_colors - 1)
@@ -120,10 +127,10 @@ class ImageItem(GraphicsObject):
 
     def _process_f(self):
         num_colors = self._lut.shape[0]
-
         v_min, v_max = self._v_min, self._v_max
         if v_min == v_max:
             v_max = np.nextafter(v_max, 2 * v_max)
+
         scaled = self.scaleForDisplay(self._data, v_min, v_max, num_colors)
 
         data = np.take(self._lut, scaled, axis=0)
@@ -144,10 +151,7 @@ class ImageItem(GraphicsObject):
         if self._buffer is None or self._buffer.shape[:2] != data.shape[:2]:
             self._buffer = np.empty(data.shape[:2] + (4,), dtype=np.uint8)
 
-        if data.dtype.kind == 'f':
-            self._process_f()
-        else:
-            raise NotImplementedError
+        self._process_f()
 
         self._qimage = self.arrayToQImage(
             self._buffer, QImage.Format.Format_ARGB32)

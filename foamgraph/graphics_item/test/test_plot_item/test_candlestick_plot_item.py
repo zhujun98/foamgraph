@@ -4,7 +4,7 @@ import numpy as np
 
 from foamgraph.graphics_item import CandlestickPlotItem
 
-from foamgraph.test import visualize
+from foamgraph.test import processEvents
 
 
 def test_input_data_parsing(view):
@@ -59,7 +59,7 @@ def test_plot(item):
     y_max = y_start + 1.
 
     item.setData(x, y_start, y_stop, y_min, y_max)
-    visualize()
+    processEvents()
 
     item.clearData()
-    visualize()
+    processEvents()

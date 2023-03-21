@@ -5,7 +5,7 @@ import numpy as np
 from foamgraph.aesthetics import FSymbol
 from foamgraph.graphics_item import ScatterPlotItem
 
-from foamgraph.test import visualize
+from foamgraph.test import processEvents
 
 
 def test_symbols(view):
@@ -16,7 +16,7 @@ def test_symbols(view):
         y = np.arange(10)
         item = ScatterPlotItem(x, y, label=sym, symbol=sym, size=np.random.randint(15, 30))
         view.addItem(item)
-        visualize(interval=0.2)
+        processEvents(timeout=0.1)
         view.removeItem(item)
 
 
@@ -46,20 +46,20 @@ def test_log_mode(view, item):
     x = np.arange(10).astype(float)
     y = x * 1.5
     item.setData(x, y)
-    visualize()
+    processEvents()
 
     # test log mode
     view._cw._onLogXScaleToggled(True)
-    visualize()
+    processEvents()
 
     view._cw._onLogYScaleToggled(True)
-    visualize()
+    processEvents()
 
     # clear data
     item.clearData()
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
-    visualize()
+    processEvents()
 
 
 def test_bounding_rect_1(item):

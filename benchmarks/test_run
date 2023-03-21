@@ -2,6 +2,8 @@
 
 scriptdir=`dirname "$BASH_SOURCE"`
 python ${scriptdir}/benchmark_imageview.py --timeout 1
+python ${scriptdir}/benchmark_imageview.py --dtype uint16 --timeout 1
+python ${scriptdir}/benchmark_imageview.py --grayscale --timeout 1
 
 python ${scriptdir}/benchmark_plotwidget.py scatter 500 --timeout 1
 python ${scriptdir}/benchmark_plotwidget.py line 500 --timeout 1

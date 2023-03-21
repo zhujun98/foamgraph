@@ -1,17 +1,15 @@
 import pytest
 from unittest.mock import patch
 
-from foamgraph import mkQApp
-from foamgraph.backend.QtCore import Qt
-from foamgraph.graphics_item import MouseCursorItem, CrossMouseCursorItem
+from foamgraph.graphics_item import MouseCursorItem
 from foamgraph.graphics_widget import ImageWidget
-
-app = mkQApp()
+from foamgraph.test import processEvents
 
 
 @pytest.fixture(scope="function")
 def iwidget():
     widget = ImageWidget()
+    processEvents()
     return widget
 
 

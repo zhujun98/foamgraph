@@ -5,7 +5,7 @@ import numpy as np
 from foamgraph.backend.QtCore import QPointF, QRectF
 from foamgraph.graphics_item import ErrorbarPlotItem
 
-from foamgraph.test import visualize
+from foamgraph.test import processEvents
 
 
 def test_input_data_parsing(view):
@@ -44,14 +44,14 @@ def test_log_mode(view, item):
     x = y = np.arange(10)
     item.setData(x, y, y_min=y-1, y_max=y+1)
     item.setBeam(1)
-    visualize()
+    processEvents()
 
     # test log mode
     view._cw._onLogXScaleToggled(True)
-    visualize()
+    processEvents()
     assert item.boundingRect() == QRectF(-0.5, -1.0, 2.0, 11.0)
     view._cw._onLogYScaleToggled(True)
-    visualize()
+    processEvents()
     assert item.boundingRect().topLeft() == QPointF(-0.5, 0.0)
     assert 1.5, item.boundingRect().bottomRight().x()
     assert 1.0 < item.boundingRect().bottomRight().y() < 1.1
@@ -60,4 +60,4 @@ def test_log_mode(view, item):
     item.clearData()
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
-    visualize()
+    processEvents()
