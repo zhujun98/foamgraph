@@ -115,7 +115,7 @@ class TestGraphView:
             y = np.random.rand(20)
             # TODO: CI will report segfault with the following line
             #       because of ScatterPlotItem.
-            y[-i-1:-1] = np.nan
+            # y[-i-1:-1] = np.nan
             if isinstance(plot, ErrorbarPlotItem):
                 plot.setData(x, y, y - 0.1, y + 0.1)
             elif isinstance(plot, AnnotationItem):

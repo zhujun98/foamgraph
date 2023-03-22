@@ -6,7 +6,7 @@ from foamgraph.backend.QtCore import QEventLoop, QTimer
 app = mkQApp()
 
 
-def processEvents(timeout=0.2):
+def processEvents(timeout=0.1):
     for _ in range(2):
         app.processEvents(
             QEventLoop.ProcessEventsFlag.WaitForMoreEvents)

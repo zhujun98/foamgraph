@@ -299,11 +299,13 @@ class ColorMap:
 
         return r, g, b, a
 
-    def getLookUpTable(self, n: int) -> np.ndarray:
+    def getLookUpTable(self, n: int, *, with_alpha: bool = True) -> np.ndarray:
         table = np.empty((n, 4), dtype=np.ubyte)
         for i in range(n):
             table[i] = self._colorAt(i / (n - 1))
-        return table
+        if with_alpha:
+            return table
+        return table[:, :3]
 
 
 def createIconButton(filepath: str, size: int, *, description: str = ""):

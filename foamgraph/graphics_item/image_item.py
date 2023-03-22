@@ -28,8 +28,8 @@ class ImageItem(GraphicsObject):
     def __init__(self, data: Optional[np.ndarray] = None, *, parent=None):
         super().__init__(parent=parent)
 
-        self._data = None   # original image data
-        self._qimage = None  # rendered image for display
+        self._data: Optional[np.ndarray] = None   # original image data
+        self._qimage: Optional[QImage] = None  # rendered image for display
         self._buffer = None
 
         self._levels = self.Levels(0, 1)
@@ -57,19 +57,25 @@ class ImageItem(GraphicsObject):
         self._qimage = None
         self.update()
 
-    def clearData(self):
+    def clearData(self) -> None:
         self.setData(None)
 
     def _parseImageData(self, data):
-        if not isinstance(data, np.ndarray):
-            raise TypeError("Image data must be a numpy.ndarray!")
+        if data is not None:
+            if not isinstance(data, np.ndarray):
+                raise TypeError("Image data must be a numpy.ndarray!")
 
-        if data.ndim != 2:
-            raise ValueError("Image data must be 2 dimensional!")
+            if data.size == 0:
+                raise ValueError("Image data is an empty array!")
+
+            if data.ndim != 2:
+                raise ValueError("Image data must be 2 dimensional!")
 
         dtype_changed = False
         shape_changed = False
-        if self._data is None:
+        if data is None and self._data is None:
+            ...
+        elif data is None or self._data is None:
             shape_changed = True
             dtype_changed = True
         elif data.shape != self._data.shape:
@@ -79,10 +85,7 @@ class ImageItem(GraphicsObject):
 
         return dtype_changed, shape_changed
 
-    def setData(self, data, *, auto_levels=False):
-        if data is None:
-            return
-
+    def setData(self, data, *, auto_levels=False) -> None:
         shape_changed, dtype_changed = self._parseImageData(data)
         self._data = data
 
@@ -93,9 +96,9 @@ class ImageItem(GraphicsObject):
             self.prepareGeometryChange()
             self.informViewBoundsChanged()
 
-        if auto_levels:
-            self._levels = self.Levels(*self.quick_min_max(
-                self._data, q=self._auto_level_quantile))
+        if data is not None and auto_levels:
+            self._levels = self.Levels(*quick_min_max(
+                data, q=self._auto_level_quantile))
 
         self._prepareForRender()
 
@@ -104,12 +107,17 @@ class ImageItem(GraphicsObject):
     def dataAt(self, x: int, y: int) -> float:
         return self._data[y, x]
 
-    def _generateLookUpTable(self):
-        n = 256 if self._data.dtype == np.uint8 else 512
-        self._lut = self._cmap.getLookUpTable(n)
+    def _maybeCreateLookUpTable(self, num_colors: int, with_alpha: bool):
+        self._lut = self._cmap.getLookUpTable(
+            num_colors, with_alpha=with_alpha)
+
+    def _maybeCreateBuffer(self):
+        image_shape = self._data.shape[:2]
+        if self._buffer is None or self._buffer.shape[:2] != image_shape:
+            self._buffer = np.empty(image_shape + (3,), dtype=np.uint8)
 
     @staticmethod
-    def scaleForDisplay(data, v_min: float, v_max: float, num_colors: int):
+    def scaleForLookUp(data, v_min: float, v_max: float, num_colors: int):
         if data.dtype.kind in 'iu':
             # FIXME
             data = data.astype(float)
@@ -123,46 +131,59 @@ class ImageItem(GraphicsObject):
     @staticmethod
     def arrayToQImage(arr: np.ndarray, fmt: QImage.Format):
         h, w = arr.shape[:2]
-        qimg = QImage(arr.ctypes.data, w, h, arr.strides[0], fmt)
-        return qimg
+        image = QImage(arr.ctypes.data, w, h, arr.strides[0], fmt)
+        return image
 
-    def _process_f(self):
-        num_colors = self._lut.shape[0]
-        v_min, v_max = self._levels
+    @staticmethod
+    def regularizeLevels(v_min, v_max, dtype):
         if v_min == v_max:
-            v_max = np.nextafter(v_max, 2 * v_max)
+            if v_max == 0:
+                if dtype.kind in 'iu':
+                    v_max = 1
+                else:
+                    v_max = np.nextafter(0, 1)
+            else:
+                v_max = np.nextafter(v_max, 2 * v_max)
+        return v_min, v_max
 
-        scaled = self.scaleForDisplay(self._data, v_min, v_max, num_colors)
-
-        data = np.take(self._lut, scaled, axis=0)
-
-        order = [2, 1, 0, 3]
-        for i in range(0, data.shape[2]):
-            self._buffer[..., i] = data[..., order[i]]
-
-    def _render(self):
+    def _render_f(self):
         """Convert data to QImage for displaying."""
-        data = self._data
-        if data is None or data.size == 0:
-            return
+        v_min, v_max = self.regularizeLevels(*self._levels, self._data.dtype)
 
-        if self._lut is None:
-            self._generateLookUpTable()
+        scaled = self.scaleForLookUp(
+            self._data, v_min, v_max, self._lut.shape[0])
 
-        if self._buffer is None or self._buffer.shape[:2] != data.shape[:2]:
-            self._buffer = np.empty(data.shape[:2] + (4,), dtype=np.uint8)
+        self._buffer = np.take(self._lut, scaled, axis=0)
 
-        self._process_f()
+    def _render_u(self):
+        """Convert data to QImage for displaying."""
+        v_min, v_max = self.regularizeLevels(*self._levels, self._data.dtype)
 
-        self._qimage = self.arrayToQImage(
-            self._buffer, QImage.Format.Format_ARGB32)
+        scaled = self.scaleForLookUp(
+            self._data, v_min, v_max, self._lut.shape[0])
+
+        self._buffer = np.take(self._lut, scaled, axis=0)
 
     def paint(self, p, *args) -> None:
         """Override."""
         if self._qimage is None:
-            self._render()
-            if self._qimage is None:
+            if self._data is None:
                 return
+
+            dtype = self._data.dtype
+
+            self._maybeCreateLookUpTable(256, False)
+            self._maybeCreateBuffer()
+
+            if dtype.kind == "f":
+                self._render_f()
+            elif dtype in [np.uint8, np.uint16]:
+                self._render_u()
+            else:
+                raise TypeError(f"Unsupported image dtype: {dtype}")
+
+            self._qimage = self.arrayToQImage(
+                self._buffer, QImage.Format.Format_RGB888)
 
         p.drawImage(QRectF(0, 0, *self._data.shape[::-1]), self._qimage)
 
