@@ -198,13 +198,14 @@ class GraphicsItem:
         return tr
     
     def viewRect(self) -> Optional[QRectF]:
-        """Return the visible bounds of this item's Canvas,
+        """Return the visible bounds of this item's Canvas.
+
         in the local coordinate system of the item."""
         canvas = self.canvas()
         if canvas is None:
             return QRectF()
 
-        rect = self.mapRectFromView(canvas.graphRect())
+        rect = self.mapRectFromView(canvas.viewRect())
         return rect.normalized()
 
     def mapToDevice(self, obj):

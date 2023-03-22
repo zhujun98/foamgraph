@@ -33,8 +33,7 @@ class ColormapController(GraphicsWidget):
 
         self._auto_levels = True
 
-        canvas = Canvas(auto_range_x_locked=True,
-                        parent=self)
+        canvas = Canvas(auto_range_x_locked=True, parent=self)
         canvas.setMaximumWidth(152)
         canvas.setMinimumWidth(45)
         canvas.addItem(self._hist)
