@@ -139,16 +139,7 @@ class ImageItem(GraphicsObject):
         np.clip(data, 0, num_colors - 1, out=scaled)
         return scaled
 
-    def _render_f(self):
-        """Convert data to QImage for displaying."""
-        v_min, v_max = self.regularizeLevels(*self._levels)
-
-        scaled = self.scaleForLookUp(
-            self._data, v_min, v_max, self._lut.shape[0])
-
-        self._buffer = np.take(self._lut, scaled, axis=0)
-
-    def _render_u(self):
+    def _render(self):
         """Convert data to QImage for displaying."""
         v_min, v_max = self.regularizeLevels(*self._levels)
 
@@ -163,17 +154,10 @@ class ImageItem(GraphicsObject):
             if self._data is None:
                 return
 
-            dtype = self._data.dtype
-
             self._maybeCreateLookUpTable(256, False)
             self._maybeCreateBuffer()
 
-            if dtype.kind == "f":
-                self._render_f()
-            elif dtype in [np.uint8, np.uint16]:
-                self._render_u()
-            else:
-                raise TypeError(f"Unsupported image dtype: {dtype}")
+            self._render()
 
             self._qimage = self.arrayToQImage(
                 self._buffer, QImage.Format.Format_RGB888)
