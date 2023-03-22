@@ -25,7 +25,13 @@ class BenchmarkImageViewSpeed:
         self._timer = QTimer()
         self._timer.timeout.connect(self.update)
 
-        self._data = np.random.normal(size=(50, 1024, 1280)).astype(dtype)
+        if dtype in [np.float32, np.float64]:
+            self._data = np.random.normal(size=(50, 1024, 1280)).astype(dtype)
+        elif dtype == np.uint16:
+            self._data = np.random.randint(
+                0, 65536, size=(50, 1024, 1280)).astype(np.uint16)
+        else:
+            raise TypeError
         self._prev_t = None
         self._count = 0
         self._fps = None

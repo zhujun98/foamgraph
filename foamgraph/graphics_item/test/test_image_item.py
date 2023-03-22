@@ -61,22 +61,18 @@ class TestImageItem:
         assert scaled.dtype == np.uint16
 
     def test_regularize_levels(self):
-        v_min, v_max = ImageItem.regularizeLevels(1.0, 2.0, dtype=np.dtype('f4'))
+        v_min, v_max = ImageItem.regularizeLevels(1.0, 2.0)
         assert v_min == 1.0
         assert v_max == 2.0
 
-        v_min, v_max = ImageItem.regularizeLevels(-1.1, -1.0, dtype=np.dtype('u2'))
+        v_min, v_max = ImageItem.regularizeLevels(-1.1, -1.0)
         assert v_min == -1.1
         assert v_max == -1.0
 
-        v_min, v_max = ImageItem.regularizeLevels(0, 0, dtype=np.dtype('f4'))
+        v_min, v_max = ImageItem.regularizeLevels(0, 0)
         assert v_min == 0
-        assert 0 < v_max < 1e-100
+        assert 0 < v_max < 1e-8
 
-        v_min, v_max = ImageItem.regularizeLevels(0, 0, dtype=np.dtype('u2'))
-        assert v_min == 0
-        assert v_max == 1
-
-        v_min, v_max = ImageItem.regularizeLevels(0, 0, dtype=np.dtype('u1'))
-        assert v_min == 0
-        assert v_max == 1
+        v_min, v_max = ImageItem.regularizeLevels(-1.0, -1.0)
+        assert v_min == -1.0
+        assert -1.0 < v_max < -1.0 + 1e-8

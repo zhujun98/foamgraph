@@ -117,38 +117,31 @@ class ImageItem(GraphicsObject):
             self._buffer = np.empty(image_shape + (3,), dtype=np.uint8)
 
     @staticmethod
-    def scaleForLookUp(data, v_min: float, v_max: float, num_colors: int):
-        if data.dtype.kind in 'iu':
-            # FIXME
-            data = data.astype(float)
-        else:
-            data = data.copy()
-        data -= v_min
-        data *= num_colors / (v_max - v_min)
-        data = np.clip(data, 0, num_colors - 1)
-        return data.astype(np.min_scalar_type(num_colors - 1))
-
-    @staticmethod
     def arrayToQImage(arr: np.ndarray, fmt: QImage.Format):
         h, w = arr.shape[:2]
         image = QImage(arr.ctypes.data, w, h, arr.strides[0], fmt)
         return image
 
     @staticmethod
-    def regularizeLevels(v_min, v_max, dtype):
+    def regularizeLevels(v_min: float, v_max: float):
         if v_min == v_max:
-            if v_max == 0:
-                if dtype.kind in 'iu':
-                    v_max = 1
-                else:
-                    v_max = np.nextafter(0, 1)
-            else:
-                v_max = np.nextafter(v_max, 2 * v_max)
+            v_max = np.nextafter(v_max, v_max + 1)
         return v_min, v_max
+
+    @staticmethod
+    def scaleForLookUp(data, v_min, v_max, num_colors: int):
+        dtype = np.float32 if np.can_cast(data, np.float32) else np.float64
+        data = data.astype(dtype, copy=True)
+        data -= v_min
+        data *= num_colors / (v_max - v_min)
+
+        scaled = np.empty_like(data, dtype=np.min_scalar_type(num_colors - 1))
+        np.clip(data, 0, num_colors - 1, out=scaled)
+        return scaled
 
     def _render_f(self):
         """Convert data to QImage for displaying."""
-        v_min, v_max = self.regularizeLevels(*self._levels, self._data.dtype)
+        v_min, v_max = self.regularizeLevels(*self._levels)
 
         scaled = self.scaleForLookUp(
             self._data, v_min, v_max, self._lut.shape[0])
@@ -157,7 +150,7 @@ class ImageItem(GraphicsObject):
 
     def _render_u(self):
         """Convert data to QImage for displaying."""
-        v_min, v_max = self.regularizeLevels(*self._levels, self._data.dtype)
+        v_min, v_max = self.regularizeLevels(*self._levels)
 
         scaled = self.scaleForLookUp(
             self._data, v_min, v_max, self._lut.shape[0])
