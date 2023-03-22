@@ -123,6 +123,8 @@ class Canvas(QGraphicsWidget):
         self._auto_range_x = True
         self._auto_range_y = True
 
+        self._aspect_ratio_locked = False
+
         self._x_inverted = False
         self._y_inverted = False
 
@@ -202,8 +204,7 @@ class Canvas(QGraphicsWidget):
         return self._menu.addAction(label)
 
     def setMouseMode(self, mode: int) -> None:
-        ...
-        # self.getMenu("Mouse Mode").actions()[mode].setChecked(True)
+        self.getMenu("MouseMode").actions()[mode].setChecked(True)
 
     def __setMouseMode(self, mode: "Canvas.MouseMode"):
         self._mouse_mode = mode
