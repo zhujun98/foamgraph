@@ -242,6 +242,9 @@ class PlotWidget(GraphicsWidget):
     def invertY(self, inverted: bool = True) -> None:
         self._canvas.invertY(inverted)
 
+    def setAspectLocked(self, state: bool) -> None:
+        self._canvas.setAspectRatioLocked(state)
+
     def close(self) -> None:
         """Override"""
         self._canvas.close()

@@ -82,7 +82,7 @@ class AbstractScene(QMainWindow, _SceneMixin):
         if len(self._queue) == 0:
             return
 
-        data = self._queue[0]
+        data = self._queue.pop()
         for widget in self._graphics_view:
             widget.updateF(data)
 

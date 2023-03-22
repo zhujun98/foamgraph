@@ -39,6 +39,7 @@ class ImageWidget(PlotWidget):
         """Override."""
         super()._initUI()
         self._layout.addItem(self._cmap_controller, 1, 2)
+        self.setAspectLocked(True)
 
     def _initConnections(self) -> None:
         """Override."""

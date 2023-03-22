@@ -47,6 +47,7 @@ class ScatterPlot(GraphView):
         self._plot4 = self.addScatterPlot(
             label="Data4", pen=FColor.mkPen('k', alpha=150), symbol="+")
         self.addLegend()
+        self.setAspectLocked(True)
 
     def updateF(self, data):
         """Override."""

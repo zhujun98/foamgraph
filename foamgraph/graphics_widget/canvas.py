@@ -209,6 +209,9 @@ class Canvas(QGraphicsWidget):
     def __setMouseMode(self, mode: "Canvas.MouseMode"):
         self._mouse_mode = mode
 
+    def setAspectRatioLocked(self, state: bool) -> None:
+        self._aspect_ratio_locked = state
+
     def _createSelectionRect(self):
         rect = QGraphicsRectItem(0, 0, 1, 1)
         rect.setPen(FColor.mkPen('Gold'))
@@ -274,13 +277,67 @@ class Canvas(QGraphicsWidget):
         self.updateMatrix()
         self.update()
 
-    def setTargetXRange(self, vmin: float, vmax: float, *,
+    @staticmethod
+    def scaleRange(x0, x1, scale):
+        xc = (x0 + x1) / 2.
+        hw = (x1 - x0) / 2.
+        return xc - scale * hw, xc + scale * hw
+
+    def _getLockedXRangeFromYRange(self, y0: float, y1: float):
+        geometry = self.rect()
+        if geometry.isEmpty():
+            return
+        geometry_ratio = geometry.width() / geometry.height()
+        x0, x1 = self._graph_rect.left(), self._graph_rect.right()
+        one_over_view_ratio = (y1 - y0) / (x1 - x0)
+        scale = geometry_ratio * one_over_view_ratio
+        return self.scaleRange(x0, x1, scale)
+
+    def _getLockedYRangeFromXRange(self, x0: float, x1: float):
+        geometry = self.rect()
+        if geometry.isEmpty():
+            return
+        geometry_ratio = geometry.height() / geometry.width()
+        y0, y1 = self._graph_rect.top(), self._graph_rect.bottom()
+        one_over_view_ratio = (x1 - x0) / (y1 - y0)
+        scale = geometry_ratio * one_over_view_ratio
+        return self.scaleRange(y0, y1, scale)
+
+    def _maybeAdjustAspectRatio(self, rect: QRectF) -> None:
+        geometry = self.rect()
+        if rect.isEmpty() or geometry.isEmpty():
+            return
+
+        geometry_ratio = geometry.height() / geometry.width()
+        y0, y1 = rect.top(), rect.bottom()
+        x0, x1 = rect.left(), rect.right()
+        one_over_view_ratio = (x1 - x0) / (y1 - y0)
+        scale = geometry_ratio * one_over_view_ratio
+
+        if scale > 1:
+            y0, y1 = self.scaleRange(y0, y1, scale)
+            rect.setTop(y0)
+            rect.setBottom(y1)
+        elif scale < 1:
+            x0, x1 = self.scaleRange(x0, x1, 1. / scale)
+            rect.setLeft(x0)
+            rect.setRight(x1)
+
+    def setTargetXRange(self, x_min: float, x_max: float, *,
                         disable_auto_range: bool = True,
                         add_padding: bool = True,
+                        respect_aspect_ratio: bool = True,
                         update: bool = True):
-        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.X, add_padding)
-        self._graph_rect.setLeft(vmin)
-        self._graph_rect.setRight(vmax)
+        x_min, x_max = self._regularizeRange(
+            x_min, x_max, self.Axis.X, add_padding)
+        self._graph_rect.setLeft(x_min)
+        self._graph_rect.setRight(x_max)
+
+        if self._aspect_ratio_locked and respect_aspect_ratio:
+            y_range = self._getLockedYRangeFromXRange(x_min, x_max)
+            if y_range is not None:
+                self._graph_rect.setTop(y_range[0])
+                self._graph_rect.setBottom(y_range[1])
 
         if disable_auto_range:
             self.enableAutoRangeX(False)
@@ -288,13 +345,20 @@ class Canvas(QGraphicsWidget):
         if update:
             self._updateAll()
 
-    def setTargetYRange(self, vmin: float, vmax: float, *,
+    def setTargetYRange(self, y_min: float, y_max: float, *,
                         disable_auto_range: bool = True,
                         add_padding: bool = True,
+                        respect_aspect_ratio: bool = True,
                         update: bool = True):
-        vmin, vmax = self._regularizeRange(vmin, vmax, self.Axis.Y, add_padding)
-        self._graph_rect.setTop(vmin)
-        self._graph_rect.setBottom(vmax)
+        y_min, y_max = self._regularizeRange(y_min, y_max, self.Axis.Y, add_padding)
+        self._graph_rect.setTop(y_min)
+        self._graph_rect.setBottom(y_max)
+
+        if self._aspect_ratio_locked and respect_aspect_ratio:
+            x_range = self._getLockedXRangeFromYRange(y_min, y_max)
+            if x_range is not None:
+                self._graph_rect.setLeft(x_range[0])
+                self._graph_rect.setRight(x_range[1])
 
         if disable_auto_range:
             self.enableAutoRangeY(False)
@@ -304,24 +368,28 @@ class Canvas(QGraphicsWidget):
 
     def setTargetRange(self, *args,
                        disable_auto_range: bool = True,
-                       add_padding: bool = True):
+                       add_padding: bool = True,
+                       aspect_ratio_changed: bool = True):
         if len(args) == 1:
             rect = args[0]
-            xrange = (rect.left(), rect.right())
-            # Caveat: y-axis pointing to the opposite direction of the
-            #         y axis of a QRect
-            yrange = (rect.top(), rect.bottom())
         else:
             xrange, yrange = args
+            rect = QRectF(xrange[0], yrange[0],
+                          xrange[1] - xrange[0], yrange[1] - yrange[0])
 
-        self.setTargetXRange(xrange[0], xrange[1],
+        if self._aspect_ratio_locked and aspect_ratio_changed:
+            self._maybeAdjustAspectRatio(rect)
+
+        self.setTargetXRange(rect.left(), rect.right(),
                              disable_auto_range=disable_auto_range,
                              add_padding=add_padding,
+                             respect_aspect_ratio=False,
                              update=False)
 
-        self.setTargetYRange(yrange[0], yrange[1],
+        self.setTargetYRange(rect.top(), rect.bottom(),
                              disable_auto_range=disable_auto_range,
                              add_padding=add_padding,
+                             respect_aspect_ratio=False,
                              update=False)
         self._updateAll()
 
@@ -379,14 +447,28 @@ class Canvas(QGraphicsWidget):
         return wr
 
     def updateAutoRange(self) -> None:
+        if not self._auto_range_x and not self._auto_range_y:
+            return
+
         rect = self._proxy.viewRect()
 
-        if self._auto_range_x:
+        if self._auto_range_x and self._auto_range_y:
+            if self._aspect_ratio_locked:
+                self._maybeAdjustAspectRatio(rect)
+            self.setTargetXRange(rect.left(), rect.right(),
+                                 disable_auto_range=False,
+                                 respect_aspect_ratio=False,
+                                 update=False)
+            self.setTargetYRange(rect.top(), rect.bottom(),
+                                 disable_auto_range=False,
+                                 respect_aspect_ratio=False,
+                                 update=False)
+        elif self._auto_range_x:
             self.setTargetXRange(rect.left(), rect.right(),
                                  disable_auto_range=False,
                                  update=False)
 
-        if self._auto_range_y:
+        elif self._auto_range_y:
             self.setTargetYRange(rect.top(), rect.bottom(),
                                  disable_auto_range=False,
                                  update=False)
@@ -470,7 +552,9 @@ class Canvas(QGraphicsWidget):
         x1 = xc + (rect.right() - xc) * sx
         y0 = yc + (rect.top() - yc) * sy
         y1 = yc + (rect.bottom() - yc) * sy
-        self.setTargetRange((x0, x1), (y0, y1), add_padding=False)
+        self.setTargetRange((x0, x1), (y0, y1),
+                            add_padding=False,
+                            aspect_ratio_changed=(not sx == sy))
 
     def wheelMovementToScaleFactor(self, delta: float) -> float:
         return 1 + delta * self.WHEEL_SCALE_FACTOR
@@ -509,7 +593,8 @@ class Canvas(QGraphicsWidget):
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, dx, dy))
         self.setTargetRange(rect.adjusted(l.dx(), l.dy(), l.dx(), l.dy()),
-                            add_padding=False)
+                            add_padding=False,
+                            aspect_ratio_changed=False)
 
     def hoverEvent(self, ev: HoverEvent) -> None:
         if ev.isExit():
@@ -598,6 +683,8 @@ class Canvas(QGraphicsWidget):
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""
+        if self._aspect_ratio_locked:
+            self._maybeAdjustAspectRatio(self._graph_rect)
         self._updateAll()
         self._proxy.prepareGeometryChange()
 

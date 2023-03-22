@@ -160,7 +160,7 @@ class StockPriceData:
 
 class ImageData:
     def __init__(self):
-        self._shape = (1024, 768)
+        self._shape = (768, 1024)
 
         self._counter = 0
         self._h, self._w = self._shape
