@@ -64,14 +64,6 @@ class ScatterPlotItem(PlotItem):
         """Override."""
         return self._x, self._y
 
-    def _computePaddings(self) -> tuple[float, float]:
-        w, h = self._fragment.width(), self._fragment.height()
-        canvas = self.canvas()
-        if canvas is None:
-            return 0, 0
-        rect = canvas.mapSceneToView(QRectF(0, 0, w, h)).boundingRect()
-        return rect.width(), rect.height()
-
     def _prepareGraph(self) -> None:
         """Override."""
         self._graph = QRectF()
@@ -86,12 +78,7 @@ class ScatterPlotItem(PlotItem):
         if np.isnan(y_min) or np.isnan(y_max):
             y_min, y_max = 0, 0
 
-        padding_x, padding_y = self._computePaddings()
-
-        self._graph.setRect(x_min - padding_x,
-                            y_min - padding_y,
-                            x_max - x_min + 2 * padding_x,
-                            y_max - y_min + 2 * padding_y)
+        self._graph.setRect(x_min, y_min, x_max - x_min, y_max - y_min)
 
     @staticmethod
     def transformCoordinates(matrix: QTransform, x: np.array, y: np.array,

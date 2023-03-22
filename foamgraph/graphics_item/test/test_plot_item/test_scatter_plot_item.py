@@ -2,6 +2,7 @@ import pytest
 
 import numpy as np
 
+from foamgraph.backend.QtCore import QRectF
 from foamgraph.aesthetics import FSymbol
 from foamgraph.graphics_item import ScatterPlotItem
 
@@ -67,10 +68,7 @@ def test_bounding_rect_1(item):
     y = np.array([2, 4, 6, 8, 10])
     item.setData(x, y)
     rect = item.boundingRect()
-    assert abs(rect.x()) < 0.016
-    assert abs(rect.y() - 2) < 0.021
-    assert abs(rect.width() - 4) < 0.031
-    assert abs(rect.height() - 8) < 0.041
+    assert rect == QRectF(0.0, 2.0, 4.0, 8.0)
 
 
 def test_bounding_rect_2(item):
@@ -78,10 +76,7 @@ def test_bounding_rect_2(item):
     y = np.array([2, 4, 6, np.nan, 10])
     item.setData(x, y)
     rect = item.boundingRect()
-    assert abs(rect.x()) < 0.016
-    assert abs(rect.y() - 2) < 0.021
-    assert abs(rect.width() - 4) < 0.031
-    assert abs(rect.height() - 8) < 0.041
+    assert rect == QRectF(0.0, 2.0, 4.0, 8.0)
 
 
 def test_bounding_rect_3(item):
@@ -89,10 +84,7 @@ def test_bounding_rect_3(item):
     y = np.array([2, 4, 6, np.nan, 10])
     item.setData(x, y)
     rect = item.boundingRect()
-    assert abs(rect.x() - 1) < 0.016
-    assert abs(rect.y() - 2) < 0.021
-    assert abs(rect.width() - 3) < 0.031
-    assert abs(rect.height() - 8) < 0.041
+    assert rect == QRectF(1.0, 2.0, 3.0, 8.0)
 
 
 def test_bounding_rect_4(item):
@@ -100,7 +92,4 @@ def test_bounding_rect_4(item):
     y = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
     item.setData(x, y)
     rect = item.boundingRect()
-    assert abs(rect.x()) < 0.016
-    assert abs(rect.y()) < 0.021
-    assert abs(rect.width()) < 0.031
-    assert abs(rect.height()) < 0.041
+    assert rect == QRectF()
