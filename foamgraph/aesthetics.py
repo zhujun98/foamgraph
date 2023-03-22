@@ -8,6 +8,8 @@ Author: Jun Zhu
 from collections import OrderedDict
 from typing import Optional
 
+import numpy as np
+
 from .backend.QtCore import Qt, QRectF, QSize
 from .backend.QtGui import (
     QBrush, QColor, QIcon, QPainterPath, QPen, QTransform
@@ -181,24 +183,6 @@ class SequentialColor:
 
 
 class ColorMap:
-    """
-    A ColorMap defines a relationship between a scalar value and a range of colors.
-    ColorMaps are commonly used for false-coloring monochromatic images, coloring
-    scatter-plot points, and coloring surface plots by height.
-
-    Each color map is defined by a set of colors, each corresponding to a
-    particular scalar value. For example:
-
-        | 0.0  -> black
-        | 0.2  -> red
-        | 0.6  -> yellow
-        | 1.0  -> white
-
-    The colors for intermediate values are determined by interpolating between
-    the two nearest colors in either RGB or HSV color space.
-
-    To provide user-defined color mappings, see :class:`GradientWidget <pyqtgraph.GradientWidget>`.
-    """
 
     gradients = {
         'thermal': (
@@ -281,6 +265,47 @@ class ColorMap:
     @classmethod
     def fromName(cls, name: str):
         return ColorMap(*cls.gradients[name])
+
+    def _colorAt(self, x: float):
+        positions = self.positions
+        colors = self.colors
+        if x <= positions[0]:
+            c = colors[0]
+            return c.red(), c.green(), c.blue(), c.alpha()
+        if x >= positions[-1]:
+            c = colors[-1]
+            return c.red(), c.green(), c.blue(), c.alpha()
+
+        x2 = positions[0]
+        for i in range(1, len(positions)):
+            x1 = x2
+            x2 = positions[i]
+            if x1 <= x <= x2:
+                break
+
+        dx = x2 - x1
+        if dx == 0:
+            f = 0.
+        else:
+            f = (x - x1) / dx
+
+        c1 = colors[i-1]
+        c2 = colors[i]
+
+        r = c1.red() * (1.-f) + c2.red() * f
+        g = c1.green() * (1.-f) + c2.green() * f
+        b = c1.blue() * (1.-f) + c2.blue() * f
+        a = c1.alpha() * (1.-f) + c2.alpha() * f
+
+        return r, g, b, a
+
+    def getLookUpTable(self, n: int, *, with_alpha: bool = True) -> np.ndarray:
+        table = np.empty((n, 4), dtype=np.ubyte)
+        for i in range(n):
+            table[i] = self._colorAt(i / (n - 1))
+        if with_alpha:
+            return table
+        return table[:, :3]
 
 
 def createIconButton(filepath: str, size: int, *, description: str = ""):

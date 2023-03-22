@@ -137,9 +137,8 @@ class AnnotationItem(PlotItem):
         # TODO: maybe cache the value
         padding_x, padding_y = self._computePaddings()
 
-        x_min, x_max = np.min(x), np.max(x)
-        y_min, y_max = np.min(y), np.max(y)
-
+        x_min, x_max = np.nanmin(x), np.nanmax(x)
+        y_min, y_max = np.nanmin(y), np.nanmax(y)
         self._graph.setRect(x_min,
                             y_min,
                             x_max - x_min + padding_x,

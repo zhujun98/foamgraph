@@ -4,7 +4,7 @@ import numpy as np
 
 from foamgraph.graphics_item import AnnotationItem
 
-from foamgraph.test import visualize
+from foamgraph.test import processEvents
 
 
 def test_input_data_parsing(view):
@@ -44,7 +44,7 @@ def test_plot(item):
     annotations = ['text'] * 10
 
     item.setData(x, y, annotations)
-    visualize()
+    processEvents()
 
     item.clearData()
-    visualize()
+    processEvents()

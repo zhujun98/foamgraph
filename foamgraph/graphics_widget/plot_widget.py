@@ -24,8 +24,9 @@ from .label_widget import LabelWidget
 class PlotWidget(GraphicsWidget):
     """2D plot widget for displaying graphs or an image.
 
-    It contains a `Canvas`, up to four `AxisItem`s, a `LabelWidget` to
-    display title and a `MouseCursorItem`.
+    It contains a :class:`Canvas`, up to four :class:`AxisItem`s,
+    a :class"`LabelWidget` for displaying the title and
+    a :class:`MouseCursorItem`.
     """
 
     _TITLE_LOC = (0, 1)

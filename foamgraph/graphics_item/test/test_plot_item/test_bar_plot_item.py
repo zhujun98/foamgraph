@@ -5,7 +5,7 @@ import numpy as np
 from foamgraph.backend.QtCore import QRectF
 from foamgraph.graphics_item import BarPlotItem
 
-from foamgraph.test import visualize
+from foamgraph.test import processEvents
 
 
 def test_input_data_parsing(view):
@@ -34,18 +34,19 @@ def test_log_mode(view, item):
     x = np.arange(10).astype(np.float32)
     y = x * 1.5
     item.setData(x, y)
-    visualize()
+    item.update()
+    processEvents()
 
     # test log mode
     view._cw._onLogXScaleToggled(True)
-    visualize()
+    processEvents()
     assert item.boundingRect() == QRectF(-1.0, 0, 3.0, 14.0)
     view._cw._onLogYScaleToggled(True)
-    visualize()
+    processEvents()
     assert item.boundingRect() == QRectF(-1.0, 0, 3.0, 2.0)
 
     # clear data
     item.clearData()
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
-    visualize()
+    processEvents()

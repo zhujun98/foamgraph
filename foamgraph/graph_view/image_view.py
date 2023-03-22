@@ -32,6 +32,9 @@ class ImageView(GraphicsView):
     def setImage(self, *args, **kwargs):
         self._cw.setImage(*args, **kwargs)
 
+    def setColorMap(self, *args, **kwargs):
+        self._cw.setColorMap(*args, **kwargs)
+
 
 class TimedImageView(ImageView):
     def __init__(self, interval: int = 1000, *args, **kwargs):

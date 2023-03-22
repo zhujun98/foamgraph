@@ -5,25 +5,22 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-import numpy as np
-
 from ..backend.QtGui import (
-    QAction, QBrush, QColor, QGraphicsRectItem, QGraphicsWidget,
-    QHBoxLayout, QLabel, QLinearGradient, QMenu, QPainter, QPixmap,
-    QGraphicsSceneMouseEvent, QGraphicsSceneResizeEvent, QWidget,
-    QWidgetAction
+    QBrush, QColor, QGraphicsRectItem, QHBoxLayout, QLabel, QLinearGradient,
+    QMenu, QPainter, QPixmap, QGraphicsSceneMouseEvent,
+    QGraphicsSceneResizeEvent, QWidget, QWidgetAction
 )
 from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
-from ..backend.QtWidgets import QGraphicsItem, QSizePolicy
+from ..backend.QtWidgets import QSizePolicy
 
 from ..aesthetics import ColorMap
-from ..config import config
 from .graphics_widget import GraphicsWidget
 
 
 class ColorbarWidget(GraphicsWidget):
+    """Widget for visualizing a color map."""
 
-    gradient_changed_sgn = pyqtSignal(object)
+    colormap_changed_sgn = pyqtSignal()
 
     def __init__(self, orientation=Qt.Orientation.Vertical, *, parent=None):
         """Initialization.
@@ -36,7 +33,7 @@ class ColorbarWidget(GraphicsWidget):
 
         self._cmap = None
         self._gradient = QGraphicsRectItem(parent=self)
-        self.setColorMap(ColorMap.fromName(config['COLOR_MAP']))
+        # self.setColorMap(ColorMap.fromName(config['COLOR_MAP']))
 
         # FIXME: do not use magic numbers
         self._gradient_width = 15
@@ -93,66 +90,23 @@ class ColorbarWidget(GraphicsWidget):
         action.setData(name)
         return action
 
-    def _colorAt(self, x: float):
-        positions = self._cmap.positions
-        colors = self._cmap.colors
-        if x <= positions[0]:
-            c = colors[0]
-            return c.red(), c.green(), c.blue(), c.alpha()
-        if x >= positions[-1]:
-            c = colors[-1]
-            return c.red(), c.green(), c.blue(), c.alpha()
-
-        x2 = positions[0]
-        for i in range(1, len(positions)):
-            x1 = x2
-            x2 = positions[i]
-            if x1 <= x <= x2:
-                break
-
-        dx = x2 - x1
-        if dx == 0:
-            f = 0.
-        else:
-            f = (x - x1) / dx
-
-        c1 = colors[i-1]
-        c2 = colors[i]
-
-        r = c1.red() * (1.-f) + c2.red() * f
-        g = c1.green() * (1.-f) + c2.green() * f
-        b = c1.blue() * (1.-f) + c2.blue() * f
-        a = c1.alpha() * (1.-f) + c2.alpha() * f
-
-        return r, g, b, a
-
     def setColorMap(self, cmap: ColorMap) -> None:
         if self._orientation == Qt.Orientation.Vertical:
-            gradient = QLinearGradient(0., 0., 0., 1)
+            gradient = QLinearGradient(0., 0., 0., 1.)
         else:
-            gradient = QLinearGradient(0., 0., 1, 0.)
+            gradient = QLinearGradient(0., 0., 1., 0.)
         gradient.setCoordinateMode(gradient.CoordinateMode.ObjectMode)
 
         gradient.setStops([(x, QColor(c)) for x, c in
                            zip(cmap.positions, cmap.colors)])
         self._gradient.setBrush(QBrush(gradient))
-        self.gradient_changed_sgn.emit(self)
-        self.update()
 
         self._cmap = cmap
+        self.colormap_changed_sgn.emit()
+        self.update()
 
-    def getLookupTable(self, n: int) -> np.ndarray:
-        """Return an RGBA lookup table.
-
-        :param n: The number of points in the returned lookup table.
-        """
-        table = np.empty((n, 4), dtype=np.ubyte)
-            
-        for i in range(n):
-            x = float(i)/(n - 1)
-            table[i] = self._colorAt(x)
-
-        return table
+    def colorMap(self) -> ColorMap:
+        return self._cmap
 
     def mouseClickEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         if ev.button() == Qt.MouseButton.RightButton:

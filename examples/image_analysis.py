@@ -22,6 +22,11 @@ app = mkQApp()
 
 
 class ImageAnalysis(ImageView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.setTitle("Image with ROIs")
+
     def updateF(self, data):
         """Override."""
         self.setImage(data['image']['data'])

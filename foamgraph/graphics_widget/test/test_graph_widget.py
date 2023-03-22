@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import patch
 
-from foamgraph import mkQApp
 from foamgraph.backend.QtCore import QPoint, QPointF, Qt
 from foamgraph.graphics_item import (
     BarPlotItem, CurvePlotItem, ErrorbarPlotItem, CrossMouseCursorItem,
@@ -10,14 +9,13 @@ from foamgraph.graphics_item import (
 from foamgraph.graphics_widget import (
     AxisWidget, LabelWidget, LegendWidget, GraphWidget
 )
-
-
-app = mkQApp()
+from foamgraph.test import processEvents
 
 
 @pytest.fixture(scope="function")
 def gwidget():
     widget = GraphWidget()
+    processEvents()
     return widget
 
 

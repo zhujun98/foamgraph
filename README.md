@@ -12,19 +12,20 @@ foamgraph
 
 `foamgraph` was originally developed as part of the online analysis framework 
 [EXtra-foam](https://github.com/European-XFEL/EXtra-foam.git)
-to provide fast display (10 Hz) and interactive data analysis for photon science
-experiments at the state-of-art free-electron laser (FEL) facility - European XFEL.
-It was implemented on top of the famous Python graphics and GUI library
-[PyQtGraph](https://github.com/pyqtgraph/pyqtgraph). The following features make 
-`foamgraph` stand out:
+to provide fast display (10 Hz) and interactive data analysis for data-intensive 
+photon science experiments at the state-of-art free-electron laser (FEL) facility - 
+European XFEL. It was originally implemented on top of the famous Python graphics 
+and GUI library [PyQtGraph](https://github.com/pyqtgraph/pyqtgraph). The following 
+features made `foamgraph` stand out:
 
-- The widgets and graphics objects are dedicated for photon science experiments.
+- The widgets are dedicated for photon science experiments.
 - The performance has been significantly improved.
-- It trades flexibility for an easy-to-use and unified API.
 
-It must be emphasized that `foamgraph` is only a GUI library. It does not provide
-any interfaces for data and metadata exchange between the backend and the GUI because
-it is facility and experiment specific.
+As of now, `foamgraph` has almost evolved into its own implementation completely. 
+It's time to decide the direction for future development. Since there are already
+many excellent GUI libraries around, `foamgraph` should and will do something different.
+
+...
 
 Nevertheless, when integrating GUI into a real-time data analysis pipeline, 
 there are a couple of things to be taken into account:

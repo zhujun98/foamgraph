@@ -2,18 +2,16 @@ import pytest
 import unittest
 from unittest.mock import MagicMock, patch
 
-from foamgraph import ImageView, mkQApp, TimedImageView
+from foamgraph import ImageView, TimedImageView
 
-from foamgraph.test import visualize
-
-app = mkQApp()
+from foamgraph.test import processEvents
 
 
 @pytest.fixture
 def image_view():
     view = ImageView()
-    if visualize():
-        view.show()
+    view.show()
+    processEvents()
     return view
 
 
@@ -35,6 +33,11 @@ class TestImageView:
             data = object()
             view.setImage(data)
             mocked.assert_called_once_with(data)
+
+        with patch.object(cw, "setColorMap") as mocked:
+            cmap = "plasma"
+            view.setColorMap(cmap)
+            mocked.assert_called_once_with(cmap)
 
         with patch.object(cw, "addItem") as mocked:
             item = object()

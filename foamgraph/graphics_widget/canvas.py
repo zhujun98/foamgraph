@@ -61,7 +61,6 @@ class Canvas(QGraphicsWidget):
             for item in self._items:
                 if not item.isVisible():
                     continue
-
                 bounding_rect = bounding_rect.united(
                     self.mapRectFromItem(item, item.boundingRect()))
 
@@ -342,7 +341,7 @@ class Canvas(QGraphicsWidget):
     def linkXTo(self, canvas: "Canvas"):
         """Make X-axis change as X-axis of the given canvas changes."""
         if self._linked_x is not None:
-            self._linked_x.x_range_changed_sgn.disconnect(self.xLinkChanged)
+            self._linked_x.x_range_changed_sgn.disconnect(self.linkedXChanged)
         canvas.x_range_changed_sgn.connect(self.linkedXChanged)
         self._linked_x = canvas
 
