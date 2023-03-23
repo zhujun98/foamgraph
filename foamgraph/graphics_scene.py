@@ -1,15 +1,13 @@
 from enum import Enum
+import time
 import weakref
 
-from .backend import sip
 from .backend.QtCore import pyqtSignal, QRect, Qt
-from .backend.QtGui import QAction
 from .backend.QtWidgets import (
     QGraphicsScene, QGraphicsSceneMouseEvent, QMenu
 )
 
-from .pyqtgraph_be import ptime
-from .pyqtgraph_be.Point import Point
+from .Point import Point
 
 
 class MouseEventState(Enum):
@@ -183,7 +181,7 @@ class MouseClickEvent:
         self._button = pressEvent.button()
         self._buttons = pressEvent.buttons()
         self._modifiers = pressEvent.modifiers()
-        self._time = ptime.time()
+        self._time = time.time()
         self.acceptedItem = None
 
     def accept(self):
@@ -507,7 +505,7 @@ class GraphicsScene(QGraphicsScene):
             # FIXME: duplicated?
             super().mouseMoveEvent(ev)
             if self.mouseGrabberItem() is None:
-                now = ptime.time()
+                now = time.time()
                 init = False
                 # keep track of which buttons are involved in dragging
                 for btn in [Qt.MouseButton.LeftButton,

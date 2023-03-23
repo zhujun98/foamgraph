@@ -14,13 +14,13 @@ import numpy as np
 
 from ..backend import QT_LIB, sip
 from ..backend.QtGui import (
-    QAction, QGraphicsItem, QImage, QMenu, QPainter, QPainterPath, QPen,
-    QPicture, QTransform
+    QAction, QImage, QPainter, QPainterPath, QPen, QPicture, QTransform
 )
 from ..backend.QtCore import (
     pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, Qt, QTimer
 )
-from ..pyqtgraph_be import Point
+from ..backend.QtWidgets import QGraphicsItem, QMenu
+from ..Point import Point
 
 from ..aesthetics import FColor
 from ..graphics_scene import HoverEvent, MouseDragEvent

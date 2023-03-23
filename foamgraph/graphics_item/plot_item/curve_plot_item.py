@@ -9,6 +9,7 @@ from typing import Optional
 
 import numpy as np
 
+from ...backend import sip
 from ...backend.QtGui import QPainter, QPainterPath, QPolygonF
 from ...backend.QtCore import QPointF, Qt
 from ...aesthetics import FColor
@@ -82,7 +83,7 @@ class CurvePlotItem(PlotItem):
 
         buffer = polyline.data()
         if buffer is None:
-            buffer = Qt.sip.voidptr(0)
+            buffer = sip.voidptr(0)
         buffer.setsize(2 * n * np.dtype(np.double).itemsize)
 
         arr = np.frombuffer(buffer, np.double).reshape((-1, 2))

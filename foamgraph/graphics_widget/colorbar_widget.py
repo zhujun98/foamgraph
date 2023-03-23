@@ -6,12 +6,13 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 from ..backend.QtGui import (
-    QBrush, QColor, QGraphicsRectItem, QHBoxLayout, QLabel, QLinearGradient,
-    QMenu, QPainter, QPixmap, QGraphicsSceneMouseEvent,
-    QGraphicsSceneResizeEvent, QWidget, QWidgetAction
+    QBrush, QColor, QLinearGradient, QPainter, QPixmap
 )
 from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
-from ..backend.QtWidgets import QSizePolicy
+from ..backend.QtWidgets import (
+    QGraphicsRectItem, QGraphicsSceneMouseEvent, QGraphicsSceneResizeEvent,
+    QHBoxLayout, QLabel, QMenu, QSizePolicy, QWidget, QWidgetAction
+)
 
 from ..aesthetics import ColorMap
 from .graphics_widget import GraphicsWidget
