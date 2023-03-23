@@ -219,6 +219,7 @@ class Canvas(QGraphicsWidget):
 
     def setAspectRatioLocked(self, state: bool) -> None:
         self._aspect_ratio_locked = state
+        self.resizeEvent(QGraphicsSceneResizeEvent())
 
     def _createSelectionRect(self):
         rect = QGraphicsRectItem(0, 0, 1, 1)
@@ -255,22 +256,17 @@ class Canvas(QGraphicsWidget):
     def viewRect(self) -> QRectF:
         return self._view_rect
 
-    def _regularizeRange(
-            self, vmin, vmax, axis: "Canvas.Axis", add_padding: bool):
-        if add_padding:
-            if axis == self.Axis.X:
-                delta = self._view_rect.width()
-            else:
-                delta = self._view_rect.height()
+    def _addPaddingToRange(self, vmin, vmax):
+        delta = vmax - vmin
+        # FIXME: not sure this is a good function
+        padding = np.clip(1./(delta**0.5), 0.02, 0.1) \
+            if delta > 0 else 0.02
+        return vmin - padding, vmax + padding
 
-            # FIXME: not sure this is a good function
-            padding = np.clip(1./(delta**0.5), 0.02, 0.1) \
-                if delta > 0 else 0.02
-
-            vmin -= padding
-            vmax += padding
-
-        return vmin, vmax
+    def _addPaddingToRect(self, rect: QRectF):
+        x_min, x_max = self._addPaddingToRange(rect.left(), rect.right())
+        y_min, y_max = self._addPaddingToRange(rect.top(), rect.bottom())
+        rect.setRect(x_min, y_min, x_max - x_min, y_max - y_min)
 
     def _updateAll(self):
         self.x_range_changed_sgn.emit()
@@ -333,11 +329,8 @@ class Canvas(QGraphicsWidget):
 
     def setTargetXRange(self, x_min: float, x_max: float, *,
                         disable_auto_range: bool = True,
-                        add_padding: bool = True,
                         respect_aspect_ratio: bool = True,
                         update: bool = True):
-        x_min, x_max = self._regularizeRange(
-            x_min, x_max, self.Axis.X, add_padding)
         self._target_rect.setLeft(x_min)
         self._target_rect.setRight(x_max)
 
@@ -357,11 +350,8 @@ class Canvas(QGraphicsWidget):
 
     def setTargetYRange(self, y_min: float, y_max: float, *,
                         disable_auto_range: bool = True,
-                        add_padding: bool = True,
                         respect_aspect_ratio: bool = True,
                         update: bool = True):
-        y_min, y_max = self._regularizeRange(
-            y_min, y_max, self.Axis.Y, add_padding)
         self._target_rect.setTop(y_min)
         self._target_rect.setBottom(y_max)
 
@@ -390,18 +380,19 @@ class Canvas(QGraphicsWidget):
             rect = QRectF(xrange[0], yrange[0],
                           xrange[1] - xrange[0], yrange[1] - yrange[0])
 
+        if add_padding:
+            self._addPaddingToRect(rect)
+
         if self._aspect_ratio_locked and aspect_ratio_changed:
             self._maybeAdjustAspectRatio(rect)
 
         self.setTargetXRange(rect.left(), rect.right(),
                              disable_auto_range=disable_auto_range,
-                             add_padding=add_padding,
                              respect_aspect_ratio=False,
                              update=False)
 
         self.setTargetYRange(rect.top(), rect.bottom(),
                              disable_auto_range=disable_auto_range,
-                             add_padding=add_padding,
                              respect_aspect_ratio=False,
                              update=False)
 
@@ -443,11 +434,11 @@ class Canvas(QGraphicsWidget):
 
     def linkedXChanged(self):
         rect = self._linked_x.targetRect()
-        self.setTargetXRange(rect.left(), rect.right(), add_padding=False)
+        self.setTargetXRange(rect.left(), rect.right())
 
     def linkedYChanged(self):
         rect = self._linked_y.targetRect()
-        self.setTargetYRange(rect.top(), rect.bottom(), add_padding=False)
+        self.setTargetYRange(rect.top(), rect.bottom())
 
     def updateAutoRange(self) -> None:
         if not self._auto_range_x and not self._auto_range_y:
@@ -455,8 +446,11 @@ class Canvas(QGraphicsWidget):
 
         rect = self._proxy.graphRect()
         if self._auto_range_x and self._auto_range_y:
+            self._addPaddingToRect(rect)
+
             if self._aspect_ratio_locked:
                 self._maybeAdjustAspectRatio(rect)
+
             self.setTargetXRange(rect.left(), rect.right(),
                                  disable_auto_range=False,
                                  respect_aspect_ratio=False,
@@ -466,12 +460,14 @@ class Canvas(QGraphicsWidget):
                                  respect_aspect_ratio=False,
                                  update=False)
         elif self._auto_range_x:
-            self.setTargetXRange(rect.left(), rect.right(),
+            x_min, x_max = self._addPaddingToRange(rect.left(), rect.right())
+            self.setTargetXRange(x_min, x_max,
                                  disable_auto_range=False,
                                  update=False)
 
         elif self._auto_range_y:
-            self.setTargetYRange(rect.top(), rect.bottom(),
+            y_min, y_max = self._addPaddingToRange(rect.top(), rect.bottom())
+            self.setTargetYRange(y_min, y_max,
                                  disable_auto_range=False,
                                  update=False)
 
@@ -540,7 +536,7 @@ class Canvas(QGraphicsWidget):
         xc = center.x()
         x0 = xc + (rect.left() - xc) * sx
         x1 = xc + (rect.right() - xc) * sx
-        self.setTargetXRange(x0, x1, add_padding=False)
+        self.setTargetXRange(x0, x1)
 
     def scaleYBy(self, sy: float, yc: float) -> None:
         rect = self._view_rect
@@ -548,7 +544,7 @@ class Canvas(QGraphicsWidget):
         yc = center.y()
         y0 = yc + (rect.top() - yc) * sy
         y1 = yc + (rect.bottom() - yc) * sy
-        self.setTargetYRange(y0, y1, add_padding=False)
+        self.setTargetYRange(y0, y1)
 
     def scaleBy(self, sx: float, sy: float, xc: float, yc: float) -> None:
         rect = self._view_rect
@@ -584,15 +580,13 @@ class Canvas(QGraphicsWidget):
         rect = self._view_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, dx, 0))
-        self.setTargetXRange(rect.left() + l.dx(), rect.right() + l.dx(),
-                             add_padding=False)
+        self.setTargetXRange(rect.left() + l.dx(), rect.right() + l.dx())
 
     def translateYBy(self, dy: float) -> None:
         rect = self._view_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, 0, dy))
-        self.setTargetYRange(rect.top() + l.dy(), rect.bottom() + l.dy(),
-                             add_padding=False)
+        self.setTargetYRange(rect.top() + l.dy(), rect.bottom() + l.dy())
 
     def translateBy(self, dx: float, dy: float) -> None:
         rect = self._view_rect
@@ -692,7 +686,6 @@ class Canvas(QGraphicsWidget):
             self._view_rect = QRectF(self._target_rect)
             self._maybeAdjustAspectRatio(self._view_rect)
         self._updateAll()
-        self._proxy.prepareGeometryChange()
 
     def close(self) -> None:
         """Override."""
