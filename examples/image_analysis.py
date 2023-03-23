@@ -100,15 +100,15 @@ class ImageAnalysisScene(AbstractScene):
             h_layout.addWidget(mon)
 
         layout = QVBoxLayout()
-        layout.addWidget(self._image)
-        layout.addWidget(self._roi_ctrl)
-        layout.addLayout(h_layout)
+        layout.addWidget(self._image, 5)
+        layout.addWidget(self._roi_ctrl, 1)
+        layout.addLayout(h_layout, 2)
 
         self._cw = QFrame()
         self._cw.setLayout(layout)
         self.setCentralWidget(self._cw)
 
-        w, h = 640, 800
+        w, h = 800, 800
         self.resize(w, h)
         self.setMinimumSize(int(0.6 * w), int(0.6 * h))
 

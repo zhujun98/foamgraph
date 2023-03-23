@@ -323,7 +323,7 @@ class AxisWidget(GraphicsWidget):
         self._auto_range_act.triggered.emit(True)
 
     def onCanvasChanged(self) -> None:
-        rect = self._vb.graphRect()
+        rect = self._vb.viewRect()
         if self._orientation == Qt.Orientation.Vertical:
             vmin, vmax = rect.top(), rect.bottom()
         else:

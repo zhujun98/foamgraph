@@ -160,7 +160,7 @@ class StockPriceData:
 
 class ImageData:
     def __init__(self):
-        self._shape = (1024, 768)
+        self._shape = (768, 1024)
 
         self._counter = 0
         self._h, self._w = self._shape
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     line_plot_data = LinePlotData(500)
     scatter_plot_data = ScatterPlotData(500)
     errorbar_plot_data = ErrorBarPlotData(50)
-    multi_line_plot_data = MultiLinePlotData(1000)
+    multi_line_plot_data = MultiLinePlotData(500)
     double_y_plot_data = DoubleYPlotData(100)
     multi_peak_data = MultiPeakData()
     candlestick_plot_data = StockPriceData(100)
