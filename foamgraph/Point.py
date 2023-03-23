@@ -6,7 +6,7 @@ Distributed under MIT/X11 license. See license.txt for more information.
 """
 import numpy as np
 
-from ..backend.QtCore import QPoint, QPointF, QSizeF
+from .backend.QtCore import QPoint, QPointF, QSizeF
 
 __all__ = ['Point']
 

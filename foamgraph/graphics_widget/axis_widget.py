@@ -1,15 +1,13 @@
 import numpy as np
 
 from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
-from ..backend.QtGui import (
-    QAction, QGraphicsTextItem, QGraphicsSceneResizeEvent,
-    QGraphicsSceneWheelEvent, QPen, QPicture, QPainter
-)
+from ..backend.QtGui import QAction, QPen, QPicture, QPainter
 from ..backend.QtWidgets import (
-    QCheckBox, QGridLayout, QMenu, QWidget, QWidgetAction
+    QCheckBox, QGraphicsSceneResizeEvent, QGraphicsSceneWheelEvent,
+    QGridLayout, QMenu, QGraphicsTextItem, QWidget, QWidgetAction
 )
 
-from ..pyqtgraph_be.Point import Point
+from ..Point import Point
 
 from ..aesthetics import FColor
 from ..graphics_scene import MouseClickEvent, MouseDragEvent
@@ -38,7 +36,7 @@ class AxisWidget(GraphicsWidget):
             self._orientation = Qt.Orientation.Horizontal
         else:
             self._orientation = Qt.Orientation.Vertical
-            self._label.rotate(-90)
+            self._label.setRotation(-90)
 
         # Negative values draw into the plot, positive values draw outward.
         self._tick_length = -5

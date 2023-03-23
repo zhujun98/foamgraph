@@ -1,3 +1,10 @@
+"""
+Distributed under the terms of the BSD 3-Clause License.
+
+The full license is in the file LICENSE, distributed with this software.
+
+Author: Jun Zhu
+"""
 from enum import IntEnum
 from typing import Any
 
@@ -5,12 +12,13 @@ import numpy as np
 
 from ..backend.QtCore import pyqtSignal, QLineF, QPointF, QRectF, Qt
 from ..backend.QtGui import (
-    QAction, QActionGroup, QDoubleValidator, QGraphicsSceneResizeEvent,
-    QGraphicsSceneWheelEvent, QSizePolicy, QTransform
+    QAction, QActionGroup, QDoubleValidator,
+    QTransform
 )
 from ..backend.QtWidgets import (
-    QGraphicsItem, QGraphicsObject, QGraphicsWidget, QGraphicsRectItem,
-    QHBoxLayout, QLabel, QMenu, QWidget, QWidgetAction
+    QGraphicsItem, QGraphicsObject, QGraphicsRectItem,
+    QGraphicsSceneResizeEvent, QGraphicsSceneWheelEvent, QGraphicsWidget,
+    QHBoxLayout, QLabel, QMenu, QSizePolicy, QWidget, QWidgetAction
 )
 
 from ..aesthetics import FColor

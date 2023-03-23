@@ -6,8 +6,8 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 from ..backend.QtCore import QPointF, QRectF, QSizeF, Qt
-from ..backend.QtGui import QColor, QFont, QGraphicsSceneResizeEvent
-from ..backend.QtWidgets import QGraphicsTextItem
+from ..backend.QtGui import QColor, QFont
+from ..backend.QtWidgets import QGraphicsSceneResizeEvent, QGraphicsTextItem
 
 from ..aesthetics import FColor
 from .graphics_widget import GraphicsWidget

@@ -29,7 +29,7 @@ class ColormapController(GraphicsWidget):
         self._cbar = ColorbarWidget(parent=self)
         self._lri = LinearVRegionItem(0, 1)
         self._hist = CurvePlotItem(pen=FColor.mkPen('k'))
-        self._hist.rotate(90)
+        self._hist.setRotation(90)
 
         self._auto_levels = True
 

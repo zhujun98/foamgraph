@@ -7,7 +7,7 @@ from .backend.QtWidgets import (
     QGraphicsScene, QGraphicsSceneMouseEvent, QMenu
 )
 
-from .pyqtgraph_be.Point import Point
+from .Point import Point
 
 
 class MouseEventState(Enum):

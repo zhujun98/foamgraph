@@ -3,13 +3,13 @@ import operator
 from typing import Any, Optional
 import weakref
 
+from ..backend import sip
 from ..backend.QtCore import QRectF
 from ..backend.QtWidgets import (
     QGraphicsItem, QGraphicsObject, QGraphicsWidget
 )
 
-from ..pyqtgraph_be import isQObjectAlive
-from ..pyqtgraph_be.Point import Point
+from ..Point import Point
 
 
 class LRUCache:
@@ -151,7 +151,7 @@ class GraphicsItem:
             self._viewWidget = weakref.ref(self.scene().views()[0])
 
         v = self._viewWidget()
-        if v is not None and not isQObjectAlive(v):
+        if v is not None and sip.isdeleted(v):
             return
 
         return v
