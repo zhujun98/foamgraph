@@ -98,7 +98,7 @@ class Canvas(QGraphicsWidget):
     class MouseMode(IntEnum):
         Off = 0
         Pan = 1
-        Rect = 2
+        Zoom = 2
 
     class Axis(IntEnum):
         X = 0
@@ -129,10 +129,10 @@ class Canvas(QGraphicsWidget):
 
         # desired rect, which can be changed by mouse panning, zooming,
         # mouse wheel scrolling, etc.
-        self._target_rect = QRectF(0, 0, 1, 1)
+        self._target_rect = QRectF()
         # actual view rect, which can be different from the desired rect
         # due to constraint such as aspect ratio.
-        self._view_rect = QRectF(self._target_rect)
+        self._view_rect = QRectF()
 
         self._linked_x = None
         self._linked_y = None
@@ -192,7 +192,7 @@ class Canvas(QGraphicsWidget):
             action.setActionGroup(group)
             action.setCheckable(True)
             action.toggled.connect(
-                lambda: self.__setMouseMode(self.MouseMode.Rect))
+                lambda: self.__setMouseMode(self.MouseMode.Zoom))
 
         return root
 
@@ -403,6 +403,7 @@ class Canvas(QGraphicsWidget):
                              add_padding=add_padding,
                              respect_aspect_ratio=False,
                              update=False)
+
         self._updateAll()
 
     def enableAutoRangeX(self, state: bool = True) -> None:
@@ -446,17 +447,6 @@ class Canvas(QGraphicsWidget):
     def linkedYChanged(self):
         rect = self._linked_y.targetRect()
         self.setTargetYRange(rect.top(), rect.bottom(), add_padding=False)
-
-    def screenGeometry(self):
-        """return the screen geometry"""
-        view = self.scene().views()[0]
-
-        b = self.sceneBoundingRect()
-        wr = view.mapFromScene(b).boundingRect()
-
-        pos = view.mapToGlobal(view.pos())
-        wr.adjust(pos.x(), pos.y(), pos.x(), pos.y())
-        return wr
 
     def updateAutoRange(self) -> None:
         if not self._auto_range_x and not self._auto_range_y:
@@ -634,7 +624,7 @@ class Canvas(QGraphicsWidget):
         if ev.button() == Qt.MouseButton.LeftButton:
             # Rect mode cannot be selected if any of _auto_range_x_locked
             # or _auto_range_y_locked is True.
-            if self._mouse_mode == self.MouseMode.Rect:
+            if self._mouse_mode == self.MouseMode.Zoom:
                 rect = self._proxy.mapRectFromParent(
                     QRectF(ev.buttonDownPos(), ev.pos()))
                 if ev.exiting():
