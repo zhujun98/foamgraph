@@ -142,10 +142,13 @@ class Canvas(QGraphicsWidget):
         self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
         if _DEBUG_CANVAS:
-            self._border = QGraphicsRectItem(0, 0, 1, 1, parent=self)
-            self._border.setPen(FColor.mkPen('r', width=2))
+            self._view_border = QGraphicsRectItem(0, 0, 1, 1, parent=self)
+            self._view_border.setPen(FColor.mkPen('r', width=2))
+            self._target_border = QGraphicsRectItem(0, 0, 1, 1, parent=self)
+            self._target_border.setPen(FColor.mkPen('b', width=2))
         else:
-            self._border = None
+            self._view_border = None
+            self._target_border = None
 
         self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding,
                                        QSizePolicy.Policy.Expanding))
@@ -252,23 +255,17 @@ class Canvas(QGraphicsWidget):
     def viewRect(self) -> QRectF:
         return self._view_rect
 
-    def _regularizeRange(self, vmin, vmax, axis: "Canvas.Axis", add_padding: bool):
-        if axis == self.Axis.X:
-            delta = self._target_rect.width()
-        else:
-            delta = self._target_rect.height()
+    def _regularizeRange(
+            self, vmin, vmax, axis: "Canvas.Axis", add_padding: bool):
+        if add_padding:
+            if axis == self.Axis.X:
+                delta = self._view_rect.width()
+            else:
+                delta = self._view_rect.height()
 
-        # If we requested 0 range, try to preserve previous scale.
-        # Otherwise just pick an arbitrary scale.
-        if vmin == vmax:
-            if delta == 0:
-                delta = 1
-            vmin -= 0.5 * delta
-            vmax += 0.5 * delta
-
-        elif add_padding:
             # FIXME: not sure this is a good function
-            padding = np.clip(1./(delta**0.5), 0.02, 0.1) if delta > 0 else 0.02
+            padding = np.clip(1./(delta**0.5), 0.02, 0.1) \
+                if delta > 0 else 0.02
 
             vmin -= padding
             vmax += padding
@@ -276,13 +273,16 @@ class Canvas(QGraphicsWidget):
         return vmin, vmax
 
     def _updateAll(self):
-        if self._border is not None:
-            self._border.setRect(
-                self.mapRectFromItem(self._proxy, self._target_rect))
-
         self.x_range_changed_sgn.emit()
         self.y_range_changed_sgn.emit()
         self.updateMatrix()
+
+        if _DEBUG_CANVAS:
+            self._view_border.setRect(
+                self.mapRectFromItem(self._proxy, self._view_rect))
+            self._target_border.setRect(
+                self.mapRectFromItem(self._proxy, self._target_rect))
+
         self.update()
 
     @staticmethod
@@ -291,22 +291,22 @@ class Canvas(QGraphicsWidget):
         hw = (x1 - x0) / 2.
         return xc - scale * hw, xc + scale * hw
 
-    def _getLockedXRangeFromYRange(self, y0: float, y1: float):
+    def _getLockedXRange(self, y0: float, y1: float):
         geometry = self.rect()
         if geometry.isEmpty():
             return
         geometry_ratio = geometry.width() / geometry.height()
-        x0, x1 = self._target_rect.left(), self._target_rect.right()
+        x0, x1 = self._view_rect.left(), self._view_rect.right()
         one_over_view_ratio = (y1 - y0) / (x1 - x0)
         scale = geometry_ratio * one_over_view_ratio
         return self.scaleRange(x0, x1, scale)
 
-    def _getLockedYRangeFromXRange(self, x0: float, x1: float):
+    def _getLockedYRange(self, x0: float, x1: float):
         geometry = self.rect()
         if geometry.isEmpty():
             return
         geometry_ratio = geometry.height() / geometry.width()
-        y0, y1 = self._target_rect.top(), self._target_rect.bottom()
+        y0, y1 = self._view_rect.top(), self._view_rect.bottom()
         one_over_view_ratio = (x1 - x0) / (y1 - y0)
         scale = geometry_ratio * one_over_view_ratio
         return self.scaleRange(y0, y1, scale)
@@ -342,7 +342,7 @@ class Canvas(QGraphicsWidget):
         self._target_rect.setRight(x_max)
 
         if self._aspect_ratio_locked and respect_aspect_ratio:
-            y_range = self._getLockedYRangeFromXRange(x_min, x_max)
+            y_range = self._getLockedYRange(x_min, x_max)
             if y_range is not None:
                 self._target_rect.setTop(y_range[0])
                 self._target_rect.setBottom(y_range[1])
@@ -360,12 +360,13 @@ class Canvas(QGraphicsWidget):
                         add_padding: bool = True,
                         respect_aspect_ratio: bool = True,
                         update: bool = True):
-        y_min, y_max = self._regularizeRange(y_min, y_max, self.Axis.Y, add_padding)
+        y_min, y_max = self._regularizeRange(
+            y_min, y_max, self.Axis.Y, add_padding)
         self._target_rect.setTop(y_min)
         self._target_rect.setBottom(y_max)
 
         if self._aspect_ratio_locked and respect_aspect_ratio:
-            x_range = self._getLockedXRangeFromYRange(y_min, y_max)
+            x_range = self._getLockedXRange(y_min, y_max)
             if x_range is not None:
                 self._target_rect.setLeft(x_range[0])
                 self._target_rect.setRight(x_range[1])
@@ -476,13 +477,13 @@ class Canvas(QGraphicsWidget):
 
         self._updateAll()
 
-    def invertX(self, inverted: bool = True):
+    def invertX(self, inverted: bool = True) -> None:
         self._x_inverted = inverted
         self.x_range_changed_sgn.emit()
         self.updateMatrix()
         self.update()
 
-    def invertY(self, inverted: bool = True):
+    def invertY(self, inverted: bool = True) -> None:
         self._y_inverted = inverted
         self.y_range_changed_sgn.emit()
         self.updateMatrix()
@@ -534,7 +535,7 @@ class Canvas(QGraphicsWidget):
         return self._proxy.mapFromItem(item, obj)
 
     def scaleXBy(self, sx: float, xc: float) -> None:
-        rect = self._target_rect
+        rect = self._view_rect
         center = self.invertedGraphTransform().map(QPointF(xc, 0))
         xc = center.x()
         x0 = xc + (rect.left() - xc) * sx
@@ -542,7 +543,7 @@ class Canvas(QGraphicsWidget):
         self.setTargetXRange(x0, x1, add_padding=False)
 
     def scaleYBy(self, sy: float, yc: float) -> None:
-        rect = self._target_rect
+        rect = self._view_rect
         center = self.invertedGraphTransform().map(QPointF(0, yc))
         yc = center.y()
         y0 = yc + (rect.top() - yc) * sy
@@ -550,7 +551,7 @@ class Canvas(QGraphicsWidget):
         self.setTargetYRange(y0, y1, add_padding=False)
 
     def scaleBy(self, sx: float, sy: float, xc: float, yc: float) -> None:
-        rect = self._target_rect
+        rect = self._view_rect
         center = self.invertedGraphTransform().map(QPointF(xc, yc))
         xc, yc = center.x(), center.y()
         x0 = xc + (rect.left() - xc) * sx
@@ -580,21 +581,21 @@ class Canvas(QGraphicsWidget):
         ev.accept()
 
     def translateXBy(self, dx: float) -> None:
-        rect = self._target_rect
+        rect = self._view_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, dx, 0))
         self.setTargetXRange(rect.left() + l.dx(), rect.right() + l.dx(),
                              add_padding=False)
 
     def translateYBy(self, dy: float) -> None:
-        rect = self._target_rect
+        rect = self._view_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, 0, dy))
         self.setTargetYRange(rect.top() + l.dy(), rect.bottom() + l.dy(),
                              add_padding=False)
 
     def translateBy(self, dx: float, dy: float) -> None:
-        rect = self._target_rect
+        rect = self._view_rect
         tr = self.invertedGraphTransform()
         l = tr.map(QLineF(0, 0, dx, dy))
         self.setTargetRange(rect.adjusted(l.dx(), l.dy(), l.dx(), l.dy()),
@@ -631,7 +632,7 @@ class Canvas(QGraphicsWidget):
                     self._selection_rect.hide()
                     # should not go beyond the bounding rect of the canvas
                     self.setTargetRange(
-                        rect.intersected(self._target_rect), add_padding=False)
+                        rect.intersected(self._view_rect), add_padding=False)
                 else:
                     if ev.entering():
                         self._selection_rect.show()

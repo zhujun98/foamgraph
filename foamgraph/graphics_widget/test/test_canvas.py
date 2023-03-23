@@ -59,8 +59,8 @@ class TestGraphViewCanvas:
         assert canvas._auto_range_x
         assert canvas._auto_range_y
 
-        assert canvas.targetRect() == QRectF(-0.5, -0.5, 1.0, 1.0)
-        assert canvas.viewRect() == QRectF(-0.5, -0.5, 1.0, 1.0)
+        assert canvas.targetRect() == QRectF(-0.1, -0.1, 0.2, 0.2)
+        assert canvas.viewRect() == QRectF(-0.1, -0.1, 0.2, 0.2)
 
         plot1 = view.addCurvePlot()
         plot1.setData(np.arange(11), 0.1 * np.arange(11))
