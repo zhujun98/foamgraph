@@ -136,7 +136,7 @@ class ImageItem(GraphicsObject):
         data *= num_colors / (v_max - v_min)
 
         scaled = np.empty_like(data, dtype=np.min_scalar_type(num_colors - 1))
-        np.clip(data, 0, num_colors - 1, out=scaled)
+        np.clip(data, 0, num_colors - 1, out=scaled, casting='unsafe')
         return scaled
 
     def _render(self):
