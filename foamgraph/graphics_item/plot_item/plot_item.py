@@ -153,7 +153,7 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
         return np.log10(ret + 1)
 
     def label(self) -> str:
-        """Label displayed in `LegendWidget`."""
+        """Label displayed in :class:`LegendWidget`."""
         return self._label
 
     def setLabel(self, label: str) -> None:
@@ -161,5 +161,5 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
         self.label_changed_sgn.emit(label)
 
     def drawSample(self, p: Optional[QPainter] = None) -> bool:
-        """Draw a sample used in `LegendWidget`."""
+        """Draw a sample used in :class:`LegendWidget`."""
         return False

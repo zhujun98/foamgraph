@@ -32,40 +32,21 @@ class ImageAnalysis(ImageView):
         self.setImage(data['image']['data'])
 
 
-# TODO: improve ROI geometry handling
 class RoiProjectionMonitor(GraphView):
-    def __init__(self, id_: str, *, parent=None):
+    def __init__(self, roi, *, parent=None):
         super().__init__(parent=parent)
 
-        self._id = id_
-        self.setTitle(id_)
-
-        self._roi_geom = None
+        self._roi = roi
+        self.setTitle(roi.label())
 
         self._plot = self.addCurvePlot()
 
-    def onRoiGeometryChange(self, id_: str, value: tuple):
-        if id_ != self._id:
-            return
-
-        activated, _, x, y, w, h = value
-        if activated:
-            self._roi_geom = (x, y, w, h)
-        else:
-            self._roi_geom = None
-
     def updateF(self, data):
         """override."""
-        if self._roi_geom is None:
-            self.clearData()
-            return
+        data = extract_rect_roi(data['image']['data'], self._roi.region())
 
-        roi = extract_rect_roi(data['image']['data'], self._roi_geom)
-        if roi is None:
-            self._plot.setData(None, None)
-        else:
-            proj = np.mean(roi, axis=0)
-            self._plot.setData(np.arange(len(proj)), proj)
+        proj = np.mean(data, axis=0)
+        self._plot.setData(np.arange(len(proj)), proj)
 
 
 class ImageAnalysisScene(AbstractScene):
@@ -75,16 +56,17 @@ class ImageAnalysisScene(AbstractScene):
         """Initialization."""
         super().__init__(*args, **kwargs)
 
-        num_rois = 2
         self._image = ImageAnalysis(parent=self)
         self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
         self._roi_monitors = []
 
-        for i in range(num_rois):
-            roi = self._image.addROI()
-            id_ = f"ROI{i+1}"
-            self._roi_ctrl.addROI(id_, roi)
-            self._roi_monitors.append(RoiProjectionMonitor(id_, parent=self))
+        roi1 = self._image.addRectROI("ROI1", 0, 0, 100, 100)
+        self._roi_ctrl.addROI("ROI1", roi1)
+        self._roi_monitors.append(RoiProjectionMonitor(roi1, parent=self))
+
+        roi2 = self._image.addEllipseROI("ROI2", 10, 10, 100, 100)
+        self._roi_ctrl.addROI("ROI2", roi2)
+        self._roi_monitors.append(RoiProjectionMonitor(roi2, parent=self))
 
         self.initUI()
         self.initConnections()
@@ -114,9 +96,7 @@ class ImageAnalysisScene(AbstractScene):
 
     def initConnections(self):
         """Override."""
-        for mon in self._roi_monitors:
-            self._roi_ctrl.roi_geometry_change_sgn.connect(
-                mon.onRoiGeometryChange)
+        ...
 
 
 if __name__ == "__main__":

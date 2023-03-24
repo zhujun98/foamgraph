@@ -141,6 +141,10 @@ class PlotWidget(GraphicsWidget):
         if self._mouse_cursor is not None:
             self._canvas.removeItem(self._mouse_cursor)
 
+        # The parent of a mouse cursor cannot be the canvas because the mouse
+        # cursor should not move when the canvas (e.g. its view range) has
+        # changed. In another word, the mouse cursor should always stay at
+        # the position where the real mouse cursor points at.
         if style == MouseCursorStyle.Simple:
             cursor = MouseCursorItem(parent=self)
         elif style == MouseCursorStyle.Cross:

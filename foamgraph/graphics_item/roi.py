@@ -5,460 +5,191 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-import abc
+from abc import abstractmethod
 from enum import Enum
-from math import cos, sin
-from typing import Union
+from typing import Optional, Union
 
-import numpy as np
-
-from ..backend import QT_LIB, sip
-from ..backend.QtGui import (
-    QAction, QImage, QPainter, QPainterPath, QPen, QPicture, QTransform
+from ..backend.QtGui import QPainter, QPainterPath, QPen
+from ..backend.QtCore import pyqtSignal, QPointF, QRect, QRectF, QSize, Qt
+from ..backend.QtWidgets import (
+    QAbstractGraphicsShapeItem, QGraphicsRectItem, QGraphicsEllipseItem
 )
-from ..backend.QtCore import (
-    pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, Qt, QTimer
-)
-from ..backend.QtWidgets import QGraphicsItem, QMenu
 
 from ..aesthetics import FColor
-from ..graphics_scene import HoverEvent, MouseDragEvent
+from ..graphics_scene import MouseDragEvent
 from .graphics_item import GraphicsObject
 
 
-class UIGraphicsItem(GraphicsObject):
-    """Base class for graphics items with boundaries relative to a GraphicsView or Canvas.
+class ROIBase(GraphicsObject):
 
-    The purpose of this class is to allow the creation of GraphicsItems which live inside
-    a scalable view, but whose boundaries will always stay fixed relative to the view's boundaries.
-    For example: GridItem, InfiniteLine
-
-    The view can be specified on initialization or it can be automatically detected when the item is painted.
-    """
-
-    # TODO: make parent the first argument
-    def __init__(self, bounds=None, *, parent=None):
-        """
-        ============== =============================================================================
-        **Arguments:**
-        bounds         QRectF with coordinates relative to view box. The default is QRectF(0,0,1,1),
-                       which means the item will have the same bounds as the view.
-        ============== =============================================================================
-        """
-        super().__init__(parent=parent)
-        self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges)
-
-        if bounds is None:
-            self._bounds = QRectF(0, 0, 1, 1)
-        else:
-            self._bounds = bounds
-
-        self._bounding_rect = None
-
-    def itemChange(self, change, value):
-        """Override."""
-        ret = super().itemChange(change, value)
-
-        # workaround for pyqt bug:
-        # http://www.riverbankcomputing.com/pipermail/pyqt/2012-August/031818.html
-        if QT_LIB == 'PyQt5' and change == self.ItemParentChange and isinstance(ret, QGraphicsItem):
-            ret = sip.cast(ret, QGraphicsItem)
-
-        if change == self.GraphicsItemChange.ItemScenePositionHasChanged:
-            self.setNewBounds()
-        return ret
-
-    def boundingRect(self) -> QRectF:
-        """Override."""
-        if self._bounding_rect is None:
-            br = self.viewRect()
-            if br is None:
-                return QRectF()
-            self._bounding_rect = br
-        return QRectF(self._bounding_rect)
-
-    def setNewBounds(self):
-        """Update the item's bounding rect to match the viewport"""
-        self._bounding_rect = None  # invalidate bounding rect, regenerate later if needed.
-        self.prepareGeometryChange()
-
-    def setPos(self, pos):
-        """Override."""
-        super().setPos(pos)
-        self.setNewBounds()
-
-
-class RoiHandle(UIGraphicsItem):
-    """A single interactive point attached to an ROI."""
-
-    def __init__(self, pos: QPointF, *, parent=None):
-        super().__init__(parent=parent)
-
-        # bookkeeping the relative position to the attached ROI
-        self._pos = pos
-        self.updatePosition()
-
-        self._size = 10
-        self._edges = 4
-
-        self._pen = FColor.mkPen("c", width=0)
-        self._hover_pen = FColor.mkPen("y", width=0)
-
-        self._mouse_hovering = False
-        self._moving = False
-        self._cursor_offset = None
-
-        self._path = QPainterPath()
-        self._buildPath()
-
-        self.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
-
-    def hoverEvent(self, ev: HoverEvent) -> None:
-        hovering = False
-        if not ev.isExit():
-            if ev.acceptDrags(Qt.MouseButton.LeftButton):
-                hovering = True
-
-        if self._mouse_hovering == hovering:
-            return
-
-        self._mouse_hovering = hovering
-        self.update()
-
-    def mouseDragEvent(self, ev: MouseDragEvent) -> None:
-        if ev.button() != Qt.MouseButton.LeftButton:
-            return
-        ev.accept()
-
-        if ev.exiting():
-            if self._moving:
-                self.parentItem().stateChangeFinished()
-            self._moving = False
-            self._cursor_offset = 0
-            self.update()
-        elif ev.entering():
-            self.parentItem().handleMoveStarted()
-            self._moving = True
-            self._cursor_offset = self.scenePos() - ev.buttonDownScenePos()
-
-        if self._moving:
-            pos = ev.scenePos() + self._cursor_offset
-            self.parentItem().moveHandle(self, pos)
-
-    def _buildPath(self):
-        angle = 0
-        for i in range(0, self._edges + 1):
-            x = self._size * cos(angle)
-            y = self._size * sin(angle)
-            angle += 2 * np.pi / self._edges
-            if i == 0:
-                self._path.moveTo(x, y)
-            else:
-                self._path.lineTo(x, y)
-
-    def paint(self, p, *args) -> None:
-        """Override."""
-        p.setRenderHints(p.RenderHint.Antialiasing, True)
-        if self._mouse_hovering:
-            p.setPen(self._hover_pen)
-        else:
-            p.setPen(self._pen)
-        p.drawPath(self._path)
-
-    def boundingRect(self) -> QRectF:
-        """Override."""
-        return self._path.boundingRect()
-
-    def updatePosition(self):
-        self.setPos(self._pos * self.parentItem().size())
-
-
-class ROI(GraphicsObject):
-    """Generic region-of-interest graphics object."""
-
-    class DragMode(Enum):
+    class Moving(Enum):
         NONE = 0
-        TRANSLATE = 1
-
-    # Emitted when the user starts dragging the ROI (or one of its handles).
-    region_change_started_sgn = pyqtSignal(object)
+        BODY = 1
+        TOP = 2
+        BOTTOM = 3
+        LEFT = 4
+        RIGHT = 5
 
     # Emitted when the user stops dragging the ROI (or one of its handles)
     # or if the ROI is changed programmatically.
-    region_change_finished_sgn = pyqtSignal(object)
+    region_change_finished_sgn = pyqtSignal()
 
-    # Emitted any time the position of the ROI changes, including while
-    # it is being dragged by the user.
-    region_changed_sgn = pyqtSignal(object)
+    item_type = QAbstractGraphicsShapeItem
 
-    def __init__(self,
-                 pos: Union[tuple[float, float], QPointF] = (0, 0),
-                 size: Union[tuple[float, float], QPointF] = (1, 1), *,
-                 snap: bool = True,
-                 parent=None):
-        """Initialization.
+    def __init__(self, label: str = "", *args, **kwargs):
+        super().__init__(**kwargs)
 
-        :param pos: (x, y) position of the ROI's origin. For most ROIs, this is
-            the lower-left corner of its bounding rectangle.
-        :param size: (width, height) of the ROI.
-        :param snap: If True, the width and height of the ROI are forced
-                     to be integers.
-        """
-        super().__init__(parent)
-        self.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
-        self._snap = snap
+        self._label = label
 
-        self._mouse_hovering = False
-        self._moving = False
-        self._cursor_offset = None
-        self._drag_mode = self.DragMode.NONE
+        self._item = self.item_type(*args, parent=self)
+
+        self._ref_cursor: QPointF = None
+        self._ref_rect: QRectF = None
+        self._moving = self.Moving.NONE
 
         self._pen = FColor.mkPen("k")
         self._hover_pen = FColor.mkPen("w")
 
-        self._handles = []
-
-        self._pos = None
-        self._size = None
-        self.setPos(pos)
-        self.setSize(size)
-
-        self._translatable = True
-        self._addHandles()
-
-    def setZValue(self, z):
-        QGraphicsItem.setZValue(self, z)
-        for handle in self._handles:
-            handle.setZValue(z + 1)
+    def label(self) -> str:
+        return self._label
 
     def setPen(self, pen: QPen) -> None:
         """Set the QPen used to draw the ROI."""
         self._pen = pen
         self.update()
 
+    def pen(self) -> QPen():
+        return self._pen
+
     def setHoverPen(self, pen: QPen) -> None:
         """Set the QPen used to draw the ROI when the mouse is hovering."""
         self._hover_pen = pen
         self.update()
 
-    def size(self) -> QPointF:
-        """Return the size (w,h) of the ROI."""
-        return self._size
+    def rect(self) -> tuple[int, int, int, int]:
+        """Return the bounding region in parent's coordinate system."""
+        pos = self.pos()
+        rect = self._item.rect()
+        return int(pos.x()), int(pos.y()), int(rect.width()), int(rect.height())
 
-    def pos(self) -> QPointF:
-        """Return the position (x, y) of the ROI's origin."""
-        return self._pos
+    def setPos(self, x: Union[QPointF, float], y: Optional[float] = None):
+        """Override."""
+        if y is None:
+            y, x = x.y(), x.x()
+        super().setPos(int(x), int(y))
 
-    def setPos(self, pos: Union[tuple, QPointF], *,
-               update: bool = True,
-               finish: bool = True) -> None:
-        """Set the position of the ROI (in the parent's coordinate system).
+    def setRect(self, x: float, y: float, width: float, height: float) -> None:
+        self.setPos(x, y)
+        self._item.setRect(0, 0, int(width), int(height))
 
-        :param pos: New position of the ROI.
-        :param update: ...
-        :param finish: ...
+    def moveBy(self, dx: float, dy: float) -> None:
+        """Override."""
+        super().moveBy(int(dx), int(dy))
 
-        FIXME: check whether it is called repeatedly
-        """
-        pos = QPointF(pos)
-        if self._snap:
-            pos[0] = round(pos[0])
-            pos[1] = round(pos[1])
-
-        self._pos = pos
-        super().setPos(self._pos)
-        if update:
-            self.stateChanged(finish=finish)
-
-    def setSize(self, size: QPointF, *,
-                update: bool = True,
-                finish: bool = True) -> None:
-        """Set the size of the ROI.
-
-        :param size: New size of the ROI.
-        :param update: ...
-        :param finish: ...
-        """
-        if self._snap:
-            size[0] = round(size[0])
-            size[1] = round(size[1])
-
-        self._size = size
-        if update:
-            self.stateChanged(finish=finish)
-
-    def scale(self, scale: float, update: bool = True, finish: bool = True) -> None:
-        """Resize the ROI by scaling relative to *center*."""
-        self.setSize(self._size * scale, update=update, finish=finish)
-
-    def translate(self, offset, update=True, finish=True) -> None:
-        """Translate the ROI by a given offset."""
-        self.setPos(self._pos + offset, update=update, finish=finish)
-
-    def handleMoveStarted(self) -> None:
-        # called by RoiHandle
-        self.region_change_started_sgn.emit(self)
-
-    def addHandle(self, pos: QPointF) -> None:
-        """Add a new handle to the ROI.
-
-        Dragging a scale handle allows changing the height and/or width of the ROI.
-
-        :param pos: The normalized position of the handle relative to the ROI.
-            (0, 0) indicates the upper-left corner and (1, 1) indicates the
-            lower-right corner.
-        """
-        handle = RoiHandle(pos, parent=self)
-        handle.setZValue(self.zValue() + 1)
-        self._handles.append(handle)
-
-        self.stateChanged()
-
-    @abc.abstractmethod
-    def _addHandles(self) -> None:
-        ...
-
-    def _clearHandles(self) -> None:
-        """Remove the ROI handle."""
-        for handle in self._handles:
-            self.scene().removeItem(handle)
-        self._handles.clear()
-        self.stateChanged()
-
-    def setSelected(self, state: bool) -> None:
-        QGraphicsItem.setSelected(self, state)
-        if state:
-            for handle in self._handles:
-                handle.show()
-        else:
-            for handle in self._handles:
-                handle.hide()
-
-    def hoverEvent(self, ev: HoverEvent) -> None:
-        hover = False
-        if not ev.isExit():
-            if self._translatable and ev.acceptDrags(Qt.MouseButton.LeftButton):
-                hover = True
-
-        if self._mouse_hovering == hover:
+    def _updateMovingState(self, pos: QPointF):
+        if not self.isEnabled():
+            self._moving = self.Moving.NONE
             return
 
-        self._mouse_hovering = hover
-        # update because color changed
-        self.update()
+        rect = self._item.rect()
+        b = 0.2  # border
+        if pos.x() > (1 - b) * rect.width() + rect.x() :
+            self._moving = self.Moving.RIGHT
+        elif pos.x() < b * rect.width() + rect.x():
+            self._moving = self.Moving.LEFT
+        elif pos.y() > (1 - b) * rect.height() + rect.y():
+            self._moving = self.Moving.BOTTOM
+        elif pos.y() < b * rect.height() + rect.y():
+            self._moving = self.Moving.TOP
+        else:
+            self._moving = self.Moving.BODY
 
     def mouseDragEvent(self, ev: MouseDragEvent) -> None:
-        drag_mode = self.DragMode
-        if ev.entering():
-            if ev.button() == Qt.MouseButton.LeftButton:
-                # self.setSelected(True)
-
-                if self._translatable:
-                    self._drag_mode = drag_mode.TRANSLATE
-                else:
-                    self._drag_mode = drag_mode.NONE
-
-                if self._drag_mode != drag_mode.NONE:
-                    self.moveStarted()
-                    self._cursor_offset = self.pos() - self.mapToParent(ev.buttonDownPos())
-                    ev.accept()
-                else:
-                    ev.ignore()
-            else:
-                self._drag_mode = drag_mode.NONE
-                ev.ignore()
-
-        if ev.exiting() and self._drag_mode != drag_mode.NONE:
-            self.moveFinished()
+        if ev.button() != Qt.MouseButton.LeftButton:
             return
 
-        if self._drag_mode == drag_mode.TRANSLATE:
-            self.translate(
-                self.mapToParent(ev.pos()) + self._cursor_offset - self.pos(),
-                finish=False)
+        ev.accept()
 
-    def moveStarted(self) -> None:
-        self._moving = True
-        self.region_change_started_sgn.emit(self)
+        if ev.entering():
+            pos = ev.buttonDownPos()
+            self._updateMovingState(pos)
 
-    def moveFinished(self) -> None:
-        if self._moving:
-            self.stateChangeFinished()
-        self._moving = False
+            if self._moving == self.Moving.NONE:
+                return
 
-    def moveHandle(self, handle: RoiHandle, pos) -> None:
-        """Move the given handle to the given position.
+            self._ref_cursor = pos
+            self._ref_rect = self._item.rect()
 
-        :param handle: The ROI handle.
-        :param pos: New position of the handle in its scene's coordinate system.
-        """
-        p0 = self.mapToParent(handle.pos()) - self._pos
-        p1 = self.mapToParent(self.mapFromScene(pos)) - self._pos
+        offset = ev.pos() - self._ref_cursor
+        ref_rect = self._ref_rect
+        if self._moving == self.Moving.BODY:
+            self.moveBy(offset.x(), offset.y())
+        elif self._moving == self.Moving.RIGHT:
+            self._item.setRect(
+                0, 0, ref_rect.width() + offset.x(), ref_rect.height())
+        elif self._moving == self.Moving.LEFT:
+            self.moveBy(offset.x(), 0)
+            rect = self._item.rect()
+            self._item.setRect(
+                0, 0, rect.width() - int(offset.x()), rect.height())
+        elif self._moving == self.Moving.BOTTOM:
+            self._item.setRect(
+                0, 0, ref_rect.width(), ref_rect.height() + offset.y())
+        else:  # self._moving == self.Moving.TOP:
+            self.moveBy(0, offset.y())
+            rect = self._item.rect()
+            self._item.setRect(
+                0, 0, rect.width(), rect.height() - int(offset.y()))
 
-        self.setSize(self._size * (p1 / p0), finish=False)
+        if ev.exiting() and self._moving != self.Moving.NONE:
+            self.stateChanged(finish=True)
+            self._moving = self.Moving.NONE
+            return
+
+        self.stateChanged(finish=False)
 
     def stateChanged(self, finish: bool = True) -> None:
         """Process changes to the state of the ROI."""
-        self.prepareGeometryChange()
-
-        for handle in self._handles:
-            handle.updatePosition()
-
         self.update()
-        self.region_changed_sgn.emit(self)
-
         if finish:
-            self.stateChangeFinished()
+            self.region_change_finished_sgn.emit()
             self.informViewBoundsChanged()
 
-    def stateChangeFinished(self):
-        self.region_change_finished_sgn.emit(self)
+    @abstractmethod
+    def region(self) -> tuple:
+        """Returns the geometry parameters for querying region of interest."""
+        raise NotImplementedError
 
     def boundingRect(self) -> QRectF:
         """Override."""
-        return QRectF(0, 0, self._size[0], self._size[1]).normalized()
+        return self._item.boundingRect()
 
-    def paint(self, p, *args) -> None:
+    def paint(self, p: QPainter, *args) -> None:
         """Override."""
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        if self._mouse_hovering:
-            p.setPen(self._hover_pen)
+        if self._moving == self.Moving.NONE:
+            self._item.setPen(self._pen)
         else:
-            p.setPen(self._pen)
-
-        p.drawRect(self.boundingRect())
+            self._item.setPen(self._hover_pen)
 
 
-class RectROI(ROI):
+class RectROI(ROIBase):
     """Rectangular ROI widget."""
-    def __init__(self, pos: tuple = (0, 0),
-                 size: tuple = (1, 1),
-                 color: str = 'k', **kwargs):
-        """Initialization.
 
-        :param pos: (x, y) of the left-upper corner.
-        :param size: (w, h) of the ROI.
-        :param color: ROI display color.
-        """
-        # TODO: make 'color' an attribute of the parent class
-        self._color = color
-        super().__init__(pos, size, **kwargs)
+    item_type = QGraphicsRectItem
 
-        pen = FColor.mkPen(color, width=2, style=Qt.PenStyle.SolidLine)
-        self.setPen(pen)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    @property
-    def color(self):
-        return self._color
+    def region(self) -> tuple:
+        return self.rect()
 
-    def setLocked(self, locked: bool):
-        if locked:
-            self._translatable = False
-            self._clearHandles()
-        else:
-            self._translatable = True
-            self._addHandles()
 
-    def _addHandles(self):
-        """Override."""
-        self.addHandle([1, 1])
+class EllipseROI(ROIBase):
+
+    item_type = QGraphicsEllipseItem
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def region(self) -> tuple:
+        return self.rect()
