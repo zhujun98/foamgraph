@@ -817,4 +817,4 @@ class AxisWidget(GraphicsWidget):
     def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton:
             ev.accept()
-            self._menu.popup(ev.screenPos().toPoint())
+            self._menu.popup(ev.screenPos())

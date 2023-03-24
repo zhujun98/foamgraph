@@ -2,12 +2,10 @@ from enum import Enum
 import time
 import weakref
 
-from .backend.QtCore import pyqtSignal, QRect, Qt
+from .backend.QtCore import pyqtSignal, QLineF, QRect, Qt
 from .backend.QtWidgets import (
     QGraphicsScene, QGraphicsSceneMouseEvent, QMenu
 )
-
-from .Point import Point
 
 
 class MouseEventState(Enum):
@@ -67,11 +65,11 @@ class MouseDragEvent:
 
     def scenePos(self):
         """Return the current scene position of the mouse."""
-        return Point(self._scenePos)
+        return self._scenePos
 
     def screenPos(self):
         """Return the current screen position (pixels relative to widget) of the mouse."""
-        return Point(self._screenPos)
+        return self._screenPos
 
     def buttonDownScenePos(self, btn=None):
         """
@@ -80,7 +78,7 @@ class MouseDragEvent:
         """
         if btn is None:
             btn = self.button()
-        return Point(self._buttonDownScenePos[btn])
+        return self._buttonDownScenePos[btn]
 
     def buttonDownScreenPos(self, btn=None):
         """
@@ -89,19 +87,19 @@ class MouseDragEvent:
         """
         if btn is None:
             btn = self.button()
-        return Point(self._buttonDownScreenPos[btn])
+        return self._buttonDownScreenPos[btn]
 
     def lastScenePos(self):
         """
         Return the scene position of the mouse immediately prior to this event.
         """
-        return Point(self._lastScenePos)
+        return self._lastScenePos
 
     def lastScreenPos(self):
         """
         Return the screen position of the mouse immediately prior to this event.
         """
-        return Point(self._lastScreenPos)
+        return self._lastScreenPos
 
     def buttons(self):
         """
@@ -122,14 +120,14 @@ class MouseDragEvent:
         Return the current position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return Point(self.currentItem.mapFromScene(self._scenePos))
+        return self.currentItem.mapFromScene(self._scenePos)
 
     def lastPos(self):
         """
         Return the previous position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return Point(self.currentItem.mapFromScene(self._lastScenePos))
+        return self.currentItem.mapFromScene(self._lastScenePos)
 
     def buttonDownPos(self, btn=None):
         """
@@ -138,7 +136,7 @@ class MouseDragEvent:
         """
         if btn is None:
             btn = self.button()
-        return Point(self.currentItem.mapFromScene(self._buttonDownScenePos[btn]))
+        return self.currentItem.mapFromScene(self._buttonDownScenePos[btn])
 
     def entering(self):
         """Whether this event is the first one since a drag was initiated."""
@@ -202,11 +200,11 @@ class MouseClickEvent:
 
     def scenePos(self):
         """Return the current scene position of the mouse."""
-        return Point(self._scenePos)
+        return self._scenePos
 
     def screenPos(self):
         """Return the current screen position (pixels relative to widget) of the mouse."""
-        return Point(self._screenPos)
+        return self._screenPos
 
     def buttons(self):
         """
@@ -230,14 +228,14 @@ class MouseClickEvent:
         Return the current position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return Point(self.currentItem.mapFromScene(self._scenePos))
+        return self.currentItem.mapFromScene(self._scenePos)
 
     def lastPos(self):
         """
         Return the previous position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return Point(self.currentItem.mapFromScene(self._lastScenePos))
+        return self.currentItem.mapFromScene(self._lastScenePos)
 
     def modifiers(self):
         """Return any keyboard modifiers currently pressed.
@@ -340,19 +338,19 @@ class HoverEvent:
 
     def scenePos(self):
         """Return the current scene position of the mouse."""
-        return Point(self._scenePos)
+        return self._scenePos
 
     def screenPos(self):
         """Return the current screen position of the mouse."""
-        return Point(self._screenPos)
+        return self._screenPos
 
     def lastScenePos(self):
         """Return the previous scene position of the mouse."""
-        return Point(self._lastScenePos)
+        return self._lastScenePos
 
     def lastScreenPos(self):
         """Return the previous screen position of the mouse."""
-        return Point(self._lastScreenPos)
+        return self._lastScreenPos
 
     def buttons(self):
         """
@@ -366,14 +364,14 @@ class HoverEvent:
         Return the current position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return Point(self.currentItem.mapFromScene(self._scenePos))
+        return self.currentItem.mapFromScene(self._scenePos)
 
     def lastPos(self):
         """
         Return the previous position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return Point(self.currentItem.mapFromScene(self._lastScenePos))
+        return self.currentItem.mapFromScene(self._lastScenePos)
 
     def __repr__(self):
         if self.exit:
@@ -517,7 +515,7 @@ class GraphicsScene(QGraphicsScene):
                         cev = [e for e in self.clickEvents if e.button() == btn]
                         if cev:
                             cev = cev[0]
-                            dist = Point(ev.scenePos() - cev.scenePos()).length()
+                            dist = QLineF(ev.scenePos(), cev.scenePos()).length()
                             if dist == 0 or (dist < self._moveDistance and now - cev.time() < self.minDragTime):
                                 continue
                             # If this is the first button to be dragged, then init=True
