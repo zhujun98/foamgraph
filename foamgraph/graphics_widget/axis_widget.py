@@ -1,13 +1,11 @@
 import numpy as np
 
-from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
+from ..backend.QtCore import pyqtSignal, QLineF, QPointF, QRectF, Qt
 from ..backend.QtGui import QAction, QPen, QPicture, QPainter
 from ..backend.QtWidgets import (
     QCheckBox, QGraphicsSceneResizeEvent, QGraphicsSceneWheelEvent,
     QGridLayout, QMenu, QGraphicsTextItem, QWidget, QWidgetAction
 )
-
-from ..Point import Point
 
 from ..aesthetics import FColor
 from ..graphics_scene import MouseClickEvent, MouseDragEvent
@@ -585,7 +583,7 @@ class AxisWidget(GraphicsWidget):
         points = list(map(self.mapToDevice, span))
         if None in points:
             return
-        lengthInPixels = Point(points[1] - points[0]).length()
+        lengthInPixels = QLineF(points[1], points[0]).length()
         if lengthInPixels == 0:
             return
 
@@ -656,7 +654,7 @@ class AxisWidget(GraphicsWidget):
                 color = tickPen.color()
                 color.setAlpha(int(lineAlpha))
                 tickPen.setColor(color)
-                tickSpecs.append((tickPen, Point(p1), Point(p2)))
+                tickSpecs.append((tickPen, QPointF(*p1), QPointF(*p2)))
 
         axisSpec = (self._tick_pen, span[0], span[1])
 
