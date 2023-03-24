@@ -630,17 +630,19 @@ class Canvas(QGraphicsWidget):
             if self._mouse_mode == self.MouseMode.Zoom:
                 rect = self._proxy.mapRectFromParent(
                     QRectF(ev.buttonDownPos(), ev.pos()))
+                srect = self._selection_rect
                 if ev.exiting():
-                    self._selection_rect.hide()
+                    srect.hide()
                     # should not go beyond the bounding rect of the canvas
                     self.setTargetRange(
                         rect.intersected(self._view_rect), add_padding=False)
                 else:
                     if ev.entering():
-                        self._selection_rect.show()
-                    self._selection_rect.setPos(rect.topLeft())
-                    self._selection_rect.resetTransform()
-                    self._selection_rect.scale(rect.width(), rect.height())
+                        srect.show()
+                    srect.setPos(rect.topLeft())
+                    tr = QTransform()
+                    tr.scale(rect.width(), rect.height())
+                    srect.setTransform(tr)
 
             else:  # self._mouse_mode == self.MouseMode.Pan
                 if self._auto_range_x_locked:
