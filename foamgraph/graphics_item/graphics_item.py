@@ -9,8 +9,6 @@ from ..backend.QtWidgets import (
     QGraphicsItem, QGraphicsObject, QGraphicsWidget
 )
 
-from ..Point import Point
-
 
 class LRUCache:
     """
@@ -239,7 +237,7 @@ class GraphicsItem:
         return inv_vt.mapRect(obj)
 
     def pos(self):
-        return Point(self._qtBaseClass.pos(self))
+        return self._qtBaseClass.pos(self)
         
     def informViewBoundsChanged(self):
         """

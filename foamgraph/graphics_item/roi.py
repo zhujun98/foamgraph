@@ -20,7 +20,6 @@ from ..backend.QtCore import (
     pyqtSignal, pyqtSlot, QPoint, QPointF, QRectF, Qt, QTimer
 )
 from ..backend.QtWidgets import QGraphicsItem, QMenu
-from ..Point import Point
 
 from ..aesthetics import FColor
 from ..graphics_scene import HoverEvent, MouseDragEvent
@@ -83,7 +82,7 @@ class UIGraphicsItem(GraphicsObject):
         self._bounding_rect = None  # invalidate bounding rect, regenerate later if needed.
         self.prepareGeometryChange()
 
-    def setPos(self, pos: Point):
+    def setPos(self, pos):
         """Override."""
         super().setPos(pos)
         self.setNewBounds()
@@ -92,11 +91,11 @@ class UIGraphicsItem(GraphicsObject):
 class RoiHandle(UIGraphicsItem):
     """A single interactive point attached to an ROI."""
 
-    def __init__(self, pos: Union[tuple, QPointF, Point], *, parent=None):
+    def __init__(self, pos: QPointF, *, parent=None):
         super().__init__(parent=parent)
 
         # bookkeeping the relative position to the attached ROI
-        self._pos = Point(pos)
+        self._pos = pos
         self.updatePosition()
 
         self._size = 10
@@ -192,7 +191,9 @@ class ROI(GraphicsObject):
     # it is being dragged by the user.
     region_changed_sgn = pyqtSignal(object)
 
-    def __init__(self, pos=Point(0, 0), size=Point(1, 1), *,
+    def __init__(self,
+                 pos: Union[tuple[float, float], QPointF] = (0, 0),
+                 size: Union[tuple[float, float], QPointF] = (1, 1), *,
                  snap: bool = True,
                  parent=None):
         """Initialization.
@@ -206,9 +207,6 @@ class ROI(GraphicsObject):
         super().__init__(parent)
         self.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
         self._snap = snap
-
-        pos = Point(pos)
-        size = Point(size)
 
         self._mouse_hovering = False
         self._moving = False
@@ -243,15 +241,15 @@ class ROI(GraphicsObject):
         self._hover_pen = pen
         self.update()
 
-    def size(self) -> Point:
+    def size(self) -> QPointF:
         """Return the size (w,h) of the ROI."""
         return self._size
 
-    def pos(self) -> Point:
+    def pos(self) -> QPointF:
         """Return the position (x, y) of the ROI's origin."""
         return self._pos
 
-    def setPos(self, pos: Union[tuple, QPointF, Point], *,
+    def setPos(self, pos: Union[tuple, QPointF], *,
                update: bool = True,
                finish: bool = True) -> None:
         """Set the position of the ROI (in the parent's coordinate system).
@@ -262,17 +260,17 @@ class ROI(GraphicsObject):
 
         FIXME: check whether it is called repeatedly
         """
-        pos = Point(pos)
+        pos = QPointF(pos)
         if self._snap:
             pos[0] = round(pos[0])
             pos[1] = round(pos[1])
 
         self._pos = pos
-        super().setPos(self._pos)  # why?
+        super().setPos(self._pos)
         if update:
             self.stateChanged(finish=finish)
 
-    def setSize(self, size: Union[tuple, QPointF, Point], *,
+    def setSize(self, size: QPointF, *,
                 update: bool = True,
                 finish: bool = True) -> None:
         """Set the size of the ROI.
@@ -281,7 +279,6 @@ class ROI(GraphicsObject):
         :param update: ...
         :param finish: ...
         """
-        size = Point(size)
         if self._snap:
             size[0] = round(size[0])
             size[1] = round(size[1])
@@ -294,7 +291,7 @@ class ROI(GraphicsObject):
         """Resize the ROI by scaling relative to *center*."""
         self.setSize(self._size * scale, update=update, finish=finish)
 
-    def translate(self, offset: Point, update=True, finish=True) -> None:
+    def translate(self, offset, update=True, finish=True) -> None:
         """Translate the ROI by a given offset."""
         self.setPos(self._pos + offset, update=update, finish=finish)
 
@@ -302,7 +299,7 @@ class ROI(GraphicsObject):
         # called by RoiHandle
         self.region_change_started_sgn.emit(self)
 
-    def addHandle(self, pos: Union[tuple, QPointF, Point]) -> None:
+    def addHandle(self, pos: QPointF) -> None:
         """Add a new handle to the ROI.
 
         Dragging a scale handle allows changing the height and/or width of the ROI.
@@ -389,7 +386,7 @@ class ROI(GraphicsObject):
             self.stateChangeFinished()
         self._moving = False
 
-    def moveHandle(self, handle: RoiHandle, pos: Point) -> None:
+    def moveHandle(self, handle: RoiHandle, pos) -> None:
         """Move the given handle to the given position.
 
         :param handle: The ROI handle.
@@ -398,7 +395,7 @@ class ROI(GraphicsObject):
         p0 = self.mapToParent(handle.pos()) - self._pos
         p1 = self.mapToParent(self.mapFromScene(pos)) - self._pos
 
-        self.setSize(Point(self._size * (p1 / p0)), finish=False)
+        self.setSize(self._size * (p1 / p0), finish=False)
 
     def stateChanged(self, finish: bool = True) -> None:
         """Process changes to the state of the ROI."""
@@ -445,7 +442,7 @@ class RectROI(ROI):
         """
         # TODO: make 'color' an attribute of the parent class
         self._color = color
-        super().__init__(Point(pos), Point(size), **kwargs)
+        super().__init__(pos, size, **kwargs)
 
         pen = FColor.mkPen(color, width=2, style=Qt.PenStyle.SolidLine)
         self.setPen(pen)
