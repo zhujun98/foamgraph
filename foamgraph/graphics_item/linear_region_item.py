@@ -12,7 +12,7 @@ from ..backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 from ..backend.QtGui import QBrush, QPen
 
 from ..aesthetics import FColor
-from ..graphics_scene import HoverEvent, MouseDragEvent
+from ..graphics_scene import MouseDragEvent
 from .graphics_item import GraphicsObject
 
 
@@ -39,7 +39,6 @@ class LinearRegionItem(GraphicsObject):
         self._edge_fraction = 0.3
         self._moving = self.Moving.NONE
         self._cursor_offset = 0
-        self._mouse_hovering = False
 
         self._pen = FColor.mkPen(None)
         self._brush = None
@@ -75,11 +74,12 @@ class LinearRegionItem(GraphicsObject):
     def paint(self, p, *args) -> None:
         """Override."""
         p.setPen(self._pen)
-        if self._mouse_hovering:
-            p.setBrush(self._hover_brush)
-        else:
+        if self._moving == self.Moving.NONE:
             p.setBrush(self._brush)
-        p.drawRect(self.boundingRect())
+        else:
+            p.setBrush(self._hover_brush)
+        rect = self.boundingRect()
+        p.drawRect(rect)
 
     def _updateRegion(self) -> None:
         self._bounding_rect = None
@@ -127,16 +127,6 @@ class LinearRegionItem(GraphicsObject):
             self._moving = self.Moving.NONE
 
         ev.accept()
-
-    def hoverEvent(self, ev: HoverEvent) -> None:
-        hovering = False
-        if not ev.isExit() and ev.acceptDrags(Qt.MouseButton.LeftButton):
-            hovering = True
-
-        if self._mouse_hovering == hovering:
-            return
-        self._mouse_hovering = hovering
-        self.update()
 
 
 class LinearHRegionItem(LinearRegionItem):
