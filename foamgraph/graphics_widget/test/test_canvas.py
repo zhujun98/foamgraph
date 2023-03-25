@@ -101,6 +101,12 @@ class TestGraphViewCanvas:
         # target rect does not change until setTargetRange is called
         assert canvas.targetRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
 
+    def test_close(self, view, canvas):
+        view.addCurvePlot()
+        view.addAnnotation()
+        canvas.close()
+        assert not canvas._proxy.childItems()
+
 
 class TestImageViewCanvas:
     @pytest.fixture(scope="function")

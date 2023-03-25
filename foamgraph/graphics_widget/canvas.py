@@ -82,7 +82,7 @@ class Canvas(QGraphicsWidget):
             ...
 
         def cleanUp(self) -> None:
-            for item in self._items:
+            for item in self.childItems():
                 item.setParentItem(None)
             self._items.clear()
 
