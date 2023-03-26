@@ -9,7 +9,10 @@ from typing import Optional
 
 from ..backend.QtCore import QPointF, Qt
 
-from ..graphics_item import ImageItem, RectROI, MouseCursorStyle
+from ..aesthetics import FColor
+from ..graphics_item import (
+    EllipseROI, ImageItem, MouseCursorStyle, RectROI, ROIBase, RectROI
+)
 from .axis_widget import AxisWidget
 from .colormap_controller import ColormapController
 from .plot_widget import PlotWidget
@@ -22,6 +25,9 @@ class ImageWidget(PlotWidget):
     :class"`LabelWidget` for displaying the title and a
     :class:`MouseCursorItem`.
     """
+
+    ROI_COLORS = ['b', 'r', 'g', 'y']
+
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
@@ -51,19 +57,22 @@ class ImageWidget(PlotWidget):
     def imageItem(self):
         return self._image_item
 
-    def addROI(self, roi: Optional[RectROI] = None) -> RectROI:
-        if len(self._rois) == 4:
+    def _addROI(self, roi_type, *args, **kwargs) -> ROIBase:
+        if len(self._rois) == len(self.ROI_COLORS):
             raise RuntimeError("The maximum ROIs allowed is 4")
 
-        colors = ['b', 'r', 'g', 'y']
-        if roi is None:
-            i = len(self._rois)
-            roi = RectROI(pos=(5 + 15 * i, 5 + 15 * i),
-                          size=(100, 100),
-                          color=colors[i])
+        roi = roi_type(*args, **kwargs)
+        roi.setPen(FColor.mkPen(
+            self.ROI_COLORS[len(self._rois)], width=2))
         self._rois.append(roi)
-        self.addItem(roi)
+        self._canvas.addItem(roi, ignore_bounds=True)
         return roi
+
+    def addRectROI(self, *args, **kwargs) -> RectROI:
+        return self._addROI(RectROI, *args, **kwargs)
+
+    def addEllipseROI(self, *args, **kwargs) -> EllipseROI:
+        return self._addROI(EllipseROI, *args, **kwargs)
 
     def setImage(self, *args, **kwargs):
         self._image_item.setData(*args, **kwargs)

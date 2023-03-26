@@ -24,9 +24,14 @@ class TestImageView:
             view.clearData()
             mocked.assert_called_once()
 
-        with patch.object(cw, "addROI") as mocked:
+        with patch.object(cw, "addRectROI") as mocked:
             roi = object()
-            view.addROI(roi)
+            view.addRectROI(roi)
+            mocked.assert_called_once_with(roi)
+
+        with patch.object(cw, "addEllipseROI") as mocked:
+            roi = object()
+            view.addEllipseROI(roi)
             mocked.assert_called_once_with(roi)
 
         with patch.object(cw, "setImage") as mocked:

@@ -14,7 +14,7 @@ from ..backend.QtWidgets import (
 )
 
 from ..aesthetics import FColor
-from ..graphics_scene import HoverEvent, MouseDragEvent
+from ..graphics_scene import MouseDragEvent
 from ..graphics_item import PlotItem
 from .graphics_widget import GraphicsWidget
 from .label_widget import LabelWidget
@@ -186,9 +186,6 @@ class LegendWidget(GraphicsWidget):
         p.setPen(self._pen)
         p.setBrush(self._brush)
         p.drawRect(self.boundingRect())
-
-    def hoverEvent(self, ev: HoverEvent) -> None:
-        ev.acceptDrags(Qt.MouseButton.LeftButton)
 
     def mouseDragEvent(self, ev: MouseDragEvent) -> None:
         if not self._draggable or ev.button() != Qt.MouseButton.LeftButton:

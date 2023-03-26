@@ -10,4 +10,4 @@ from .plot_item import (
     AnnotationItem, BarPlotItem, CandlestickPlotItem, CurvePlotItem,
     ErrorbarPlotItem, PlotItem, ScatterPlotItem
 )
-from .roi import RectROI
+from .region_of_interest_item import EllipseROI, RectROI, ROIBase

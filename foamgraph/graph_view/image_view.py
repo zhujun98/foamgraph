@@ -26,8 +26,11 @@ class ImageView(GraphicsView):
         self._cw = ImageWidget()
         self.setCentralWidget(self._cw)
 
-    def addROI(self, *args, **kwargs):
-        return self._cw.addROI(*args, **kwargs)
+    def addRectROI(self, *args, **kwargs):
+        return self._cw.addRectROI(*args, **kwargs)
+
+    def addEllipseROI(self, *args, **kwargs):
+        return self._cw.addEllipseROI(*args, **kwargs)
 
     def setImage(self, *args, **kwargs):
         self._cw.setImage(*args, **kwargs)

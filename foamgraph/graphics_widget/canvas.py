@@ -82,7 +82,7 @@ class Canvas(QGraphicsWidget):
             ...
 
         def cleanUp(self) -> None:
-            for item in self._items:
+            for item in self.childItems():
                 item.setParentItem(None)
             self._items.clear()
 
@@ -688,7 +688,7 @@ class Canvas(QGraphicsWidget):
     def mouseClickEvent(self, ev: MouseClickEvent):
         if ev.button() == Qt.MouseButton.RightButton:
             ev.accept()
-            self._menu.popup(ev.screenPos().toPoint())
+            self._menu.popup(ev.screenPos())
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""
