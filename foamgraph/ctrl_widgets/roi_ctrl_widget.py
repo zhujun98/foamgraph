@@ -14,7 +14,9 @@ from ..backend.QtWidgets import (
 
 from .base_ctrl_widgets import AbstractCtrlWidget, AbstractGroupBoxCtrlWidget
 from .smart_widgets import SmartLineEdit
-from foamgraph.graphics_item.roi import ROIBase, RectROI, EllipseROI
+from foamgraph.graphics_item.region_of_interest_item import (
+    ROIBase, RectROI, EllipseROI
+)
 
 
 class RoiCtrlWidget(AbstractCtrlWidget):
