@@ -77,6 +77,12 @@ class BarPlotItem(PlotItem):
 
         p.end()
 
+    def boundingRect(self) -> QRectF:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        return QRectF(self._graph.boundingRect())
+
     def paint(self, p: QPainter, *args) -> None:
         """Override."""
         if self._graph is None:

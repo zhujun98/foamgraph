@@ -113,19 +113,6 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
         self.prepareGeometryChange()
         self.informBoundsChanged()
 
-    def paint(self, p: QPainter, *args) -> None:
-        """Override."""
-        if self._graph is None:
-            self._prepareGraph()
-        p.setPen(self._pen)
-        p.drawPath(self._graph)
-
-    def boundingRect(self) -> QRectF:
-        """Override."""
-        if self._graph is None:
-            self._prepareGraph()
-        return QRectF(self._graph.boundingRect())
-
     def setLogX(self, state) -> None:
         """Set log mode for x axis."""
         self._log_x_mode = state

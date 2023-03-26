@@ -11,7 +11,7 @@ import numpy as np
 
 from ...backend import sip
 from ...backend.QtGui import QPainter, QPainterPath, QPolygonF
-from ...backend.QtCore import QPointF, Qt
+from ...backend.QtCore import QPointF, QRectF, Qt
 from ...aesthetics import FColor
 from .plot_item import PlotItem
 
@@ -66,11 +66,6 @@ class CurvePlotItem(PlotItem):
                 self.toLogScale(self._y)
                 if self._log_y_mode else np.nan_to_num(self._y))
 
-    def _prepareGraph(self) -> None:
-        """Override."""
-        x, y = self.transformedData()
-        self._graph = self.array2Path(x, y)
-
     @staticmethod
     def array2Path(x, y) -> QPainterPath:
         """Convert array to QPainterPath."""
@@ -93,6 +88,24 @@ class CurvePlotItem(PlotItem):
         path = QPainterPath()
         path.addPolygon(polyline)
         return path
+
+    def _prepareGraph(self) -> None:
+        """Override."""
+        x, y = self.transformedData()
+        self._graph = self.array2Path(x, y)
+
+    def paint(self, p: QPainter, *args) -> None:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        p.setPen(self._pen)
+        p.drawPath(self._graph)
+
+    def boundingRect(self) -> QRectF:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        return self._graph.boundingRect()
 
     def drawSample(self, p: Optional[QPainter] = None) -> bool:
         """Override."""

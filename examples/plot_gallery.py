@@ -36,7 +36,7 @@ class ScatterPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
-        self.setTitle('Scatter plot')
+        self.setTitle('Scatter plot (aspect ratio locked)')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot1 = self.addScatterPlot(label="Data1", symbol="d", size=9)
@@ -172,6 +172,26 @@ class CandlestickPlot(GraphView):
                            data['y_min'], data['y_max'])
 
 
+class StemPlot(GraphView):
+    def __init__(self, *, parent=None):
+        super().__init__(parent=parent)
+
+        self.setTitle('Stem plot')
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
+
+        self._plot1 = self.addStemPlot(
+            label="Data1", symbol="s", pen=FColor.mkPen('DodgerBlue'))
+        self._plot2 = self.addStemPlot(
+            label="Data2", symbol="o", brush=FColor.mkBrush('DarkOrange'))
+        self.addLegend()
+
+    def updateF(self, data):
+        """Override."""
+        data = data['stem']
+        self._plot1.setData(data['x'], data['y1'])
+        self._plot2.setData(data['x'], data['y2'])
+
+
 class PlotGalleryScene(AbstractScene):
     _title = "Plot gallery"
 
@@ -189,7 +209,8 @@ class PlotGalleryScene(AbstractScene):
             MultiLinePlot(parent=self),
             DoubleYPlot(parent=self),
             LinePlotWithAnnotation(parent=self),
-            CandlestickPlot(parent=self)
+            CandlestickPlot(parent=self),
+            StemPlot(parent=self)
         ]
 
         self.initUI()
@@ -205,12 +226,10 @@ class PlotGalleryScene(AbstractScene):
     def initUI(self):
         """Override."""
         layout = QGridLayout()
-        rows, cols = 2, 3
+        rows, cols = 3, 3
         for i in range(rows):
             for j in range(cols):
                 layout.addWidget(self._plots[cols * i + j], i, j)
-        layout.addWidget(self._plots[-2], 2, 0)
-        layout.addWidget(self._plots[-1], 2, 1)
 
         self._cw = QFrame()
         self._cw.setLayout(layout)

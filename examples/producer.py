@@ -3,6 +3,7 @@ import pickle
 import time
 
 import numpy as np
+from scipy import signal
 import zmq
 
 
@@ -120,11 +121,10 @@ class DoubleYPlotData:
 class MultiPeakData:
     def __init__(self):
         from scipy.datasets import electrocardiogram
-        from scipy.signal import find_peaks
 
         self._x = np.arange(2000, 4000)
         self._y = electrocardiogram()[2000:4000]
-        self._peaks, _ = find_peaks(self._y, distance=150)
+        self._peaks, _ = signal.find_peaks(self._y, distance=150)
 
     def next(self):
         return {
@@ -156,6 +156,28 @@ class StockPriceData:
                 "y_end": self._y_end[:self._counter],
                 "y_min": self._y_min[:self._counter],
                 "y_max": self._y_max[:self._counter]}
+
+
+class StemPlotData:
+    def __init__(self, n: int):
+        self._x = np.linspace(-1, 1, 2 * n, endpoint=False)
+        self._y1 = 10 * signal.gausspulse(self._x, fc=3)
+        self._y2 = 5 * signal.gausspulse(self._x, fc=5)
+
+        self._x = self._x[int(n/2):int(n/2) + n]
+        self._y1 = self._y1[int(n/2):int(n/2) + n]
+        self._y2 = self._y2[int(n/2):int(n/2) + n]
+
+        self._counter = 0
+
+    def next(self):
+        if self._counter == len(self._x):
+            self._counter = 0
+        self._counter += 1
+
+        return {"x": self._x[:self._counter],
+                "y1": self._y1[:self._counter],
+                "y2": self._y2[:self._counter]}
 
 
 class ImageData:
@@ -208,6 +230,7 @@ if __name__ == "__main__":
     double_y_plot_data = DoubleYPlotData(100)
     multi_peak_data = MultiPeakData()
     candlestick_plot_data = StockPriceData(100)
+    stem_plot_data = StemPlotData(80)
     image_data = ImageData()
     counter = 0
     while True:
@@ -223,6 +246,7 @@ if __name__ == "__main__":
             "double-y": double_y_plot_data.next(),
             "multi-peak": multi_peak_data.next(),
             "candlestick": candlestick_plot_data.next(),
+            "stem": stem_plot_data.next(),
             "image": image_data.next()
         }
 

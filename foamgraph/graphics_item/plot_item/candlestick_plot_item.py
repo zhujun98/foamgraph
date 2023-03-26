@@ -83,12 +83,6 @@ class CandlestickPlotItem(PlotItem):
 
         p.end()
 
-    def paint(self, p: QPainter, *args) -> None:
-        """Override."""
-        if self._graph is None:
-            self._prepareGraph()
-        self._graph.play(p)
-
     def transformedData(self) -> tuple:
         """Override."""
         return (
@@ -98,3 +92,15 @@ class CandlestickPlotItem(PlotItem):
             self.toLogScale(self._y_min) if self._log_y_mode else self._y_min,
             self.toLogScale(self._y_max) if self._log_y_mode else self._y_max
         )
+
+    def boundingRect(self) -> QRectF:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        return QRectF(self._graph.boundingRect())
+
+    def paint(self, p: QPainter, *args) -> None:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        self._graph.play(p)
