@@ -54,6 +54,18 @@ class ImageWidget(PlotWidget):
         self._setMouseCursorStyle(MouseCursorStyle.Simple)
         self._canvas.getMenuAction("Cursor_Show").setChecked(False)
 
+    def _extendCanvasContextMenu(self):
+        """Override."""
+        super()._extendCanvasContextMenu()
+
+        menu = self._canvas.extendContextMenu("ROI")
+        menu.setObjectName("ROI")
+
+        # action = menu.addAction("Show")
+        # action.setObjectName("Cursor_Show")
+        # action.setCheckable(True)
+        # action.toggled.connect(self._onMouseCursorToggled)
+
     def imageItem(self):
         return self._image_item
 
@@ -66,6 +78,13 @@ class ImageWidget(PlotWidget):
             self.ROI_COLORS[len(self._rois)], width=2))
         self._rois.append(roi)
         self._canvas.addItem(roi, ignore_bounds=True)
+
+        menu = self._canvas.getMenu("ROI")
+        action = menu.addAction(roi.label())
+        action.setCheckable(True)
+        action.toggled.connect(lambda x: roi.setVisible(x))
+
+        roi.hide()
         return roi
 
     def addRectROI(self, *args, **kwargs) -> RectROI:
