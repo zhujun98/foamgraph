@@ -6,7 +6,7 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 from collections import OrderedDict
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
@@ -77,19 +77,23 @@ class QualitativeColor:
         return QColor(*getattr(cls, c), alpha)
 
     @classmethod
-    def mkPen(cls, c: Optional[str] = None, *,
+    def mkPen(cls, c: Optional[Union[str, QColor]] = None, *,
               alpha=255, width=1, style=Qt.PenStyle.SolidLine):
         if c is None:
             return QPen(QColor(0, 0, 0, 0), width, Qt.PenStyle.NoPen)
-        pen = QPen(QColor(*getattr(cls, c), alpha), width, style)
+        if not isinstance(c, QColor):
+            c = QColor(*getattr(cls, c), alpha)
+        pen = QPen(c, width, style)
         pen.setCosmetic(True)
         return pen
 
     @classmethod
-    def mkBrush(cls, c: Optional[str] = None, *, alpha=255):
+    def mkBrush(cls, c: Optional[Union[str, QColor]] = None, *, alpha=255):
         if c is None:
             return QBrush(QColor(0, 0, 0, 0), Qt.BrushStyle.NoBrush)
-        return QBrush(QColor(*getattr(cls, c), alpha))
+        if not isinstance(c, QColor):
+            c = QColor(*getattr(cls, c), alpha)
+        return QBrush(c)
 
 
 FColor = QualitativeColor

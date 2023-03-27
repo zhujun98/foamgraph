@@ -12,7 +12,7 @@ from ..backend.QtCore import QTimer
 
 from ..graphics_item import (
     AnnotationItem, BarPlotItem, CandlestickPlotItem, CurvePlotItem,
-    ErrorbarPlotItem, ScatterPlotItem
+    ErrorbarPlotItem, ScatterPlotItem, StemPlotItem
 )
 from ..graphics_widget import GraphWidget
 from .graphics_view import GraphicsView
@@ -30,38 +30,44 @@ class GraphView(GraphicsView):
         self._cw = GraphWidget()
         self.setCentralWidget(self._cw)
 
-    def addCandlestickPlot(self, *args, y2=False, **kwargs):
-        """Add and return a :class:`CandlestickPlotItem`."""
-        item = CandlestickPlotItem(*args, **kwargs)
-        self._cw.addItem(item, y2=y2)
-        return item
-
-    def addCurvePlot(self, *args, y2=False, **kwargs):
+    def addCurvePlot(self, *args, y2=False, **kwargs) -> CurvePlotItem:
         """Add and return a :class:`CurvePlotItem`."""
         item = CurvePlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
 
-    def addScatterPlot(self, *args, y2=False, **kwargs):
+    def addScatterPlot(self, *args, y2=False, **kwargs) -> ScatterPlotItem:
         """Add and return a :class:`ScatterPlotItem`."""
         item = ScatterPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
 
-    def addBarPlot(self, *args, y2=False, **kwargs):
+    def addBarPlot(self, *args, y2=False, **kwargs) -> BarPlotItem:
         """Add and return a :class:`BarPlotItem`."""
         item = BarPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
 
-    def addErrorbarPlot(self, *args, y2=False, **kwargs):
+    def addErrorbarPlot(self, *args, y2=False, **kwargs) -> ErrorbarPlotItem:
         """Add and return an :class:`ErrorbarPlotItem`."""
         item = ErrorbarPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
 
-    def addAnnotation(self, *args, y2=False, **kwargs):
+    def addAnnotation(self, *args, y2=False, **kwargs) -> AnnotationItem:
         item = AnnotationItem(*args, **kwargs)
+        self._cw.addItem(item, y2=y2)
+        return item
+
+    def addCandlestickPlot(self, *args, y2=False, **kwargs)\
+            -> CandlestickPlotItem:
+        """Add and return a :class:`CandlestickPlotItem`."""
+        item = CandlestickPlotItem(*args, **kwargs)
+        self._cw.addItem(item, y2=y2)
+        return item
+
+    def addStemPlot(self, *args, y2=False, **kwargs) -> StemPlotItem:
+        item = StemPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
 

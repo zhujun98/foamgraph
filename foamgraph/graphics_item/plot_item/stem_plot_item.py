@@ -9,17 +9,17 @@ from typing import Optional
 
 import numpy as np
 
-from ...backend.QtGui import QPainter, QPixmap, QTransform
+from ...backend.QtGui import QPainter, QPainterPath, QPixmap, QTransform
 from ...backend.QtCore import QRectF, Qt
 from ...aesthetics import FColor, FSymbol
 from .plot_item import PlotItem
 
 
-class ScatterPlotItem(PlotItem):
+class StemPlotItem(PlotItem):
     """ScatterPlotItem."""
 
-    def __init__(self, x=None, y=None, *, symbol='o', size=8,
-                 pen=None, brush=None, label=None):
+    def __init__(self, x=None, y=None, *, symbol='o', size=6,
+                 pen=None, brush=None, baseline_pen=None, label=None):
         """Initialization."""
         super().__init__(label=label)
 
@@ -27,11 +27,19 @@ class ScatterPlotItem(PlotItem):
         self._y = None
 
         if pen is None and brush is None:
-            self._pen = FColor.mkPen()
+            self._pen = FColor.mkPen('b')
             self._brush = FColor.mkBrush('b')
+        elif pen is None:
+            self._pen = FColor.mkPen(brush.color())
+            self._brush = brush
+        elif brush is None:
+            self._pen = pen
+            self._brush = None
+
+        if baseline_pen is None:
+            self._pen_baseline = FColor.mkPen('foreground')
         else:
-            self._pen = FColor.mkPen() if pen is None else pen
-            self._brush = FColor.mkBrush() if brush is None else brush
+            self._pen_baseline = baseline_pen
 
         self._size = size
 
@@ -40,6 +48,7 @@ class ScatterPlotItem(PlotItem):
         self._buildFragment()
 
         self._graph = None
+        self._graph_baseline = None
 
         self.setData(x, y)
 
@@ -66,19 +75,19 @@ class ScatterPlotItem(PlotItem):
 
     def _prepareGraph(self) -> None:
         """Override."""
-        self._graph = QRectF()
-        if len(self._x) == 0:
-            return
-
+        path = QPainterPath()
         x, y = self.transformedData()
-        x_min, x_max = np.nanmin(x), np.nanmax(x)
-        y_min, y_max = np.nanmin(y), np.nanmax(y)
-        if np.isnan(x_min) or np.isnan(x_max):
-            x_min, x_max = 0, 0
-        if np.isnan(y_min) or np.isnan(y_max):
-            y_min, y_max = 0, 0
+        for px, py in zip(x, y):
+            path.moveTo(px, 0)
+            path.lineTo(px, py)
 
-        self._graph.setRect(x_min, y_min, x_max - x_min, y_max - y_min)
+        self._graph = path
+
+        path = QPainterPath()
+        if len(x) > 1:
+            path.moveTo(x[0], 0)
+            path.lineTo(x[-1], 0)
+        self._graph_baseline = path
 
     @staticmethod
     def transformCoordinates(matrix: QTransform, x: np.array, y: np.array,
@@ -88,11 +97,49 @@ class ScatterPlotItem(PlotItem):
         y = matrix.m12() * x + matrix.m22() * y + matrix.m32() + dy
         return x, y
 
+    def paint(self, p, *args) -> None:
+        """Override."""
+        p.setPen(self._pen_baseline)
+        p.drawPath(self._graph_baseline)
+
+        p.setPen(self._pen)
+        p.drawPath(self._graph)
+
+        x, y = self.transformedData()
+        w, h = self._fragment.width(), self._fragment.height()
+        x, y = self.transformCoordinates(
+            self.deviceTransform(), x, y, -w / 2., -h / 2.)
+        src_rect = QRectF(self._fragment.rect())
+
+        p.resetTransform()
+        for px, py in zip(x, y):
+            p.drawPixmap(QRectF(px, py, w, h), self._fragment, src_rect)
+
+    def boundingRect(self) -> QRectF:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        return self._graph.boundingRect()
+
+    def drawSample(self, p: Optional[QPainter] = None) -> bool:
+        """Override."""
+        if p is not None:
+            p.translate(10, 10)
+            self._drawSymbol(p)
+            p.setPen(self._pen)
+            p.drawLine(0, 1, 0, 0)
+
+        return True
+
     def _drawSymbol(self, p: QPainter) -> None:
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.scale(self._size, self._size)
-        p.setPen(self._pen)
-        p.setBrush(self._brush)
+        if self._brush is None:
+            p.setPen(self._pen)
+            p.setBrush(FColor.mkBrush())
+        else:
+            p.setPen(FColor.mkPen())
+            p.setBrush(self._brush)
         p.drawPath(self._symbol_path)
 
     def _buildFragment(self):
@@ -106,28 +153,3 @@ class ScatterPlotItem(PlotItem):
         p.end()
 
         self._fragment = symbol
-
-    def paint(self, p, *args) -> None:
-        """Override."""
-        p.resetTransform()
-
-        x, y = self.transformedData()
-        w, h = self._fragment.width(), self._fragment.height()
-        x, y = self.transformCoordinates(
-            self.deviceTransform(), x, y, -w / 2., -h / 2.)
-        src_rect = QRectF(self._fragment.rect())
-        for px, py in zip(x, y):
-            p.drawPixmap(QRectF(px, py, w, h), self._fragment, src_rect)
-
-    def boundingRect(self) -> QRectF:
-        """Override."""
-        if self._graph is None:
-            self._prepareGraph()
-        return self._graph
-
-    def drawSample(self, p: Optional[QPainter] = None) -> bool:
-        """Override."""
-        if p is not None:
-            p.translate(10, 10)
-            self._drawSymbol(p)
-        return True

@@ -7,6 +7,7 @@ Author: Jun Zhu
 """
 from typing import Optional
 
+from ...backend.QtCore import QRectF
 from ...backend.QtGui import QPainter, QPainterPath
 from ...aesthetics import FColor
 from .plot_item import PlotItem
@@ -67,6 +68,22 @@ class ErrorbarPlotItem(PlotItem):
     def setBeam(self, width: float) -> None:
         self._beam = width
 
+    def drawSample(self, p: Optional[QPainter] = None) -> bool:
+        """Override."""
+        if p is not None:
+            p.setPen(self._pen)
+            # Legend sample has a bounding box of (0, 0, 20, 20)
+            p.drawLine(2, 2, 8, 2)  # lower horizontal line
+            p.drawLine(5, 2, 5, 18)  # vertical line
+            p.drawLine(2, 18, 8, 18)  # upper horizontal line
+        return True
+
+    def transformedData(self) -> tuple:
+        """Override."""
+        y_min = self.toLogScale(self._y_min) if self._log_y_mode else self._y_min
+        y_max = self.toLogScale(self._y_max) if self._log_y_mode else self._y_max
+        return super().transformedData() + (y_min, y_max)
+
     def _prepareGraph(self) -> None:
         p = QPainterPath()
 
@@ -92,18 +109,15 @@ class ErrorbarPlotItem(PlotItem):
 
         self._graph = p
 
-    def drawSample(self, p: Optional[QPainter] = None) -> bool:
+    def paint(self, p: QPainter, *args) -> None:
         """Override."""
-        if p is not None:
-            p.setPen(self._pen)
-            # Legend sample has a bounding box of (0, 0, 20, 20)
-            p.drawLine(2, 2, 8, 2)  # lower horizontal line
-            p.drawLine(5, 2, 5, 18)  # vertical line
-            p.drawLine(2, 18, 8, 18)  # upper horizontal line
-        return True
+        if self._graph is None:
+            self._prepareGraph()
+        p.setPen(self._pen)
+        p.drawPath(self._graph)
 
-    def transformedData(self) -> tuple:
+    def boundingRect(self) -> QRectF:
         """Override."""
-        y_min = self.toLogScale(self._y_min) if self._log_y_mode else self._y_min
-        y_max = self.toLogScale(self._y_max) if self._log_y_mode else self._y_max
-        return super().transformedData() + (y_min, y_max)
+        if self._graph is None:
+            self._prepareGraph()
+        return self._graph.boundingRect()
