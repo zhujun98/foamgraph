@@ -5,7 +5,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from ..backend import qt_enum_to_int
 from ..backend.QtCore import Qt, pyqtSignal, pyqtSlot
 from ..backend.QtGui import QIntValidator
 from ..backend.QtWidgets import (
@@ -36,10 +35,10 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         self._roi = roi
         self._id = id_
 
-        self._activate_cb = QCheckBox(self._id)
-        palette = self._activate_cb.palette()
+        self._label = QLabel(id_)
+        palette = self._label.palette()
         palette.setColor(palette.ColorRole.WindowText, roi.pen().color())
-        self._activate_cb.setPalette(palette)
+        self._label.setPalette(palette)
 
         self._width_le = SmartLineEdit()
         self._width_le.setValidator(self._size_validator)
@@ -60,7 +59,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         """Override."""
         layout = QHBoxLayout()
 
-        layout.addWidget(self._activate_cb)
+        layout.addWidget(self._label)
         layout.addWidget(QLabel("w: "))
         layout.addWidget(self._width_le)
         layout.addWidget(QLabel("h: "))
@@ -84,22 +83,9 @@ class RoiCtrlWidget(AbstractCtrlWidget):
 
         self._roi.region_change_finished_sgn.connect(
             self.onRoiGeometryChangeFinished)
-
-        self._activate_cb.stateChanged.connect(self.onToggleRoiActivation)
-        self._activate_cb.stateChanged.emit(
-            qt_enum_to_int(self._activate_cb.checkState()))
-
-    @pyqtSlot(int)
-    def onToggleRoiActivation(self, state):
-        if state == qt_enum_to_int(Qt.CheckState.Checked):
-            self._roi.show()
-            self.setEditable(True)
-        else:
-            self._roi.hide()
-            self.setEditable(False)
-
-        self.roi_geometry_change_sgn.emit(
-            self._id, (state == Qt.CheckState.Checked, *self._roi.rect()))
+        self._roi.visibleChanged.connect(
+            lambda: self.setEditable(self._roi.isVisible()))
+        self._roi.visibleChanged.emit()
 
     @pyqtSlot(object)
     def onRoiPositionEdited(self, value):
@@ -117,8 +103,7 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         # otherwise triggers infinite recursion
         self._roi.stateChanged(finish=False)
 
-        state = self._activate_cb.isChecked()
-        self.roi_geometry_change_sgn.emit(self._id, (state, x, y, w, h))
+        self.roi_geometry_change_sgn.emit(self._id, (x, y, w, h))
 
     @pyqtSlot(object)
     def onRoiSizeEdited(self, value):
@@ -136,16 +121,14 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         # otherwise triggers infinite recursion
         self._roi.stateChanged(finish=False)
 
-        self.roi_geometry_change_sgn.emit(
-            self._id, (self._activate_cb.isChecked(), x, y, w, h))
+        self.roi_geometry_change_sgn.emit(self._id, (x, y, w, h))
 
     def onRoiGeometryChangeFinished(self):
         """Connect to the signal from an ROI object."""
         x, y, w, h = self._roi.rect()
         self._updateEditParameters(x, y, w, h)
         # inform other widgets
-        self.roi_geometry_change_sgn.emit(
-            self._id, (self._activate_cb.isChecked(), x, y, w, h))
+        self.roi_geometry_change_sgn.emit(self._id, (x, y, w, h))
 
     def notifyRoiParams(self):
         self._roi.region_change_finished_sgn.emit()
@@ -169,7 +152,6 @@ class RoiCtrlWidget(AbstractCtrlWidget):
         self._height_le.setText(h)
         self.roi_geometry_change_sgn.connect(
             self.parent().roi_geometry_change_sgn)
-        self._activate_cb.setChecked(bool(int(state)))
 
     def setEditable(self, editable):
         for w in self._line_edits:
