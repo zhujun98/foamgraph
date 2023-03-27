@@ -43,8 +43,11 @@ class RoiProjectionMonitor(GraphView):
 
     def updateF(self, data):
         """override."""
-        data = extract_rect_roi(data['image']['data'], self._roi.region())
+        if not self._roi.isVisible():
+            self._plot.setData(None, None)
+            return
 
+        data = extract_rect_roi(data['image']['data'], self._roi.region())
         proj = np.mean(data, axis=0)
         self._plot.setData(np.arange(len(proj)), proj)
 
