@@ -88,7 +88,7 @@ python examples/producer.py
 python examples/plot_gallery.py
 ```
 
-![](examples/plot_gallery.gif)
+![](https://github.com/zhujun98/foam-demo/blob/main/foamgraph/plot_galary.gif)
 
 * Open another terminal and start the image analysis example
 
