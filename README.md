@@ -96,4 +96,4 @@ python examples/plot_gallery.py
 python examples/image_analysis.py
 ```
 
-![](examples/image_analysis.gif)
+![](https://github.com/zhujun98/foam-demo/blob/main/foamgraph/image_analysis.gif)
