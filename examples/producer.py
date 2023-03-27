@@ -224,9 +224,9 @@ if __name__ == "__main__":
     socket.bind(f"tcp://*:5555")
 
     line_plot_data = LinePlotData(500)
-    scatter_plot_data = ScatterPlotData(500)
+    scatter_plot_data = ScatterPlotData(300)
     errorbar_plot_data = ErrorBarPlotData(50)
-    multi_line_plot_data = MultiLinePlotData(500)
+    multi_line_plot_data = MultiLinePlotData(300)
     double_y_plot_data = DoubleYPlotData(100)
     multi_peak_data = MultiPeakData()
     candlestick_plot_data = StockPriceData(100)
