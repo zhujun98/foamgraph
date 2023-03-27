@@ -2,54 +2,25 @@ import pytest
 
 import numpy as np
 
-from foamgraph.backend.QtCore import (
-    QByteArray, QDataStream, QIODevice, QPointF, QRectF
-)
-from foamgraph.graphics_item import CurvePlotItem
+from foamgraph.backend.QtCore import QPointF, QRectF
+from foamgraph.graphics_item import CurvePlotItem, SimpleCurvePlotItem
 
 from foamgraph.test import processEvents
 
 
 @pytest.fixture
 def item(view):
-    item = CurvePlotItem(label="curve")
+    item = SimpleCurvePlotItem(label="curve")
     view.addItem(item)
     view.addLegend()
     return item
-
-
-def test_array2path(item):
-    size = 5
-    x = np.arange(size)
-    y = 2 * np.arange(size)
-    item.setData(x, y)
-    p = item._graph
-
-    # stream path
-    arr = QByteArray()
-    buf = QDataStream(arr, QIODevice.OpenModeFlag.ReadWrite)
-    buf << p
-    buf.device().reset()
-
-    # test protocol
-    assert arr.size() == 4 + size * 20 + 8
-    assert buf.readInt32() == size
-    for i in range(5):
-        if i == 0:
-            assert buf.readInt32() == 0
-        else:
-            assert buf.readInt32() == 1
-        assert buf.readDouble() == x[i]
-        assert buf.readDouble() == y[i]
-    assert buf.readInt32() == 0
-    assert buf.readInt32() == 0
 
 
 def test_input_data_parsing(view):
     x = y = np.arange(10).astype(float)
 
     # x and y are lists
-    item = CurvePlotItem(x.tolist(), y.tolist(), label="curve")
+    item = SimpleCurvePlotItem(x.tolist(), y.tolist(), label="curve")
     view.addItem(item)
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y, np.ndarray)
@@ -90,7 +61,7 @@ def test_item(dtype, view, item):
 
 @pytest.mark.parametrize("check_finite", [True, False])
 def test_bounding_rect_1(view, check_finite):
-    item = CurvePlotItem(check_finite=check_finite)
+    item = SimpleCurvePlotItem(check_finite=check_finite)
     view.addItem(item)
     x = [1, 2, 3, 4, 5]
     y = [2, 4, 6, 8, 10]
@@ -100,7 +71,7 @@ def test_bounding_rect_1(view, check_finite):
 
 @pytest.mark.parametrize("check_finite", [True, False])
 def test_bounding_rect_2(view, check_finite):
-    item = CurvePlotItem(check_finite=check_finite)
+    item = SimpleCurvePlotItem(check_finite=check_finite)
     view.addItem(item)
     x = [1, 2, 3, np.nan, 5]  # nan in x will be ignored
     y = [2, 4, 6, 8, 10]
@@ -110,7 +81,7 @@ def test_bounding_rect_2(view, check_finite):
 
 @pytest.mark.parametrize("check_finite", [True, False])
 def test_bounding_rect_3(view, check_finite):
-    item = CurvePlotItem(check_finite=check_finite)
+    item = SimpleCurvePlotItem(check_finite=check_finite)
     view.addItem(item)
     x = [1, 2, 3, 4, 5]
     y = [2, 4, 6, np.nan, 10]

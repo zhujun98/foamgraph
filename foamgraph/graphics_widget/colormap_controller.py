@@ -11,7 +11,7 @@ from ..backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem, QMenu
 from ..aesthetics import ColorMap, FColor
 from ..config import config
 from ..graphics_item import (
-    CurvePlotItem, ImageItem, LinearVRegionItem
+    SimpleCurvePlotItem, ImageItem, LinearVRegionItem
 )
 from .axis_widget import AxisWidget
 from .canvas import Canvas
@@ -28,7 +28,7 @@ class ColormapController(GraphicsWidget):
         self._image_item = image_item
         self._cbar = ColorbarWidget(parent=self)
         self._lri = LinearVRegionItem(0, 1)
-        self._hist = CurvePlotItem(pen=FColor.mkPen('k'))
+        self._hist = SimpleCurvePlotItem(pen=FColor.mkPen('k'))
         self._hist.setRotation(90)
 
         self._auto_levels = True

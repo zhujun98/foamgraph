@@ -81,7 +81,9 @@ class QualitativeColor:
               alpha=255, width=1, style=Qt.PenStyle.SolidLine):
         if c is None:
             return QPen(QColor(0, 0, 0, 0), width, Qt.PenStyle.NoPen)
-        if not isinstance(c, QColor):
+        if isinstance(c, QColor):
+            c.setAlpha(alpha)
+        else:
             c = QColor(*getattr(cls, c), alpha)
         pen = QPen(c, width, style)
         pen.setCosmetic(True)
@@ -91,7 +93,9 @@ class QualitativeColor:
     def mkBrush(cls, c: Optional[Union[str, QColor]] = None, *, alpha=255):
         if c is None:
             return QBrush(QColor(0, 0, 0, 0), Qt.BrushStyle.NoBrush)
-        if not isinstance(c, QColor):
+        if isinstance(c, QColor):
+            c.setAlpha(alpha)
+        else:
             c = QColor(*getattr(cls, c), alpha)
         return QBrush(c)
 

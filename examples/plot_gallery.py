@@ -17,19 +17,22 @@ from consumer import Consumer
 app = mkQApp()
 
 
-class LinePlot(GraphView):
+class ShadedPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
-        self.setTitle('Line plot')
+        self.setTitle('Shaded plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.addCurvePlot()
+        self._plot1 = self.addCurvePlot(pen=FColor.mkPen('Gray', width=2))
+
+        self._plot2 = self.addShadePlot(pen=FColor.mkPen('DodgerBlue'))
 
     def updateF(self, data):
         """Override."""
         data = data['line']
-        self._plot.setData(data['x'], data['y'])
+        self._plot1.setData(data['x'], data['y3'], data['y3_err'])
+        self._plot2.setData(data['x'], data['y1'], data['y2'])
 
 
 class ScatterPlot(GraphView):
@@ -43,7 +46,7 @@ class ScatterPlot(GraphView):
         self._plot2 = self.addScatterPlot(
             label="Data2", brush=FColor.mkBrush('Purple', alpha=50), size=7)
         self._plot3 = self.addScatterPlot(
-            label="Data3", brush=None, pen=FColor.mkPen('y', alpha=100), symbol="s")
+            label="Data3", brush=None, pen=FColor.mkPen('Brown', alpha=100), symbol="s")
         self._plot4 = self.addScatterPlot(
             label="Data4", pen=FColor.mkPen('k', alpha=150), symbol="+")
         self.addLegend()
@@ -145,7 +148,7 @@ class LinePlotWithAnnotation(GraphView):
         self.setTitle('Line plot with peak annotation')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot = self.addCurvePlot(pen=FColor.mkPen('k'))
+        self._plot = self.addCurvePlot(simple=True, pen=FColor.mkPen('k'))
         self._annotation = self.addAnnotation()
 
     def updateF(self, data):
@@ -202,7 +205,7 @@ class PlotGalleryScene(AbstractScene):
         super().__init__(*args, **kwargs)
 
         self._plots = [
-            LinePlot(parent=self),
+            ShadedPlot(parent=self),
             ScatterPlot(parent=self),
             BarPlot(parent=self),
             ErrorbarPlot(parent=self),

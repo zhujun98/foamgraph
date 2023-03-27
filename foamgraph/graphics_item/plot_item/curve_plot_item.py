@@ -9,15 +9,14 @@ from typing import Optional
 
 import numpy as np
 
-from ...backend import sip
-from ...backend.QtGui import QPainter, QPainterPath, QPolygonF
-from ...backend.QtCore import QPointF, QRectF, Qt
+from ...backend.QtGui import QPainter, QPainterPath
+from ...backend.QtCore import QRectF, Qt
 from ...aesthetics import FColor
 from .plot_item import PlotItem
 
 
-class CurvePlotItem(PlotItem):
-    """CurvePlotItem."""
+class SimpleCurvePlotItem(PlotItem):
+    """SimpleCurvePlotItem."""
 
     def __init__(self, x=None, y=None, *,
                  pen=None, label=None, check_finite=True):
@@ -66,33 +65,12 @@ class CurvePlotItem(PlotItem):
                 self.toLogScale(self._y)
                 if self._log_y_mode else np.nan_to_num(self._y))
 
-    @staticmethod
-    def array2Path(x, y) -> QPainterPath:
-        """Convert array to QPainterPath."""
-        n = x.shape[0]
-        if n < 2:
-            return QPainterPath()
-
-        polyline = QPolygonF()
-        polyline.fill(QPointF(), n)
-
-        buffer = polyline.data()
-        if buffer is None:
-            buffer = sip.voidptr(0)
-        buffer.setsize(2 * n * np.dtype(np.double).itemsize)
-
-        arr = np.frombuffer(buffer, np.double).reshape((-1, 2))
-
-        arr[:, 0] = x
-        arr[:, 1] = y
-        path = QPainterPath()
-        path.addPolygon(polyline)
-        return path
-
     def _prepareGraph(self) -> None:
         """Override."""
         x, y = self.transformedData()
-        self._graph = self.array2Path(x, y)
+        self._graph = QPainterPath()
+        polygon = PlotItem.array2Polygon(x, y)
+        self._graph.addPolygon(polygon)
 
     def paint(self, p: QPainter, *args) -> None:
         """Override."""
@@ -114,3 +92,75 @@ class CurvePlotItem(PlotItem):
             # Legend sample has a bounding box of (0, 0, 20, 20)
             p.drawLine(0, 11, 20, 11)
         return True
+
+
+class CurvePlotItem(SimpleCurvePlotItem):
+    def __init__(self, x=None, y=None, y_err=None, *, brush=None, **kwargs):
+        """Initialization."""
+        super().__init__(None, None, **kwargs)
+
+        self._brush = FColor.mkBrush(self._pen.color(), alpha=100) \
+            if brush is None else brush
+
+        self._y_err = None
+        self._graph_shade = None
+
+        self.setData(x, y, y_err)
+
+    def _parseInputData(self, x, **kwargs):
+        """Override."""
+        x = self._parse_input(x)
+        y = self._parse_input(kwargs['y'], size=len(x))
+        y_err = self._parse_input(kwargs['y_err'])
+
+        # do not set data unless they pass the sanity check!
+        self._x, self._y, self._y_err = x, y, y_err
+
+    def setData(self, x, y, y_err=None) -> None:
+        """Override."""
+        self._parseInputData(x, y=y, y_err=y_err)
+        self.updateGraph()
+
+    def data(self):
+        """Override."""
+        return self._x, self._y, self._y_err
+
+    def _prepareGraph(self) -> None:
+        """Override."""
+        x, y = self.transformedData()
+        self._graph = QPainterPath()
+        polygon = PlotItem.array2Polygon(x, y)
+        self._graph.addPolygon(polygon)
+
+        if not self._y_err.size == 0:
+            self._graph_shade = QPainterPath()
+            polygon1 = PlotItem.array2Polygon(x, y + self._y_err)
+            self._graph_shade.addPolygon(polygon1)
+            path = QPainterPath()
+            polygon2 = PlotItem.array2Polygon(x[::-1], (y - self._y_err)[::-1])
+            path.addPolygon(polygon2)
+            self._graph_shade.connectPath(path)
+        else:
+            self._graph_shade = None
+
+    def paint(self, p: QPainter, *args) -> None:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+
+        p.setPen(self._pen)
+        p.setBrush(FColor.mkBrush())
+        p.drawPath(self._graph)
+
+        if self._graph_shade is not None:
+            p.setPen(FColor.mkPen())
+            p.setBrush(self._brush)
+            p.drawPath(self._graph_shade)
+
+    def boundingRect(self) -> QRectF:
+        """Override."""
+        if self._graph is None:
+            self._prepareGraph()
+        if self._graph_shade is None:
+            return self._graph.boundingRect()
+        return self._graph_shade.boundingRect()

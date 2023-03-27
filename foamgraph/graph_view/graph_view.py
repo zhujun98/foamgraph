@@ -6,13 +6,14 @@ The full license is in the file LICENSE, distributed with this software.
 Author: Jun Zhu
 """
 import abc
-from typing import final, Optional
+from typing import final, Optional, Union
 
 from ..backend.QtCore import QTimer
 
 from ..graphics_item import (
-    AnnotationItem, BarPlotItem, CandlestickPlotItem, CurvePlotItem,
-    ErrorbarPlotItem, ScatterPlotItem, StemPlotItem
+    AnnotationItem, BarPlotItem, CandlestickPlotItem, SimpleCurvePlotItem,
+    CurvePlotItem, ErrorbarPlotItem, ScatterPlotItem, ShadePlotItem,
+    StemPlotItem
 )
 from ..graphics_widget import GraphWidget
 from .graphics_view import GraphicsView
@@ -30,9 +31,17 @@ class GraphView(GraphicsView):
         self._cw = GraphWidget()
         self.setCentralWidget(self._cw)
 
-    def addCurvePlot(self, *args, y2=False, **kwargs) -> CurvePlotItem:
-        """Add and return a :class:`CurvePlotItem`."""
-        item = CurvePlotItem(*args, **kwargs)
+    def addCurvePlot(self, *args, simple=False, y2=False, **kwargs)\
+            -> Union[CurvePlotItem, SimpleCurvePlotItem]:
+        """Add and return a :class:`CurvePlotItem` or a :class:`SimpleCurvePlotItem`.
+
+        :param simple: True for adding a :class:`SimpleCurvePlotItem`.
+            Otherwise, a :class:`CurvePlotItem` is added.
+        """
+        if simple:
+            item = SimpleCurvePlotItem(*args, **kwargs)
+        else:
+            item = CurvePlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
 
@@ -63,6 +72,11 @@ class GraphView(GraphicsView):
             -> CandlestickPlotItem:
         """Add and return a :class:`CandlestickPlotItem`."""
         item = CandlestickPlotItem(*args, **kwargs)
+        self._cw.addItem(item, y2=y2)
+        return item
+
+    def addShadePlot(self, *args, y2=False, **kwargs) -> ShadePlotItem:
+        item = ShadePlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
 
