@@ -23,8 +23,7 @@ def test_symbols(view):
 
 @pytest.fixture
 def item(view):
-    item = ScatterPlotItem(label="scatter")
-    view.addItem(item)
+    item = view.addScatterPlot(label="scatter")
     view.addLegend()
     return item
 
@@ -43,6 +42,15 @@ def test_input_data_parsing(view):
         item.setData(np.arange(2), np.arange(3))
 
 
+def test_plot(item):
+    item.setData([1], [2])
+    processEvents()
+
+    item.clearData()
+    assert item.boundingRect() == QRectF()
+    processEvents()
+
+
 def test_log_mode(view, item):
     x = np.arange(10).astype(float)
     y = x * 1.5
@@ -54,12 +62,6 @@ def test_log_mode(view, item):
     processEvents()
 
     view._cw._onLogYScaleToggled(True)
-    processEvents()
-
-    # clear data
-    item.clearData()
-    assert isinstance(item._x, np.ndarray)
-    assert isinstance(item._y, np.ndarray)
     processEvents()
 
 

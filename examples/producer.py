@@ -7,18 +7,33 @@ from scipy import signal
 import zmq
 
 
-class LinePlotData:
+class ShadePlotData:
     def __init__(self, n: int):
         self._n_pts = n
 
+        self._x = np.arange(n)
+        self._y1 = 1.5 + 2 * np.sin(self._x * np.pi / 180 * 4)
+        self._y2 = 2 + 2 * np.sin(self._x * np.pi / 180 * 6)
+
+        self._y3 = self._y1 + self._y2 + 4
+        self._y3_err = 1.0 + 0.2 * np.random.random(n)
+
+        self._counter = 0
+
     def next(self):
-        x = np.arange(self._n_pts).astype(np.float32)
-        x[0] = np.nan
-        x[2] = np.nan
-        y = np.random.random(self._n_pts).astype(np.float32)
-        y[1] = np.nan
-        y[2] = np.nan
-        return {"x": x, "y": y}
+        pace = 5
+        if pace * self._counter >= len(self._x):
+            self._counter = 0
+        self._counter += 1
+
+        s = self._counter * pace
+        return {
+            "x": self._x[:s],
+            "y1": self._y1[:s],
+            "y2": self._y2[:s],
+            "y3": self._y3[:s],
+            "y3_err": self._y3_err[:s]
+        }
 
 
 class ScatterPlotData:
@@ -89,14 +104,16 @@ class MultiLinePlotData:
         self._counter = 0
 
     def next(self):
-        if self._counter == len(self._x):
+        pace = 4
+        if pace * self._counter >= len(self._x):
             self._counter = 0
         self._counter += 1
 
-        return {"x": self._x[:self._counter],
-                "y1": self._y1[:self._counter],
-                "y2": self._y2[:self._counter],
-                "y3": self._y3[:self._counter]}
+        s = self._counter * pace
+        return {"x": self._x[:s],
+                "y1": self._y1[:s],
+                "y2": self._y2[:s],
+                "y3": self._y3[:s]}
 
 
 class DoubleYPlotData:
@@ -223,10 +240,10 @@ if __name__ == "__main__":
     socket = ctx.socket(zmq.PUB)
     socket.bind(f"tcp://*:5555")
 
-    line_plot_data = LinePlotData(500)
-    scatter_plot_data = ScatterPlotData(300)
+    line_plot_data = ShadePlotData(500)
+    scatter_plot_data = ScatterPlotData(400)
     errorbar_plot_data = ErrorBarPlotData(50)
-    multi_line_plot_data = MultiLinePlotData(300)
+    multi_line_plot_data = MultiLinePlotData(600)
     double_y_plot_data = DoubleYPlotData(100)
     multi_peak_data = MultiPeakData()
     candlestick_plot_data = StockPriceData(100)

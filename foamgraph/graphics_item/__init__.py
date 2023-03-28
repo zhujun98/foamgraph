@@ -8,6 +8,7 @@ from .line_item import InfiniteLineItem
 from .linear_region_item import LinearVRegionItem, LinearHRegionItem
 from .plot_item import (
     AnnotationItem, BarPlotItem, CandlestickPlotItem, CurvePlotItem,
-    ErrorbarPlotItem, PlotItem, ScatterPlotItem, StemPlotItem
+    ErrorbarPlotItem, PlotItem, ScatterPlotItem, ShadedPlotItem,
+    SimpleCurvePlotItem, StemPlotItem
 )
 from .region_of_interest_item import EllipseROI, RectROI, ROIBase

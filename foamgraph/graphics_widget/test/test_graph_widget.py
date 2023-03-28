@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 from foamgraph.backend.QtCore import QPoint, QPointF, Qt
 from foamgraph.graphics_item import (
-    BarPlotItem, CurvePlotItem, ErrorbarPlotItem, CrossMouseCursorItem,
-    MouseCursorItem, RectROI, ScatterPlotItem
+    BarPlotItem, ErrorbarPlotItem, CrossMouseCursorItem,
+    MouseCursorItem, RectROI, ScatterPlotItem, SimpleCurvePlotItem
 )
 from foamgraph.graphics_widget import (
     AxisWidget, LabelWidget, LegendWidget, GraphWidget
@@ -50,10 +50,10 @@ def test_axes(gwidget):
         axis = gwidget._axes[name]
         assert not axis.isVisible()
 
-        item = CurvePlotItem(label="curve-1")
+        item = SimpleCurvePlotItem(label="curve-1")
         gwidget.addItem(item)
         assert not axis.isVisible()
-        item = CurvePlotItem(label="curve-2")
+        item = SimpleCurvePlotItem(label="curve-2")
         gwidget.addItem(item, y2=True)
         assert axis.isVisible()
 
@@ -105,7 +105,7 @@ def test_title(gwidget):
 
 
 def test_clear_data(gwidget):
-    item1 = CurvePlotItem()
+    item1 = SimpleCurvePlotItem()
     gwidget.addItem(item1)
     item2 = BarPlotItem()
     gwidget.addItem(item2, y2=True)
@@ -129,7 +129,7 @@ def test_plot_item_manipulation(gwidget):
 
     gwidget.addLegend()  # add legend when there are already added PlotItems
 
-    curve_plot_item = CurvePlotItem(label="curve")
+    curve_plot_item = SimpleCurvePlotItem(label="curve")
     gwidget.addItem(curve_plot_item)
     with pytest.raises(RuntimeError):
         gwidget.addItem(curve_plot_item)
@@ -211,7 +211,7 @@ def test_log_scale_context_menu(gwidget):
     log_y_act = y_axis.getMenuAction("LogScale")
     log_y2_act = y2_axis.getMenuAction("LogScale")
 
-    plot_item1 = CurvePlotItem()
+    plot_item1 = SimpleCurvePlotItem()
     plot_item2 = ScatterPlotItem()
     plot_item3 = BarPlotItem()
     gwidget.addItem(plot_item1)

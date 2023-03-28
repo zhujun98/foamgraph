@@ -47,7 +47,6 @@ class StemPlotItem(PlotItem):
         self._fragment = None
         self._buildFragment()
 
-        self._graph = None
         self._graph_baseline = None
 
         self.setData(x, y)

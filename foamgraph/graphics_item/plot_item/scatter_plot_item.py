@@ -39,8 +39,6 @@ class ScatterPlotItem(PlotItem):
         self._fragment = None
         self._buildFragment()
 
-        self._graph = None
-
         self.setData(x, y)
 
     def _parseInputData(self, x, **kwargs):

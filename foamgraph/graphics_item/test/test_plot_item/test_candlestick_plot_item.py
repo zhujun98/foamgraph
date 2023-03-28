@@ -2,6 +2,7 @@ import pytest
 
 import numpy as np
 
+from foamgraph.backend.QtCore import QRectF
 from foamgraph.graphics_item import CandlestickPlotItem
 
 from foamgraph.test import processEvents
@@ -52,6 +53,9 @@ def item(view):
 
 
 def test_plot(item):
+    item.setData([1], [2], [3], [4], [5])
+    processEvents()
+
     x = np.arange(10).astype(float)
     y_start = np.arange(10).astype(float)
     y_stop = y_start + np.random.random() - 0.5
@@ -62,4 +66,9 @@ def test_plot(item):
     processEvents()
 
     item.clearData()
+    assert item.boundingRect() == QRectF()
     processEvents()
+
+
+def test_log_mode(view, item):
+    ...

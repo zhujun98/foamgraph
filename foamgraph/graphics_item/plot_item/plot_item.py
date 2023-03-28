@@ -11,8 +11,8 @@ import weakref
 
 import numpy as np
 
-from ...backend.QtGui import QPainter, QTransform
-from ...backend.QtCore import pyqtSignal, QRectF, Qt
+from ...backend.QtGui import QPainter, QPolygonF, QTransform
+from ...backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 from ...backend.QtWidgets import QGraphicsObject, QGraphicsView
 
 
@@ -150,3 +150,20 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
     def drawSample(self, p: Optional[QPainter] = None) -> bool:
         """Draw a sample used in :class:`LegendWidget`."""
         return False
+
+    @staticmethod
+    def array2Polygon(x: np.ndarray, y: np.ndarray) -> QPolygonF:
+        """Convert array to QPolygonF."""
+        # Users are responsible for the validity of the input data.
+        polygon = QPolygonF()
+        n = x.size
+        if n >= 1:
+            polygon.fill(QPointF(), n)
+
+            buffer = polygon.data()
+            buffer.setsize(2 * n * np.dtype(np.float64).itemsize)
+            arr = np.frombuffer(buffer, np.float64).reshape((-1, 2))
+            arr[:, 0] = x
+            arr[:, 1] = y
+
+        return polygon
