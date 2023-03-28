@@ -30,11 +30,19 @@ def item(view):
     return item
 
 
+def test_plot(item):
+    item.setData([1], [2])
+    processEvents()
+
+    item.clearData()
+    assert item.boundingRect() == QRectF()
+    processEvents()
+
+
 def test_log_mode(view, item):
     x = np.arange(10).astype(np.float32)
     y = x * 1.5
     item.setData(x, y)
-    item.update()
     processEvents()
 
     # test log mode
@@ -44,9 +52,3 @@ def test_log_mode(view, item):
     view._cw._onLogYScaleToggled(True)
     processEvents()
     assert item.boundingRect() == QRectF(-1.0, 0, 3.0, 2.0)
-
-    # clear data
-    item.clearData()
-    assert isinstance(item._x, np.ndarray)
-    assert isinstance(item._y, np.ndarray)
-    processEvents()

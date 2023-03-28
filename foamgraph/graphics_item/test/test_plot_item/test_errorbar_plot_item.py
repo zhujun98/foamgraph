@@ -40,6 +40,15 @@ def item(view):
     return item
 
 
+def test_plot(item):
+    item.setData([1], [2], [3], [4])
+    processEvents()
+
+    item.clearData()
+    assert item.boundingRect() == QRectF()
+    processEvents()
+
+
 def test_log_mode(view, item):
     x = y = np.arange(10)
     item.setData(x, y, y_min=y-1, y_max=y+1)
@@ -55,9 +64,3 @@ def test_log_mode(view, item):
     assert item.boundingRect().topLeft() == QPointF(-0.5, 0.0)
     assert 1.5, item.boundingRect().bottomRight().x()
     assert 1.0 < item.boundingRect().bottomRight().y() < 1.1
-
-    # clear data
-    item.clearData()
-    assert isinstance(item._x, np.ndarray)
-    assert isinstance(item._y, np.ndarray)
-    processEvents()

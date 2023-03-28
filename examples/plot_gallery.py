@@ -21,7 +21,7 @@ class ShadedPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
-        self.setTitle('Shaded plot')
+        self.setTitle('Shade plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot1 = self.addCurvePlot(pen=FColor.mkPen('Gray', width=2))

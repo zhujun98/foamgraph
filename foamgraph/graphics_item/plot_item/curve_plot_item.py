@@ -95,6 +95,12 @@ class SimpleCurvePlotItem(PlotItem):
 
 
 class CurvePlotItem(SimpleCurvePlotItem):
+    """CurvePlotItem.
+
+    :class:`CurvePlotItem` is a "class"`SimpleCurvePlotItem`. The former
+    should be able to use as a drop-in replacement of the latter.
+    """
+
     def __init__(self, x=None, y=None, y_err=None, *, brush=None, **kwargs):
         """Initialization."""
         super().__init__(None, None, **kwargs)
@@ -112,6 +118,8 @@ class CurvePlotItem(SimpleCurvePlotItem):
         x = self._parse_input(x)
         y = self._parse_input(kwargs['y'], size=len(x))
         y_err = self._parse_input(kwargs['y_err'])
+        if y_err.size != 0 and len(y_err) != len(y):
+            raise ValueError("'y' and 'y_err' data have different lengths!")
 
         # do not set data unless they pass the sanity check!
         self._x, self._y, self._y_err = x, y, y_err
