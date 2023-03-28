@@ -21,12 +21,12 @@ class ShadedPlot(GraphView):
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
-        self.setTitle('Shade plot')
+        self.setTitle('Shaded plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot1 = self.addCurvePlot(pen=FColor.mkPen('Gray', width=2))
 
-        self._plot2 = self.addShadePlot(pen=FColor.mkPen('DodgerBlue'))
+        self._plot2 = self.addShadedPlot(pen=FColor.mkPen('DodgerBlue'))
 
     def updateF(self, data):
         """Override."""

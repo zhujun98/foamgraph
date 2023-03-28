@@ -10,8 +10,7 @@ from foamgraph.test import processEvents
 
 @pytest.fixture
 def item(view):
-    item = StemPlotItem(label="stem")
-    view.addItem(item)
+    item = view.addStemPlot(label="stem")
     view.addLegend()
     return item
 

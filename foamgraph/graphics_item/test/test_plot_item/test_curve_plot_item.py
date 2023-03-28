@@ -96,8 +96,7 @@ class TestSimpleCurvePlotItem:
 class TestCurvePlotItem:
     @pytest.fixture
     def item(self, view):
-        item = CurvePlotItem(label="curve")
-        view.addItem(item)
+        item = view.addCurvePlot(label="curve")
         view.addLegend()
         return item
 

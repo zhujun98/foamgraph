@@ -12,7 +12,7 @@ from ..backend.QtCore import QTimer
 
 from ..graphics_item import (
     AnnotationItem, BarPlotItem, CandlestickPlotItem, SimpleCurvePlotItem,
-    CurvePlotItem, ErrorbarPlotItem, ScatterPlotItem, ShadePlotItem,
+    CurvePlotItem, ErrorbarPlotItem, ScatterPlotItem, ShadedPlotItem,
     StemPlotItem
 )
 from ..graphics_widget import GraphWidget
@@ -64,6 +64,7 @@ class GraphView(GraphicsView):
         return item
 
     def addAnnotation(self, *args, y2=False, **kwargs) -> AnnotationItem:
+        """Add and return an :class:`AnnotationItem`."""
         item = AnnotationItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
@@ -75,12 +76,14 @@ class GraphView(GraphicsView):
         self._cw.addItem(item, y2=y2)
         return item
 
-    def addShadePlot(self, *args, y2=False, **kwargs) -> ShadePlotItem:
-        item = ShadePlotItem(*args, **kwargs)
+    def addShadedPlot(self, *args, y2=False, **kwargs) -> ShadedPlotItem:
+        """Add and return a :class:`ShadedPlotItem`."""
+        item = ShadedPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
 
     def addStemPlot(self, *args, y2=False, **kwargs) -> StemPlotItem:
+        """Add and return a :class:`StemPlotItem`."""
         item = StemPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item

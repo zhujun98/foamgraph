@@ -23,8 +23,7 @@ def test_symbols(view):
 
 @pytest.fixture
 def item(view):
-    item = ScatterPlotItem(label="scatter")
-    view.addItem(item)
+    item = view.addScatterPlot(label="scatter")
     view.addLegend()
     return item
 

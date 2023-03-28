@@ -3,15 +3,14 @@ import pytest
 import numpy as np
 
 from foamgraph.backend.QtCore import QPointF, QRectF
-from foamgraph.graphics_item import ShadePlotItem
+from foamgraph.graphics_item import ShadedPlotItem
 
 from foamgraph.test import processEvents
 
 
 @pytest.fixture
 def item(view):
-    item = ShadePlotItem(label="shade")
-    view.addItem(item)
+    item = view.addShadedPlot(label="shaded")
     view.addLegend()
     return item
 
@@ -20,7 +19,7 @@ def test_input_data_parsing(view):
     x = y1 = y2 = np.arange(10).astype(float)
 
     # x and y are lists
-    item = ShadePlotItem(x.tolist(), y1.tolist(), y2.tolist(), label="shade")
+    item = ShadedPlotItem(x.tolist(), y1.tolist(), y2.tolist(), label="shaded")
     view.addItem(item)
     assert isinstance(item._x, np.ndarray)
     assert isinstance(item._y1, np.ndarray)

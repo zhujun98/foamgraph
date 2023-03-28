@@ -15,8 +15,8 @@ from ...aesthetics import FColor
 from .plot_item import PlotItem
 
 
-class ShadePlotItem(PlotItem):
-    """ShadePlotItem.
+class ShadedPlotItem(PlotItem):
+    """ShadedPlotItem.
 
     Visualize area between two lines.
     """
