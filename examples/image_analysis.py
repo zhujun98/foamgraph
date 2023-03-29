@@ -38,7 +38,7 @@ class RoiProjectionMonitor(GraphView):
         self._roi = roi
         self.setTitle(roi.label())
 
-        self._plot = self.addCurvePlot()
+        self._plot = self.addCurvePlot(pen=roi.pen())
 
     def updateF(self, data):
         """override."""
@@ -47,8 +47,11 @@ class RoiProjectionMonitor(GraphView):
             return
 
         data = extract_rect_roi(data['image']['data'], self._roi.region())
-        proj = np.mean(data, axis=0)
-        self._plot.setData(np.arange(len(proj)), proj)
+        if data is None:
+            self._plot.clearData()
+        else:
+            proj = np.mean(data, axis=0)
+            self._plot.setData(np.arange(len(proj)), proj)
 
 
 class ImageAnalysisScene(AbstractScene):
