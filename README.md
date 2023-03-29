@@ -87,7 +87,7 @@ python examples/producer.py
 python examples/plot_gallery.py
 ```
 
-![](https://github.com/zhujun98/foam-demo/blob/main/foamgraph/plot_galary.gif)
+<img src="https://github.com/zhujun98/foam-demo/blob/main/foamgraph/plot_galary.gif" width="640"/>
 
 * Open another terminal and start the image analysis example
 
@@ -95,4 +95,4 @@ python examples/plot_gallery.py
 python examples/image_analysis.py
 ```
 
-![](https://github.com/zhujun98/foam-demo/blob/main/foamgraph/image_analysis.gif)
+<img src="https://github.com/zhujun98/foam-demo/blob/main/foamgraph/image_analysis.gif" width="640"/>

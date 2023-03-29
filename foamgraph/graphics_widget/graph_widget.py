@@ -165,7 +165,7 @@ class GraphWidget(PlotWidget):
 
             if pos is None:
                 # TODO: use a value which is proportional to the plot size
-                pos = QPointF(20., 20.)
+                pos = QPointF(10., 10.)
             elif not isinstance(pos, QPointF):
                 pos = QPointF(*pos)
 
