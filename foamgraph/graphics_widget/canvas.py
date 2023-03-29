@@ -23,7 +23,9 @@ from ..backend.QtWidgets import (
 
 from ..aesthetics import FColor
 from ..graphics_item import MouseCursorItem
-from ..graphics_scene import HoverEvent, MouseClickEvent, MouseDragEvent
+from ..graphics_scene import (
+    HoverEvent, MouseClickEvent, QGraphicsSceneMouseEvent, MouseDragEvent
+)
 
 
 _DEBUG_CANVAS = False
@@ -171,11 +173,6 @@ class Canvas(QGraphicsWidget):
 
     def _createContextMenu(self):
         root = QMenu()
-
-        action = root.addAction("View All")
-        action.setObjectName("ViewAll")
-        action.triggered.connect(lambda: self.setTargetRange(
-            self._proxy.graphRect(), disable_auto_range=True))
 
         # ---
         if not self._auto_range_x_locked and not self._auto_range_y_locked:
@@ -689,6 +686,13 @@ class Canvas(QGraphicsWidget):
         if ev.button() == Qt.MouseButton.RightButton:
             ev.accept()
             self._menu.popup(ev.screenPos())
+
+    def mouseDoubleClickEvent(self, ev: QGraphicsSceneMouseEvent):
+        """Override."""
+        if ev.button() == Qt.MouseButton.LeftButton:
+            ev.accept()
+            self.setTargetRange(
+                self._proxy.graphRect(), disable_auto_range=True)
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""
