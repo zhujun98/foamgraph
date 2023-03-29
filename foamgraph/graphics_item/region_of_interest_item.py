@@ -125,21 +125,21 @@ class ROIBase(GraphicsObject):
         if self._moving == self.Moving.BODY:
             self.moveBy(offset.x(), offset.y())
         elif self._moving == self.Moving.RIGHT:
-            self._item.setRect(
-                0, 0, ref_rect.width() + offset.x(), ref_rect.height())
+            w = ref_rect.width() + offset.x()
+            self._item.setRect(0, 0, 1 if w < 1 else w, ref_rect.height())
         elif self._moving == self.Moving.LEFT:
             self.moveBy(offset.x(), 0)
             rect = self._item.rect()
-            self._item.setRect(
-                0, 0, rect.width() - int(offset.x()), rect.height())
+            w = rect.width() - int(offset.x())
+            self._item.setRect(0, 0, 1 if w < 1 else w, rect.height())
         elif self._moving == self.Moving.BOTTOM:
-            self._item.setRect(
-                0, 0, ref_rect.width(), ref_rect.height() + offset.y())
+            h = ref_rect.height() + offset.y()
+            self._item.setRect(0, 0, ref_rect.width(), 1 if h < 1 else h)
         else:  # self._moving == self.Moving.TOP:
             self.moveBy(0, offset.y())
             rect = self._item.rect()
-            self._item.setRect(
-                0, 0, rect.width(), rect.height() - int(offset.y()))
+            h = rect.height() - int(offset.y())
+            self._item.setRect(0, 0, rect.width(), 1 if h < 1 else h)
 
         if ev.exiting() and self._moving != self.Moving.NONE:
             self.stateChanged(finish=True)

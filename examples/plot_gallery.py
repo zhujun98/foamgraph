@@ -69,7 +69,7 @@ class BarPlot(GraphView):
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
         self._plot = self.addBarPlot(pen=FColor.mkPen('ForestGreen'),
-                                  brush=FColor.mkBrush('DodgerBlue'))
+                                     brush=FColor.mkBrush('DodgerBlue'))
 
     def updateF(self, data):
         """Override."""
