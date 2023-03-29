@@ -11,7 +11,7 @@ from ..backend.QtCore import QPointF, Qt
 
 from ..aesthetics import FColor
 from ..graphics_item import (
-    EllipseROI, ImageItem, MouseCursorStyle, RectROI, ROIBase, RectROI
+    EllipseROI, ImageItem, MouseCursorStyle, ROIBase, RectROI
 )
 from .axis_widget import AxisWidget
 from .colormap_controller import ColormapController
@@ -61,11 +61,6 @@ class ImageWidget(PlotWidget):
         menu = self._canvas.extendContextMenu("ROI")
         menu.setObjectName("ROI")
 
-        # action = menu.addAction("Show")
-        # action.setObjectName("Cursor_Show")
-        # action.setCheckable(True)
-        # action.toggled.connect(self._onMouseCursorToggled)
-
     def imageItem(self):
         return self._image_item
 
@@ -80,7 +75,11 @@ class ImageWidget(PlotWidget):
         self._canvas.addItem(roi, ignore_bounds=True)
 
         menu = self._canvas.getMenu("ROI")
-        action = menu.addAction(roi.label())
+        name = roi.name()
+        if not name:
+            name = f"ROI{len(self._rois)}"
+        action = menu.addAction(name)
+        action.setObjectName(f"ROI_{name}")
         action.setCheckable(True)
         action.toggled.connect(lambda x: roi.setVisible(x))
 

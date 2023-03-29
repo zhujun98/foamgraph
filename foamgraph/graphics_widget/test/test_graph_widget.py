@@ -4,7 +4,7 @@ from unittest.mock import patch
 from foamgraph.backend.QtCore import QPoint, QPointF, Qt
 from foamgraph.graphics_item import (
     BarPlotItem, ErrorbarPlotItem, CrossMouseCursorItem,
-    MouseCursorItem, RectROI, ScatterPlotItem, SimpleCurvePlotItem
+    MouseCursorItem, ScatterPlotItem, SimpleCurvePlotItem
 )
 from foamgraph.graphics_widget import (
     AxisWidget, LabelWidget, LegendWidget, GraphWidget
@@ -124,9 +124,6 @@ def test_plot_item_manipulation(gwidget):
     bar_graph_item = BarPlotItem(label="bar")
     gwidget.addItem(bar_graph_item, y2=True)
 
-    roi_item = RectROI()
-    gwidget.addItem(roi_item)
-
     gwidget.addLegend()  # add legend when there are already added PlotItems
 
     curve_plot_item = SimpleCurvePlotItem(label="curve")
@@ -139,7 +136,7 @@ def test_plot_item_manipulation(gwidget):
 
     assert len(gwidget._plot_items) == 3
     assert len(gwidget._plot_items_y2) == 1
-    assert len(gwidget._canvas._proxy._items) == 4
+    assert len(gwidget._canvas._proxy._items) == 3
     assert len(gwidget._canvas_y2._proxy._items) == 1
     assert len(gwidget._legend._items) == 3
 
@@ -147,20 +144,12 @@ def test_plot_item_manipulation(gwidget):
     gwidget.removeItem(BarPlotItem())
     assert len(gwidget._plot_items) == 3
     assert len(gwidget._plot_items_y2) == 1
-    assert len(gwidget._canvas._proxy._items) == 4
+    assert len(gwidget._canvas._proxy._items) == 3
     assert len(gwidget._canvas_y2._proxy._items) == 1
     assert len(gwidget._legend._items) == 3
 
     # remove an existing item
     gwidget.removeItem(bar_graph_item)
-    assert len(gwidget._plot_items) == 3
-    assert len(gwidget._plot_items_y2) == 0
-    assert len(gwidget._canvas._proxy._items) == 4
-    assert len(gwidget._canvas_y2._proxy._items) == 0
-    assert len(gwidget._legend._items) == 2
-
-    # remove an existing item which is not a PlotItem
-    gwidget.removeItem(roi_item)
     assert len(gwidget._plot_items) == 3
     assert len(gwidget._plot_items_y2) == 0
     assert len(gwidget._canvas._proxy._items) == 3

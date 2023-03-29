@@ -30,8 +30,8 @@ class RoiCtrlWidget(QFrame):
     _pos_validator = QIntValidator(-10000, 10000)
     _size_validator = QIntValidator(1, 10000)
 
-    def __init__(self, roi: "ROIBase", **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, roi: "ROIBase", *, parent=None):
+        super().__init__(parent=parent)
 
         self._roi = roi
 
@@ -153,11 +153,13 @@ class ROIBase(GraphicsObject):
 
     item_type = QAbstractGraphicsShapeItem
 
-    def __init__(self, label: str = "", *args, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, x: float, y: float, *args,
+                 name: str = "", parent=None):
+        super().__init__(parent=parent)
 
-        self._label = label
+        self._name = name
 
+        self.setPos(x, y)
         self._item = self.item_type(*args, parent=self)
 
         self._text = QGraphicsTextItem("", parent=self)
@@ -178,14 +180,17 @@ class ROIBase(GraphicsObject):
 
         menu = root.addMenu("Geometry")
         menu.setObjectName("Geometry")
+
         action = QWidgetAction(root)
         action.setDefaultWidget(RoiCtrlWidget(self))
+        action.setObjectName("Geometry_Editor")
+
         menu.addAction(action)
 
         return root
 
-    def label(self) -> str:
-        return self._label
+    def name(self) -> str:
+        return self._name
 
     def setPen(self, pen: QPen) -> None:
         """Set the QPen used to draw the ROI."""
@@ -320,8 +325,10 @@ class RectROI(ROIBase):
 
     item_type = QGraphicsRectItem
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, x: float, y: float, w: float, h: float, *,
+                 name: str = "", parent=None):
+        super().__init__(x, y, QRectF(0, 0, w, h),
+                         name=name, parent=parent)
 
     def region(self) -> tuple:
         return self.rect()
@@ -331,8 +338,10 @@ class EllipseROI(ROIBase):
 
     item_type = QGraphicsEllipseItem
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, x: float, y: float, w: float, h: float, *,
+                 name: str = "", parent=None):
+        super().__init__(x, y, QRectF(0, 0, w, h),
+                         name=name, parent=parent)
 
     def region(self) -> tuple:
         return self.rect()

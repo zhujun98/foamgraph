@@ -36,7 +36,7 @@ class RoiProjectionMonitor(GraphView):
         super().__init__(parent=parent)
 
         self._roi = roi
-        self.setTitle(roi.label())
+        self.setTitle(roi.name())
 
         self._plot = self.addCurvePlot(pen=roi.pen())
 
@@ -64,10 +64,10 @@ class ImageAnalysisScene(AbstractScene):
         self._image = ImageAnalysis(parent=self)
         self._roi_monitors = []
 
-        roi1 = self._image.addRectROI("ROI1", 0, 0, 100, 100)
+        roi1 = self._image.addRectROI(0, 0, 100, 100)
         self._roi_monitors.append(RoiProjectionMonitor(roi1, parent=self))
 
-        roi2 = self._image.addEllipseROI("ROI2", 10, 10, 100, 100)
+        roi2 = self._image.addEllipseROI(10, 10, 100, 100)
         self._roi_monitors.append(RoiProjectionMonitor(roi2, parent=self))
 
         self.initUI()

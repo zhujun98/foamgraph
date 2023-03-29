@@ -34,13 +34,12 @@ class ColorbarWidget(GraphicsWidget):
 
         self._cmap = None
         self._gradient = QGraphicsRectItem(parent=self)
-        # self.setColorMap(ColorMap.fromName(config['COLOR_MAP']))
 
         # FIXME: do not use magic numbers
         self._gradient_width = 15
         self._width = 20
 
-        self._menu = QMenu()
+        self._menu = self._createContextMenu()
 
         self._initUI()
 
@@ -56,12 +55,18 @@ class ColorbarWidget(GraphicsWidget):
             self.setSizePolicy(QSizePolicy.Policy.Expanding,
                                QSizePolicy.Policy.Fixed)
         else:
-            raise ValueError(f"Unknown orientation value: {self._orientation}")
+            raise ValueError(
+                f"Unknown orientation value: {self._orientation}")
+
+    def _createContextMenu(self):
+        root = QMenu()
 
         for name, ticks in ColorMap.gradients.items():
-            self._menu.addAction(self._createCmapActionWidget(name, ticks))
+            self._addCMapWidgetAction(root, name, ticks)
 
-    def _createCmapActionWidget(self, name: str, ticks: tuple) -> None:
+        return root
+
+    def _addCMapWidgetAction(self, menu: QMenu, name: str, ticks: tuple) -> None:
         cmap = QPixmap(100, 15)
         p = QPainter(cmap)
         positions, colors = ticks
@@ -83,15 +88,18 @@ class ColorbarWidget(GraphicsWidget):
 
         widget = QWidget()
         widget.setLayout(layout)
+        widget.setObjectName(name)
 
-        action = QWidgetAction(self)
+        action = QWidgetAction(menu)
         action.setDefaultWidget(widget)
-        action.triggered.connect(
-            lambda: self.setColorMap(ColorMap.fromName(action.data())))
+        action.triggered.connect(lambda: self.setColorMap(action.data()))
         action.setData(name)
-        return action
+        action.setObjectName(name)
 
-    def setColorMap(self, cmap: ColorMap) -> None:
+        menu.addAction(action)
+
+    def setColorMap(self, name: str) -> None:
+        cmap = ColorMap.fromName(name)
         if self._orientation == Qt.Orientation.Vertical:
             gradient = QLinearGradient(0., 0., 0., 1.)
         else:
