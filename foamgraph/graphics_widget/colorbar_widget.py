@@ -111,7 +111,7 @@ class ColorbarWidget(GraphicsWidget):
 
     def mouseClickEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         if ev.button() == Qt.MouseButton.RightButton:
-            self._menu.popup(ev.screenPos().toQPoint())
+            self._menu.popup(ev.screenPos())
             ev.accept()
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent) -> None:
