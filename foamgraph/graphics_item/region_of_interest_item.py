@@ -284,6 +284,7 @@ class ROIBase(GraphicsObject):
 
     def stateChanged(self, finish: bool = True) -> None:
         """Process changes to the state of the ROI."""
+        self._text.setPos(0, 5 + self._item.rect().height())
         self.update()
         if finish:
             self.region_change_finished_sgn.emit()
