@@ -8,7 +8,7 @@ Author: Jun Zhu
 from ..backend.QtCore import QPointF, Qt
 from ..backend.QtWidgets import QGraphicsGridLayout, QGraphicsItem, QMenu
 
-from ..aesthetics import ColorMap, FColor
+from ..aesthetics import FColor
 from ..config import config
 from ..graphics_item import (
     SimpleCurvePlotItem, ImageItem, LinearVRegionItem
@@ -107,4 +107,4 @@ class ColormapController(GraphicsWidget):
         self._lri.setRegion(lower, upper)
 
     def setColorMap(self, name: str) -> None:
-        self._cbar.setColorMap(ColorMap.fromName(name))
+        self._cbar.setColorMap(name)

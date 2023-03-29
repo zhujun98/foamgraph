@@ -14,7 +14,6 @@ from foamgraph import (
     AbstractScene, ImageView, mkQApp, GraphView
 )
 from foamgraph.algorithm import extract_rect_roi
-from foamgraph.ctrl_widgets import RoiCtrlWidgetGroup
 
 from consumer import Consumer
 
@@ -37,9 +36,9 @@ class RoiProjectionMonitor(GraphView):
         super().__init__(parent=parent)
 
         self._roi = roi
-        self.setTitle(roi.label())
+        self.setTitle(roi.name())
 
-        self._plot = self.addCurvePlot()
+        self._plot = self.addCurvePlot(pen=roi.pen())
 
     def updateF(self, data):
         """override."""
@@ -48,8 +47,11 @@ class RoiProjectionMonitor(GraphView):
             return
 
         data = extract_rect_roi(data['image']['data'], self._roi.region())
-        proj = np.mean(data, axis=0)
-        self._plot.setData(np.arange(len(proj)), proj)
+        if data is None:
+            self._plot.clearData()
+        else:
+            proj = np.mean(data, axis=0)
+            self._plot.setData(np.arange(len(proj)), proj)
 
 
 class ImageAnalysisScene(AbstractScene):
@@ -60,15 +62,12 @@ class ImageAnalysisScene(AbstractScene):
         super().__init__(*args, **kwargs)
 
         self._image = ImageAnalysis(parent=self)
-        self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
         self._roi_monitors = []
 
-        roi1 = self._image.addRectROI("ROI1", 0, 0, 100, 100)
-        self._roi_ctrl.addROI("ROI1", roi1)
+        roi1 = self._image.addRectROI(0, 0, 100, 100)
         self._roi_monitors.append(RoiProjectionMonitor(roi1, parent=self))
 
-        roi2 = self._image.addEllipseROI("ROI2", 10, 10, 100, 100)
-        self._roi_ctrl.addROI("ROI2", roi2)
+        roi2 = self._image.addEllipseROI(10, 10, 100, 100)
         self._roi_monitors.append(RoiProjectionMonitor(roi2, parent=self))
 
         self.initUI()
@@ -86,7 +85,6 @@ class ImageAnalysisScene(AbstractScene):
 
         layout = QVBoxLayout()
         layout.addWidget(self._image, 5)
-        layout.addWidget(self._roi_ctrl, 1)
         layout.addLayout(h_layout, 2)
 
         self._cw = QFrame()
