@@ -24,7 +24,7 @@ As of now, `foamgraph` has almost evolved into its own implementation completely
 It's time to decide the direction for future development. Since there are already
 many excellent GUI libraries around, `foamgraph` should and will do something different.
 
-...
+<img src="media/usecase.png" width="640"/>
 
 Nevertheless, when integrating GUI into a real-time data analysis pipeline, 
 there are a couple of things to be taken into account:
