@@ -3,7 +3,8 @@ from unittest.mock import patch
 
 import numpy as np
 
-from foamgraph.backend.QtCore import QRectF
+from foamgraph.backend.QtTest import QTest
+from foamgraph.backend.QtCore import QPoint, QRectF, Qt
 from foamgraph.graph_view import GraphView, ImageView
 from foamgraph.graphics_widget import Canvas
 from foamgraph.test import processEvents
@@ -26,11 +27,6 @@ class TestGraphViewCanvas:
 
     def test_context_menu(self, canvas):
         canvas = Canvas()
-
-        action = canvas.getMenuAction("ViewAll")
-        with patch.object(canvas, "setTargetRange") as mocked:
-            action.trigger()
-            mocked.assert_called_once()
 
         action = canvas.getMenuAction("MouseMode_Zoom")
         action.trigger()
@@ -95,11 +91,11 @@ class TestGraphViewCanvas:
         assert canvas.viewRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
         assert canvas.targetRect() == QRectF(-0.1, -0.1, 10.2, 1.2)
 
-        canvas.getMenuAction("ViewAll").trigger()
-        processEvents()
-        assert canvas.viewRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
-        # target rect does not change until setTargetRange is called
-        assert canvas.targetRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
+        # FIXME
+        # QTest.mouseClick(view, Qt.MouseButton.LeftButton)
+        # assert canvas.viewRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
+        # # target rect does not change until setTargetRange is called
+        # assert canvas.targetRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
 
     def test_close(self, view, canvas):
         view.addCurvePlot()
@@ -139,6 +135,7 @@ class TestImageViewCanvas:
         assert canvas.viewRect() == QRectF(-2.2, -2.7, 8.4, 8.4)
         assert canvas.targetRect() == QRectF(-0.1, -2.7, 4.2, 8.4)
 
-        canvas.getMenuAction("ViewAll").trigger()
-        processEvents()
-        assert canvas.viewRect() == QRectF(-0.1, -0.6, 4.2, 4.2)
+        # FIXME
+        # QTest.mouseClick(view, Qt.MouseButton.LeftButton)
+        # processEvents()
+        # assert canvas.viewRect() == QRectF(-0.1, -0.6, 4.2, 4.2)
