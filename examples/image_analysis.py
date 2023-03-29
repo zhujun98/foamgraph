@@ -9,9 +9,8 @@ import numpy as np
 
 from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
-
 from foamgraph import (
-    AbstractScene, ImageView, mkQApp, GraphView
+    __version__, AbstractScene, ImageView, mkQApp, GraphView
 )
 from foamgraph.algorithm import extract_rect_roi
 
@@ -60,6 +59,8 @@ class ImageAnalysisScene(AbstractScene):
     def __init__(self, *args, **kwargs):
         """Initialization."""
         super().__init__(*args, **kwargs)
+
+        self.statusBar().showMessage(f"foamgraph {__version__}")
 
         self._image = ImageAnalysis(parent=self)
         self._roi_monitors = []

@@ -5,6 +5,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+import pkg_resources
+
 from .backend import QtCore, QtGui, QtWidgets, mkQApp
 
 from .scenes import AbstractScene
@@ -16,3 +18,5 @@ from .ctrl_widgets import (
     SmartLineEdit, SmartStringLineEdit, SmartBoundaryLineEdit,
     SmartIdLineEdit, SmartSliceLineEdit
 )
+
+__version__ = pkg_resources.get_distribution('foamgraph').version

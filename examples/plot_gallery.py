@@ -7,9 +7,8 @@ Author: Jun Zhu
 """
 from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QGridLayout
-
 from foamgraph import (
-    AbstractScene, FColor, mkQApp, GraphView, TimedGraphView
+    __version__, AbstractScene, FColor, mkQApp, GraphView, TimedGraphView
 )
 
 from consumer import Consumer
@@ -203,6 +202,8 @@ class PlotGalleryScene(AbstractScene):
     def __init__(self, *args, **kwargs):
         """Initialization."""
         super().__init__(*args, **kwargs)
+
+        self.statusBar().showMessage(f"foamgraph {__version__}")
 
         self._plots = [
             ShadedPlot(parent=self),
