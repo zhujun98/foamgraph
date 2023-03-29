@@ -1,7 +1,8 @@
 import pytest
 
 from foamgraph.backend.QtCore import QRectF
-from foamgraph.backend.QtWidgets import QAction, QWidgetAction
+from foamgraph.backend.QtGui import QAction
+from foamgraph.backend.QtWidgets import QWidgetAction
 from foamgraph import ImageView
 from foamgraph.graphics_item import EllipseROI, RectROI
 
