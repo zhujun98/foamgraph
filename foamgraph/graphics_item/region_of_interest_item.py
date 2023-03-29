@@ -12,7 +12,8 @@ from typing import Optional, Union
 from ..backend.QtGui import QPainter, QPainterPath, QPen
 from ..backend.QtCore import pyqtSignal, QPointF, QRect, QRectF, QSize, Qt
 from ..backend.QtWidgets import (
-    QAbstractGraphicsShapeItem, QGraphicsRectItem, QGraphicsEllipseItem
+    QAbstractGraphicsShapeItem, QGraphicsEllipseItem, QGraphicsRectItem,
+    QGraphicsTextItem
 )
 
 from ..aesthetics import FColor
@@ -42,6 +43,10 @@ class ROIBase(GraphicsObject):
         self._label = label
 
         self._item = self.item_type(*args, parent=self)
+
+        self._text = QGraphicsTextItem("", parent=self)
+        self._text.setFlag(
+            QGraphicsTextItem.GraphicsItemFlag.ItemIgnoresTransformations)
 
         self._ref_cursor: QPointF = None
         self._ref_rect: QRectF = None
@@ -168,8 +173,11 @@ class ROIBase(GraphicsObject):
         """Override."""
         if self._moving == self.Moving.NONE:
             self._item.setPen(self._pen)
+            self._text.setPlainText("")
         else:
             self._item.setPen(self._hover_pen)
+            self._text.setDefaultTextColor(self._hover_pen.color())
+            self._text.setPlainText(str(self.rect()))
 
 
 class RectROI(ROIBase):

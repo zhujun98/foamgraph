@@ -69,15 +69,15 @@ class GraphWidget(PlotWidget):
     def _onMouseCursorMoved(self, pos: QPointF) -> None:
         """Override."""
         super()._onMouseCursorMoved(pos)
-        self._setMouseCursorLabel(pos.x(), pos.y())
+        self._setMouseCursorText(pos.x(), pos.y())
 
     def _updateMouseCursorLabel(self) -> None:
         """Override."""
         pos = self._mouse_cursor.pos()
         pos = self._canvas.mapFromItemToView(self, pos)
-        self._setMouseCursorLabel(pos.x(), pos.y())
+        self._setMouseCursorText(pos.x(), pos.y())
 
-    def _setMouseCursorLabel(self, x: float, y: float) -> None:
+    def _setMouseCursorText(self, x: float, y: float) -> None:
         self._mouse_cursor.setLabel(f"    {x:.1f}, {y:.1f}")
 
     def clearData(self) -> None:
