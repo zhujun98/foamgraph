@@ -9,16 +9,132 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Optional, Union
 
-from ..backend.QtGui import QPainter, QPainterPath, QPen
+from ..backend.QtGui import QIntValidator, QPainter, QPainterPath, QPen
 from ..backend.QtCore import pyqtSignal, QPointF, QRect, QRectF, QSize, Qt
 from ..backend.QtWidgets import (
-    QAbstractGraphicsShapeItem, QGraphicsEllipseItem, QGraphicsRectItem,
-    QGraphicsTextItem
+    QAbstractGraphicsShapeItem, QFrame, QGraphicsEllipseItem, QGridLayout,
+    QGraphicsRectItem, QGraphicsTextItem, QLabel, QMenu, QWidgetAction,
 )
 
 from ..aesthetics import FColor
-from ..graphics_scene import MouseDragEvent
+from ..graphics_scene import MouseClickEvent, MouseDragEvent
+from ..ctrl_widgets import SmartLineEdit
 from .graphics_item import GraphicsObject
+
+
+class RoiCtrlWidget(QFrame):
+    """RoiCtrlWidget class.
+
+    Widget which controls a single ROI.
+    """
+    _pos_validator = QIntValidator(-10000, 10000)
+    _size_validator = QIntValidator(1, 10000)
+
+    def __init__(self, roi: "ROIBase", **kwargs):
+        super().__init__(**kwargs)
+
+        self._roi = roi
+
+        x, y, w, h = roi.rect()
+        self._width_le = SmartLineEdit(str(w))
+        self._width_le.setValidator(self._size_validator)
+        self._height_le = SmartLineEdit(str(h))
+        self._height_le.setValidator(self._size_validator)
+        self._px_le = SmartLineEdit(str(x))
+        self._px_le.setValidator(self._pos_validator)
+        self._py_le = SmartLineEdit(str(y))
+        self._py_le.setValidator(self._pos_validator)
+
+        self._line_edits = (self._width_le, self._height_le,
+                            self._px_le, self._py_le)
+
+        self.initUI()
+        self.initConnections()
+
+    def initUI(self):
+        """Override."""
+        layout = QGridLayout(self)
+
+        layout.addWidget(QLabel("w: "), 0, 0, Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self._width_le, 0, 1)
+        layout.addWidget(QLabel("h: "), 0, 2, Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self._height_le, 0, 3)
+        layout.addWidget(QLabel("x: "), 1, 0, Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self._px_le, 1, 1)
+        layout.addWidget(QLabel("y: "), 1, 2, Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self._py_le, 1, 3)
+
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(2)
+
+    def initConnections(self):
+        """Override."""
+        self._width_le.value_changed_sgn.connect(self.onRoiSizeEdited)
+        self._height_le.value_changed_sgn.connect(self.onRoiSizeEdited)
+        self._px_le.value_changed_sgn.connect(self.onRoiPositionEdited)
+        self._py_le.value_changed_sgn.connect(self.onRoiPositionEdited)
+
+        self._roi.region_change_finished_sgn.connect(
+            self.onRoiGeometryChangeFinished)
+        self._roi.visibleChanged.connect(
+            lambda: self.setEditable(self._roi.isVisible()))
+        self._roi.visibleChanged.emit()
+
+    def onRoiPositionEdited(self, value):
+        x, y, w, h = self._roi.rect()
+        if self.sender() == self._px_le:
+            x = int(value)
+        elif self.sender() == self._py_le:
+            y = int(value)
+
+        # If 'update' == False, the state change will be remembered
+        # but not processed and no signals will be emitted.
+        self._roi.setPos(x, y)
+        # trigger region_changed_sgn which moves the handler(s)
+        # finish=False -> region_change_finished_sgn will not emit, which
+        # otherwise triggers infinite recursion
+        self._roi.stateChanged(finish=False)
+
+    def onRoiSizeEdited(self, value):
+        x, y, w, h = self._roi.rect()
+        if self.sender() == self._width_le:
+            w = int(float(value))
+        elif self.sender() == self._height_le:
+            h = int(float(value))
+
+        # If 'update' == False, the state change will be remembered
+        # but not processed and no signals will be emitted.
+        self._roi.setRect(x, y, w, h)
+        # trigger region_changed_sgn which moves the handler(s)
+        # finish=False -> region_change_finished_sgn will not emit, which
+        # otherwise triggers infinite recursion
+        self._roi.stateChanged(finish=False)
+
+    def onRoiGeometryChangeFinished(self):
+        """Connect to the signal from an ROI object."""
+        x, y, w, h = self._roi.rect()
+        self._updateEditParameters(x, y, w, h)
+
+    def notifyRoiParams(self):
+        self._roi.region_change_finished_sgn.emit()
+
+    def _updateEditParameters(self, x, y, w, h):
+        self._px_le.setText(str(x))
+        self._py_le.setText(str(y))
+        self._width_le.setText(str(w))
+        self._height_le.setText(str(h))
+
+    def reloadRoiParams(self, cfg):
+        state, _, x, y, w, h = [v.strip() for v in cfg.split(',')]
+
+        self._px_le.setText(x)
+        self._py_le.setText(y)
+        self._width_le.setText(w)
+        self._height_le.setText(h)
+
+    def setEditable(self, editable):
+        for w in self._line_edits:
+            w.setDisabled(not editable)
 
 
 class ROIBase(GraphicsObject):
@@ -54,6 +170,19 @@ class ROIBase(GraphicsObject):
 
         self._pen = FColor.mkPen("k")
         self._hover_pen = FColor.mkPen("w")
+
+        self._menu = self._createContextMenu()
+
+    def _createContextMenu(self):
+        root = QMenu()
+
+        menu = root.addMenu("Geometry")
+        menu.setObjectName("Geometry")
+        action = QWidgetAction(root)
+        action.setDefaultWidget(RoiCtrlWidget(self))
+        menu.addAction(action)
+
+        return root
 
     def label(self) -> str:
         return self._label
@@ -164,6 +293,11 @@ class ROIBase(GraphicsObject):
     def region(self) -> tuple:
         """Returns the geometry parameters for querying region of interest."""
         raise NotImplementedError
+
+    def mouseClickEvent(self, ev: MouseClickEvent):
+        if ev.button() == Qt.MouseButton.RightButton:
+            ev.accept()
+            self._menu.popup(ev.screenPos())
 
     def boundingRect(self) -> QRectF:
         """Override."""

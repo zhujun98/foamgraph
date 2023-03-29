@@ -14,7 +14,6 @@ from foamgraph import (
     AbstractScene, ImageView, mkQApp, GraphView
 )
 from foamgraph.algorithm import extract_rect_roi
-from foamgraph.ctrl_widgets import RoiCtrlWidgetGroup
 
 from consumer import Consumer
 
@@ -60,15 +59,12 @@ class ImageAnalysisScene(AbstractScene):
         super().__init__(*args, **kwargs)
 
         self._image = ImageAnalysis(parent=self)
-        self._roi_ctrl = RoiCtrlWidgetGroup(parent=self)
         self._roi_monitors = []
 
         roi1 = self._image.addRectROI("ROI1", 0, 0, 100, 100)
-        self._roi_ctrl.addROI("ROI1", roi1)
         self._roi_monitors.append(RoiProjectionMonitor(roi1, parent=self))
 
         roi2 = self._image.addEllipseROI("ROI2", 10, 10, 100, 100)
-        self._roi_ctrl.addROI("ROI2", roi2)
         self._roi_monitors.append(RoiProjectionMonitor(roi2, parent=self))
 
         self.initUI()
@@ -86,7 +82,6 @@ class ImageAnalysisScene(AbstractScene):
 
         layout = QVBoxLayout()
         layout.addWidget(self._image, 5)
-        layout.addWidget(self._roi_ctrl, 1)
         layout.addLayout(h_layout, 2)
 
         self._cw = QFrame()
