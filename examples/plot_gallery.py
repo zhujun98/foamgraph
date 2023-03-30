@@ -8,7 +8,7 @@ Author: Jun Zhu
 from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QGridLayout
 from foamgraph import (
-    __version__, AbstractScene, FColor, mkQApp, GraphView, TimedGraphView
+    LiveWindow, FColor, mkQApp, GraphView, TimedGraphView
 )
 
 from consumer import Consumer
@@ -194,16 +194,12 @@ class StemPlot(GraphView):
         self._plot2.setData(data['x'], data['y2'])
 
 
-class PlotGalleryScene(AbstractScene):
-    _title = "Plot gallery"
+class PlotGalleryWindow(LiveWindow):
 
     _TOTAL_W, _TOTAL_H = 1440, 1080
 
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
-        super().__init__(*args, **kwargs)
-
-        self.statusBar().showMessage(f"foamgraph {__version__}")
+    def __init__(self):
+        super().__init__("Plot gallery")
 
         self._plots = [
             ShadedPlot(parent=self),
@@ -219,9 +215,6 @@ class PlotGalleryScene(AbstractScene):
 
         self.initUI()
         self.initConnections()
-
-        self.resize(self._TOTAL_W, self._TOTAL_H)
-        self.setMinimumSize(int(0.6 * self._TOTAL_W), int(0.6 * self._TOTAL_H))
 
         self._timer = QTimer()
         self._timer.timeout.connect(self.updateWidgetsF)
@@ -239,15 +232,18 @@ class PlotGalleryScene(AbstractScene):
         self._cw.setLayout(layout)
         self.setCentralWidget(self._cw)
 
+        self.resize(self._TOTAL_W, self._TOTAL_H)
+        self.setMinimumSize(int(0.6 * self._TOTAL_W), int(0.6 * self._TOTAL_H))
+
     def initConnections(self):
         """Override."""
         ...
 
 
 if __name__ == "__main__":
-    scene = PlotGalleryScene()
+    win = PlotGalleryWindow()
 
-    consumer = Consumer(scene.queue)
+    consumer = Consumer(win.queue)
     consumer.start()
 
     app.exec()

@@ -5,11 +5,9 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-import pkg_resources
-
 from .backend import QtCore, QtGui, QtWidgets, mkQApp
 
-from .scenes import AbstractScene
+from .live_window import LiveWindow
 from .aesthetics import FColor, createIconButton
 from .graph_view import (
     GraphView, ImageView, TimedGraphView, TimedImageView
@@ -18,5 +16,4 @@ from .ctrl_widgets import (
     SmartLineEdit, SmartStringLineEdit, SmartBoundaryLineEdit,
     SmartIdLineEdit, SmartSliceLineEdit
 )
-
-__version__ = pkg_resources.get_distribution('foamgraph').version
+from .version import __version__
