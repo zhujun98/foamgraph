@@ -24,7 +24,7 @@ As of now, `foamgraph` has almost evolved into its own implementation completely
 It's time to decide the direction for future development. Since there are already
 many excellent GUI libraries around, `foamgraph` should and will do something different.
 
-...
+<img src="usecase.png" width="640"/>
 
 Nevertheless, when integrating GUI into a real-time data analysis pipeline, 
 there are a couple of things to be taken into account:
@@ -96,3 +96,15 @@ python examples/image_analysis.py
 ```
 
 <img src="https://github.com/zhujun98/foam-demo/blob/main/foamgraph/image_analysis.gif" width="640"/>
+
+
+## Benchmarks
+
+The benchmark was performed on a Apple M1 Pro 16GB with the GUI geometry of 800 x 600.
+
+| Plot Type | Description                | FPS    |
+|-----------|----------------------------|--------|
+| Curve     | 10000 points               | 300    |
+| Scatter   | 10000 points               | 140    |
+| Bar       | 500 bars                   | 350    |
+| Image     | 1280 x 1024                | 92     |

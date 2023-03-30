@@ -34,7 +34,7 @@ class BenchmarkPlotItemSpeed:
         if pyqtgraph:
             import pyqtgraph as pg
             self._widget = pg.plot()
-            if plot_type == "line":
+            if plot_type == "curve":
                 self._graph = pg.PlotCurveItem()
             elif plot_type == "scatter":
                 self._graph = pg.ScatterPlotItem()
@@ -62,7 +62,7 @@ class BenchmarkPlotItemSpeed:
             self._widget = GraphView()
             self._widget.addLegend()
 
-            if plot_type == "line":
+            if plot_type == "curve":
                 self._graph = self._widget.addCurvePlot(label=plot_type)
             elif plot_type == "scatter":
                 self._graph = self._widget.addScatterPlot(label=plot_type)
@@ -74,6 +74,10 @@ class BenchmarkPlotItemSpeed:
             else:
                 raise ValueError(f"Unsupported plot type: {plot_type}")
         self._plot_type = plot_type
+
+        screen_geometry = self._widget.screen().geometry()
+        wc, hc = int(screen_geometry.width() / 2), int(screen_geometry.height() / 2)
+        self._widget.setGeometry(wc - 400, hc - 300, 800, 600)
 
         self._prev_t = None
         self._count = 0
