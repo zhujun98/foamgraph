@@ -13,9 +13,8 @@ from foamgraph.backend.QtWidgets import (
     QCheckBox, QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QMainWindow,
     QPushButton, QTabWidget, QVBoxLayout
 )
-from foamgraph import (
-    __version__, mkQApp, GraphView
-)
+from foamgraph import mkQApp, GraphView
+from foamgraph.version import __version__
 
 app = mkQApp()
 

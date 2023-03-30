@@ -5,10 +5,9 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QGridLayout
 from foamgraph import (
-    __version__, AbstractScene, FColor, mkQApp, GraphView, TimedGraphView
+    LiveWindow, FColor, mkQApp, GraphView, TimedGraphView
 )
 
 from consumer import Consumer
@@ -123,7 +122,7 @@ class DoubleYPlot(GraphView):
         super().__init__(parent=parent)
 
         self.setTitle('Double-y plot')
-        self.setXYLabels("x (arb. u.)", "y (arb. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arg. u.)")
 
         self._plot = self.addCurvePlot(pen=FColor.mkPen('Brown'))
         self._plot1 = self.addScatterPlot(
@@ -194,16 +193,10 @@ class StemPlot(GraphView):
         self._plot2.setData(data['x'], data['y2'])
 
 
-class PlotGalleryScene(AbstractScene):
-    _title = "Plot gallery"
+class PlotGalleryWindow(LiveWindow):
 
-    _TOTAL_W, _TOTAL_H = 1440, 1080
-
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
-        super().__init__(*args, **kwargs)
-
-        self.statusBar().showMessage(f"foamgraph {__version__}")
+    def __init__(self):
+        super().__init__("Plot gallery")
 
         self._plots = [
             ShadedPlot(parent=self),
@@ -217,15 +210,7 @@ class PlotGalleryScene(AbstractScene):
             StemPlot(parent=self)
         ]
 
-        self.initUI()
-        self.initConnections()
-
-        self.resize(self._TOTAL_W, self._TOTAL_H)
-        self.setMinimumSize(int(0.6 * self._TOTAL_W), int(0.6 * self._TOTAL_H))
-
-        self._timer = QTimer()
-        self._timer.timeout.connect(self.updateWidgetsF)
-        self._timer.start(100)
+        self.init()
 
     def initUI(self):
         """Override."""
@@ -239,15 +224,20 @@ class PlotGalleryScene(AbstractScene):
         self._cw.setLayout(layout)
         self.setCentralWidget(self._cw)
 
+        w, h = 1440, 1080
+        self.resize(w, h)
+        self.setMinimumSize(int(0.6 * w), int(0.6 * h))
+
     def initConnections(self):
         """Override."""
         ...
 
 
 if __name__ == "__main__":
-    scene = PlotGalleryScene()
+    gui = PlotGalleryWindow()
+    consumer = Consumer(gui.queue)
 
-    consumer = Consumer(scene.queue)
+    gui.start()
     consumer.start()
 
     app.exec()

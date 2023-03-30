@@ -7,10 +7,9 @@ Author: Jun Zhu
 """
 import numpy as np
 
-from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 from foamgraph import (
-    __version__, AbstractScene, ImageView, mkQApp, GraphView
+    LiveWindow, ImageView, mkQApp, GraphView
 )
 from foamgraph.algorithm import extract_rect_roi
 
@@ -53,35 +52,25 @@ class RoiProjectionMonitor(GraphView):
             self._plot.setData(np.arange(len(proj)), proj)
 
 
-class ImageAnalysisScene(AbstractScene):
-    _title = "Image Analysis"
-
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
-        super().__init__(*args, **kwargs)
-
-        self.statusBar().showMessage(f"foamgraph {__version__}")
+class ImageAnalysisWindow(LiveWindow):
+    def __init__(self):
+        super().__init__("Image Analysis")
 
         self._image = ImageAnalysis(parent=self)
-        self._roi_monitors = []
-
         roi1 = self._image.addRectROI(0, 0, 100, 100)
-        self._roi_monitors.append(RoiProjectionMonitor(roi1, parent=self))
-
         roi2 = self._image.addEllipseROI(10, 10, 100, 100)
-        self._roi_monitors.append(RoiProjectionMonitor(roi2, parent=self))
 
-        self.initUI()
-        self.initConnections()
+        self._plots = [
+            RoiProjectionMonitor(roi1, parent=self),
+            RoiProjectionMonitor(roi2, parent=self)
+        ]
 
-        self._timer = QTimer()
-        self._timer.timeout.connect(self.updateWidgetsF)
-        self._timer.start(100)
+        self.init()
 
     def initUI(self):
         """Override."""
         h_layout = QHBoxLayout()
-        for mon in self._roi_monitors:
+        for mon in self._plots:
             h_layout.addWidget(mon)
 
         layout = QVBoxLayout()
@@ -102,9 +91,10 @@ class ImageAnalysisScene(AbstractScene):
 
 
 if __name__ == "__main__":
-    scene = ImageAnalysisScene()
+    gui = ImageAnalysisWindow()
+    consumer = Consumer(gui.queue)
 
-    consumer = Consumer(scene.queue)
+    gui.start()
     consumer.start()
 
     app.exec()
