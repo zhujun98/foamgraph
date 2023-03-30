@@ -3,9 +3,7 @@ import time
 import weakref
 
 from .backend.QtCore import pyqtSignal, QLineF, QRect, Qt
-from .backend.QtWidgets import (
-    QGraphicsScene, QGraphicsSceneMouseEvent, QMenu
-)
+from .backend.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent
 
 
 class MouseEventState(Enum):
@@ -16,43 +14,39 @@ class MouseEventState(Enum):
 
 
 class MouseDragEvent:
+    """Mouse event delivered by :class:`GraphicsScene` when a item is dragged.
     """
-    Instances of this class are delivered to items in a :class:`GraphicsScene <pyqtgraph.GraphicsScene>`
-    via their mouseDragEvent() method when the item is being mouse-dragged.
-
-    """
-
-    def __init__(self, moveEvent, pressEvent, lastEvent,
+    def __init__(self, move_ev, press_ev, last_ev,
                  state: MouseEventState = MouseEventState.ON):
         self._state = state
         self.accepted = False
-        self.currentItem = None
-        self._buttonDownScenePos = {}
-        self._buttonDownScreenPos = {}
+        self.current_item = None
+        self._button_down_scene_pos = {}
+        self._button_down_screen_pos = {}
         for btn in [Qt.MouseButton.LeftButton,
                     Qt.MouseButton.MiddleButton,
                     Qt.MouseButton.RightButton]:
-            self._buttonDownScenePos[btn] = moveEvent.buttonDownScenePos(btn)
-            self._buttonDownScreenPos[btn] = moveEvent.buttonDownScreenPos(btn)
-        self._scenePos = moveEvent.scenePos()
-        self._screenPos = moveEvent.screenPos()
-        if lastEvent is None:
-            self._lastScenePos = pressEvent.scenePos()
-            self._lastScreenPos = pressEvent.screenPos()
+            self._button_down_scene_pos[btn] = move_ev.buttonDownScenePos(btn)
+            self._button_down_screen_pos[btn] = move_ev.buttonDownScreenPos(btn)
+        self._scene_pos = move_ev.scenePos()
+        self._screen_pos = move_ev.screenPos()
+        if last_ev is None:
+            self._last_scene_pos = press_ev.scenePos()
+            self._last_screen_pos = press_ev.screenPos()
         else:
-            self._lastScenePos = lastEvent.scenePos()
-            self._lastScreenPos = lastEvent.screenPos()
-        self._buttons = moveEvent.buttons()
-        self._button = pressEvent.button()
-        self._modifiers = moveEvent.modifiers()
-        self.acceptedItem = None
+            self._last_scene_pos = last_ev.scenePos()
+            self._last_screen_pos = last_ev.screenPos()
+        self._buttons = move_ev.buttons()
+        self._button = press_ev.button()
+        self._modifiers = move_ev.modifiers()
+        self.accepted_item = None
 
     def accept(self):
         """An item should call this method if it can handle the event.
 
         This will prevent the event being delivered to any other items."""
         self.accepted = True
-        self.acceptedItem = self.currentItem
+        self.accepted_item = self.current_item
 
     def ignore(self):
         """An item should call this method if it cannot handle the event.
@@ -65,11 +59,11 @@ class MouseDragEvent:
 
     def scenePos(self):
         """Return the current scene position of the mouse."""
-        return self._scenePos
+        return self._scene_pos
 
     def screenPos(self):
         """Return the current screen position (pixels relative to widget) of the mouse."""
-        return self._screenPos
+        return self._screen_pos
 
     def buttonDownScenePos(self, btn=None):
         """
@@ -78,7 +72,7 @@ class MouseDragEvent:
         """
         if btn is None:
             btn = self.button()
-        return self._buttonDownScenePos[btn]
+        return self._button_down_scene_pos[btn]
 
     def buttonDownScreenPos(self, btn=None):
         """
@@ -87,19 +81,19 @@ class MouseDragEvent:
         """
         if btn is None:
             btn = self.button()
-        return self._buttonDownScreenPos[btn]
+        return self._button_down_screen_pos[btn]
 
     def lastScenePos(self):
         """
         Return the scene position of the mouse immediately prior to this event.
         """
-        return self._lastScenePos
+        return self._last_scene_pos
 
     def lastScreenPos(self):
         """
         Return the screen position of the mouse immediately prior to this event.
         """
-        return self._lastScreenPos
+        return self._last_screen_pos
 
     def buttons(self):
         """
@@ -120,14 +114,14 @@ class MouseDragEvent:
         Return the current position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return self.currentItem.mapFromScene(self._scenePos)
+        return self.current_item.mapFromScene(self._scene_pos)
 
     def lastPos(self):
         """
         Return the previous position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return self.currentItem.mapFromScene(self._lastScenePos)
+        return self.current_item.mapFromScene(self._last_scene_pos)
 
     def buttonDownPos(self, btn=None):
         """
@@ -136,7 +130,7 @@ class MouseDragEvent:
         """
         if btn is None:
             btn = self.button()
-        return self.currentItem.mapFromScene(self._buttonDownScenePos[btn])
+        return self.current_item.mapFromScene(self._button_down_scene_pos[btn])
 
     def entering(self):
         """Whether this event is the first one since a drag was initiated."""
@@ -147,9 +141,9 @@ class MouseDragEvent:
         return self._state == MouseEventState.EXIT
 
     def __repr__(self):
-        if self.currentItem is None:
-            lp = self._lastScenePos
-            p = self._scenePos
+        if self.current_item is None:
+            lp = self._last_scene_pos
+            p = self._scene_pos
         else:
             lp = self.lastPos()
             p = self.pos()
@@ -172,22 +166,22 @@ class MouseClickEvent:
 
     def __init__(self, pressEvent, double=False):
         self.accepted = False
-        self.currentItem = None
+        self.current_item = None
         self._double = double
-        self._scenePos = pressEvent.scenePos()
-        self._screenPos = pressEvent.screenPos()
+        self._scene_pos = pressEvent.scenePos()
+        self._screen_pos = pressEvent.screenPos()
         self._button = pressEvent.button()
         self._buttons = pressEvent.buttons()
         self._modifiers = pressEvent.modifiers()
         self._time = time.time()
-        self.acceptedItem = None
+        self.accepted_item = None
 
     def accept(self):
         """An item should call this method if it can handle the event.
 
         This will prevent the event being delivered to any other items."""
         self.accepted = True
-        self.acceptedItem = self.currentItem
+        self.accepted_item = self.current_item
 
     def ignore(self):
         """An item should call this method if it cannot handle the event.
@@ -200,11 +194,11 @@ class MouseClickEvent:
 
     def scenePos(self):
         """Return the current scene position of the mouse."""
-        return self._scenePos
+        return self._scene_pos
 
     def screenPos(self):
         """Return the current screen position (pixels relative to widget) of the mouse."""
-        return self._screenPos
+        return self._screen_pos
 
     def buttons(self):
         """
@@ -228,14 +222,14 @@ class MouseClickEvent:
         Return the current position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return self.currentItem.mapFromScene(self._scenePos)
+        return self.current_item.mapFromScene(self._scene_pos)
 
     def lastPos(self):
         """
         Return the previous position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return self.currentItem.mapFromScene(self._lastScenePos)
+        return self.current_item.mapFromScene(self._last_scene_pos)
 
     def modifiers(self):
         """Return any keyboard modifiers currently pressed.
@@ -245,8 +239,8 @@ class MouseClickEvent:
 
     def __repr__(self):
         try:
-            if self.currentItem is None:
-                p = self._scenePos
+            if self.current_item is None:
+                p = self._scene_pos
             else:
                 p = self.pos()
             return "<MouseClickEvent (%g,%g) button=%d>" % (p.x(), p.y(), int(self.button()))
@@ -283,14 +277,14 @@ class HoverEvent:
         self._state = state
         self.enter = False
         self.exit = False
-        self.__clickItems = weakref.WeakValueDictionary()
-        self.__dragItems = weakref.WeakValueDictionary()
-        self.currentItem = None
+        self.__click_items = weakref.WeakValueDictionary()
+        self.__drag_items = weakref.WeakValueDictionary()
+        self.current_item = None
         if ev is not None:
-            self._scenePos = ev.scenePos()
-            self._screenPos = ev.screenPos()
-            self._lastScenePos = ev.lastScenePos()
-            self._lastScreenPos = ev.lastScreenPos()
+            self._scene_pos = ev.scenePos()
+            self._screen_pos = ev.screenPos()
+            self._last_scene_pos = ev.lastScenePos()
+            self._last_screen_pos = ev.lastScreenPos()
             self._buttons = ev.buttons()
             self._modifiers = ev.modifiers()
         else:
@@ -315,8 +309,8 @@ class HoverEvent:
         if self._state == MouseEventState.EXIT:
             return False
 
-        if button not in self.__clickItems:
-            self.__clickItems[button] = self.currentItem
+        if button not in self.__click_items:
+            self.__click_items[button] = self.current_item
             return True
         return False
 
@@ -331,26 +325,26 @@ class HoverEvent:
         if self._state == MouseEventState.EXIT:
             return False
 
-        if button not in self.__dragItems:
-            self.__dragItems[button] = self.currentItem
+        if button not in self.__drag_items:
+            self.__drag_items[button] = self.current_item
             return True
         return False
 
     def scenePos(self):
         """Return the current scene position of the mouse."""
-        return self._scenePos
+        return self._scene_pos
 
     def screenPos(self):
         """Return the current screen position of the mouse."""
-        return self._screenPos
+        return self._screen_pos
 
     def lastScenePos(self):
         """Return the previous scene position of the mouse."""
-        return self._lastScenePos
+        return self._last_scene_pos
 
     def lastScreenPos(self):
         """Return the previous screen position of the mouse."""
-        return self._lastScreenPos
+        return self._last_screen_pos
 
     def buttons(self):
         """
@@ -364,22 +358,22 @@ class HoverEvent:
         Return the current position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return self.currentItem.mapFromScene(self._scenePos)
+        return self.current_item.mapFromScene(self._scene_pos)
 
     def lastPos(self):
         """
         Return the previous position of the mouse in the coordinate system of the item
         that the event was delivered to.
         """
-        return self.currentItem.mapFromScene(self._lastScenePos)
+        return self.current_item.mapFromScene(self._last_scene_pos)
 
     def __repr__(self):
         if self.exit:
             return "<HoverEvent exit=True>"
 
-        if self.currentItem is None:
-            lp = self._lastScenePos
-            p = self._scenePos
+        if self.current_item is None:
+            lp = self._last_scene_pos
+            p = self._scene_pos
         else:
             lp = self.lastPos()
             p = self.pos()
@@ -393,10 +387,10 @@ class HoverEvent:
         return self._modifiers
 
     def clickItems(self):
-        return self.__clickItems
+        return self.__click_items
 
     def dragItems(self):
-        return self.__dragItems
+        return self.__drag_items
 
 
 class GraphicsScene(QGraphicsScene):
@@ -455,32 +449,29 @@ class GraphicsScene(QGraphicsScene):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self._clickRadius = 2
-        self._moveDistance = 5
+        self._click_radius = 2
+        self._move_distance = 5
 
-        self.clickEvents = []
-        self.dragButtons = []
-        self.mouseGrabber = None
-        self.dragItem = None
-        self.lastDrag = None
-        self.hoverItems = weakref.WeakKeyDictionary()
-        self.lastHoverEvent = None
-        self.minDragTime = 0.5  # drags shorter than 0.5 sec are interpreted as clicks
-        
-        self.contextMenu = []
+        self.click_events = []
+        self.drag_buttons = []
+        self.drag_item = None
+        self.last_drag = None
+        self.hover_items = weakref.WeakKeyDictionary()
+        self.last_hover_event = None
+        self.min_drag_time = 0.5  # drags shorter than 0.5 sec are interpreted as clicks
 
     def mousePressEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
         super().mousePressEvent(ev)
 
         if self.mouseGrabberItem() is None:  # nobody claimed press; we are free to generate drag/click events
-            if self.lastHoverEvent is not None:
+            if self.last_hover_event is not None:
                 # If the mouse has moved since the last hover event, send a new one.
                 # This can happen if a context menu is open while the mouse is moving.
-                if ev.scenePos() != self.lastHoverEvent.scenePos():
+                if ev.scenePos() != self.last_hover_event.scenePos():
                     self.sendHoverEvents(ev)
             
-            self.clickEvents.append(MouseClickEvent(ev))
+            self.click_events.append(MouseClickEvent(ev))
             
             # set focus on the topmost focusable item under this click
             items = self.items(ev.scenePos())
@@ -511,19 +502,19 @@ class GraphicsScene(QGraphicsScene):
                             Qt.MouseButton.RightButton]:
                     if not (ev.buttons() & btn):
                         continue
-                    if btn not in self.dragButtons:  # see if we've dragged far enough yet
-                        cev = [e for e in self.clickEvents if e.button() == btn]
+                    if btn not in self.drag_buttons:  # see if we've dragged far enough yet
+                        cev = [e for e in self.click_events if e.button() == btn]
                         if cev:
                             cev = cev[0]
                             dist = QLineF(ev.scenePos(), cev.scenePos()).length()
-                            if dist == 0 or (dist < self._moveDistance and now - cev.time() < self.minDragTime):
+                            if dist == 0 or (dist < self._move_distance and now - cev.time() < self.min_drag_time):
                                 continue
                             # If this is the first button to be dragged, then init=True
-                            init = init or (len(self.dragButtons) == 0)
-                            self.dragButtons.append(btn)
+                            init = init or (len(self.drag_buttons) == 0)
+                            self.drag_buttons.append(btn)
 
                 # If we have dragged buttons, deliver a drag event
-                if len(self.dragButtons) > 0:
+                if len(self.drag_buttons) > 0:
                     if self.sendDragEvent(
                             ev, MouseEventState.ENTER if init
                             else MouseEventState.ON):
@@ -532,22 +523,22 @@ class GraphicsScene(QGraphicsScene):
     def mouseReleaseEvent(self, ev: QGraphicsSceneMouseEvent) -> None:
         """Override."""
         if self.mouseGrabberItem() is None:
-            if ev.button() in self.dragButtons:
+            if ev.button() in self.drag_buttons:
                 if self.sendDragEvent(ev, MouseEventState.EXIT):
                     ev.accept()
-                self.dragButtons.remove(ev.button())
+                self.drag_buttons.remove(ev.button())
             else:
-                cev = [e for e in self.clickEvents if e.button() == ev.button()]
+                cev = [e for e in self.click_events if e.button() == ev.button()]
                 if cev:
                     if self.sendClickEvent(cev[0]):
                         ev.accept()
-                    self.clickEvents.remove(cev[0])
+                    self.click_events.remove(cev[0])
 
         if not ev.buttons():
-            self.dragItem = None
-            self.dragButtons = []
-            self.clickEvents = []
-            self.lastDrag = None
+            self.drag_item = None
+            self.drag_buttons = []
+            self.click_events = []
+            self.last_drag = None
 
         super().mouseReleaseEvent(ev)
         
@@ -558,7 +549,7 @@ class GraphicsScene(QGraphicsScene):
         super().mouseDoubleClickEvent(ev)
 
         if self.mouseGrabberItem() is None:  # nobody claimed press; we are free to generate drag/click events
-            self.clickEvents.append(MouseClickEvent(ev, double=True))
+            self.click_events.append(MouseClickEvent(ev, double=True))
         
     def sendHoverEvents(self, ev: QGraphicsSceneMouseEvent,
                         state: MouseEventState = MouseEventState.ON):
@@ -576,13 +567,13 @@ class GraphicsScene(QGraphicsScene):
             items = self.itemsNearEvent(event, hoverable=True)
             self.mouse_hover_sgn.emit(items)
             
-        prev_items = list(self.hoverItems.keys())
+        prev_items = list(self.hover_items.keys())
             
         for item in items:
             if hasattr(item, 'hoverEvent'):
-                event.currentItem = item
-                if item not in self.hoverItems:
-                    self.hoverItems[item] = None
+                event.current_item = item
+                if item not in self.hover_items:
+                    self.hover_items[item] = None
                     event.enter = True
                 else:
                     prev_items.remove(item)
@@ -593,11 +584,11 @@ class GraphicsScene(QGraphicsScene):
         event.enter = False
         event.exit = True
         for item in prev_items:
-            event.currentItem = item
+            event.current_item = item
 
             if item.scene() is self:
                 item.hoverEvent(event)
-            del self.hoverItems[item]
+            del self.hover_items[item]
         
         # Update last hover event unless:
         #   - mouse is dragging (move+buttons); in this case we want the dragged
@@ -605,71 +596,71 @@ class GraphicsScene(QGraphicsScene):
         #   - event is not a mouse event (QEvent.Leave sometimes appears here)
         if (ev.type() == ev.Type.GraphicsSceneMousePress or
                 (ev.type() == ev.Type.GraphicsSceneMouseMove and not ev.buttons())):
-            self.lastHoverEvent = event  # save this so we can ask about accepted events later.
+            self.last_hover_event = event  # save this so we can ask about accepted events later.
 
     def sendDragEvent(self,
                       ev: QGraphicsSceneMouseEvent,
                       state: MouseEventState):
         """Send out a MouseDragEvent.
 
-        to the current dragItem or to items near the beginning of the drag.
+        to the current drag_item or to items near the beginning of the drag.
 
         :param ev:
         :param state:
         """
-        event = MouseDragEvent(ev, self.clickEvents[0], self.lastDrag, state=state)
-        if state == MouseEventState.ENTER and self.dragItem is None:
-            if self.lastHoverEvent is not None:
-                acceptedItem = self.lastHoverEvent.dragItems().get(event.button(), None)
+        event = MouseDragEvent(ev, self.click_events[0], self.last_drag, state=state)
+        if state == MouseEventState.ENTER and self.drag_item is None:
+            if self.last_hover_event is not None:
+                accepted_item = self.last_hover_event.dragItems().get(event.button(), None)
             else:
-                acceptedItem = None
+                accepted_item = None
                 
-            if acceptedItem is not None and acceptedItem.scene() is self:
-                self.dragItem = acceptedItem
-                event.currentItem = self.dragItem
-                self.dragItem.mouseDragEvent(event)
+            if accepted_item is not None and accepted_item.scene() is self:
+                self.drag_item = accepted_item
+                event.current_item = self.drag_item
+                self.drag_item.mouseDragEvent(event)
                     
             else:
                 for item in self.itemsNearEvent(event):
                     if not item.isVisible() or not item.isEnabled():
                         continue
                     if hasattr(item, 'mouseDragEvent'):
-                        event.currentItem = item
+                        event.current_item = item
                         item.mouseDragEvent(event)
                         if event.isAccepted():
-                            self.dragItem = item
+                            self.drag_item = item
                             if item.flags() & item.GraphicsItemFlag.ItemIsFocusable:
                                 item.setFocus(Qt.FocusReason.MouseFocusReason)
                             break
-        elif self.dragItem is not None:
-            event.currentItem = self.dragItem
-            self.dragItem.mouseDragEvent(event)
+        elif self.drag_item is not None:
+            event.current_item = self.drag_item
+            self.drag_item.mouseDragEvent(event)
 
-        self.lastDrag = event
+        self.last_drag = event
         
         return event.isAccepted()
 
     def sendClickEvent(self, ev: QGraphicsSceneMouseEvent):
         # if we are in mid-drag, click events may only go to the dragged item.
-        if self.dragItem is not None and hasattr(self.dragItem, 'MouseDragEvent'):
-            ev.currentItem = self.dragItem
-            self.dragItem.mouseClickEvent(ev)
+        if self.drag_item is not None and hasattr(self.drag_item, 'MouseDragEvent'):
+            ev.current_item = self.drag_item
+            self.drag_item.mouseClickEvent(ev)
             
         # otherwise, search near the cursor
         else:
-            if self.lastHoverEvent is not None:
-                acceptedItem = self.lastHoverEvent.clickItems().get(ev.button(), None)
+            if self.last_hover_event is not None:
+                accepted_item = self.last_hover_event.clickItems().get(ev.button(), None)
             else:
-                acceptedItem = None
-            if acceptedItem is not None:
-                ev.currentItem = acceptedItem
-                acceptedItem.mouseClickEvent(ev)
+                accepted_item = None
+            if accepted_item is not None:
+                ev.current_item = accepted_item
+                accepted_item.mouseClickEvent(ev)
             else:
                 for item in self.itemsNearEvent(ev):
                     if not item.isVisible() or not item.isEnabled():
                         continue
                     if hasattr(item, 'mouseClickEvent'):
-                        ev.currentItem = item
+                        ev.current_item = item
                         item.mouseClickEvent(ev)
 
                         if ev.isAccepted():
@@ -699,7 +690,7 @@ class GraphicsScene(QGraphicsScene):
         """
         view = self.views()[0]
         tr = view.viewportTransform()
-        r = self._clickRadius
+        r = self._click_radius
         rect = view.mapToScene(QRect(0, 0, 2*r, 2*r)).boundingRect()
         
         if hasattr(event, 'buttonDownScenePos'):
