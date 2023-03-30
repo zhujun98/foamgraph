@@ -42,6 +42,10 @@ class LiveWindow(QMainWindow, metaclass=_LiveWindowMeta):
 
         self._queue = deque(maxlen=self._QUEUE_SIZE)
 
+    def init(self):
+        self.initUI()
+        self.initConnections()
+
     @abc.abstractmethod
     def initUI(self):
         """Initialization of UI."""

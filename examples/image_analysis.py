@@ -66,8 +66,7 @@ class ImageAnalysisWindow(LiveWindow):
             RoiProjectionMonitor(roi2, parent=self)
         ]
 
-        self.initUI()
-        self.initConnections()
+        self.init()
 
         self._timer = QTimer()
         self._timer.timeout.connect(self.updateWidgetsF)

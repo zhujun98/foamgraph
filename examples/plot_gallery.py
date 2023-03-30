@@ -196,8 +196,6 @@ class StemPlot(GraphView):
 
 class PlotGalleryWindow(LiveWindow):
 
-    _TOTAL_W, _TOTAL_H = 1440, 1080
-
     def __init__(self):
         super().__init__("Plot gallery")
 
@@ -213,8 +211,7 @@ class PlotGalleryWindow(LiveWindow):
             StemPlot(parent=self)
         ]
 
-        self.initUI()
-        self.initConnections()
+        self.init()
 
         self._timer = QTimer()
         self._timer.timeout.connect(self.updateWidgetsF)
@@ -232,8 +229,9 @@ class PlotGalleryWindow(LiveWindow):
         self._cw.setLayout(layout)
         self.setCentralWidget(self._cw)
 
-        self.resize(self._TOTAL_W, self._TOTAL_H)
-        self.setMinimumSize(int(0.6 * self._TOTAL_W), int(0.6 * self._TOTAL_H))
+        w, h = 1440, 1080
+        self.resize(w, h)
+        self.setMinimumSize(int(0.6 * w), int(0.6 * h))
 
     def initConnections(self):
         """Override."""
