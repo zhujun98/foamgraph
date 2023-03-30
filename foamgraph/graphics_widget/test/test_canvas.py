@@ -97,6 +97,27 @@ class TestGraphViewCanvas:
         # # target rect does not change until setTargetRange is called
         # assert canvas.targetRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
 
+    def test_enable_auto_range(self, canvas):
+        with patch.object(canvas, "updateAutoRange") as patched:
+            assert canvas._auto_range_x
+            canvas.enableAutoRangeX(False)
+            patched.assert_not_called()
+            assert not canvas._auto_range_x
+
+            canvas.enableAutoRangeX(True)
+            patched.assert_called_once()
+            assert canvas._auto_range_y
+
+        with patch.object(canvas, "updateAutoRange") as patched:
+            assert canvas._auto_range_y
+            canvas.enableAutoRangeY(False)
+            patched.assert_not_called()
+            assert not canvas._auto_range_y
+
+            canvas.enableAutoRangeY(True)
+            patched.assert_called_once()
+            assert canvas._auto_range_y
+
     def test_close(self, view, canvas):
         view.addCurvePlot()
         view.addAnnotation()

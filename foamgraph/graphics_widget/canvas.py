@@ -409,6 +409,8 @@ class Canvas(QGraphicsWidget):
         if self._auto_range_x ^ state:
             self._auto_range_x = state
             self.auto_range_x_toggled_sgn.emit(state)
+        if state:
+            self.updateAutoRange()
 
     def enableAutoRangeY(self, state: bool = True) -> None:
         if self._auto_range_y_locked:
@@ -416,6 +418,8 @@ class Canvas(QGraphicsWidget):
         if self._auto_range_y ^ state:
             self._auto_range_y = state
             self.auto_range_y_toggled_sgn.emit(state)
+        if state:
+            self.updateAutoRange()
 
     def linkXTo(self, canvas: "Canvas"):
         """Make X-axis change as X-axis of the given canvas changes."""
