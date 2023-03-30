@@ -45,6 +45,11 @@ class BenchmarkImageViewSpeed:
             self._view = ImageView()
             if grayscale:
                 self._view.setColorMap("grey")
+
+        screen_geometry = self._view.screen().geometry()
+        wc, hc = int(screen_geometry.width() / 2), int(screen_geometry.height() / 2)
+        self._view.setGeometry(wc - 400, hc - 300, 800, 600)
+
         self._view.show()
 
     def start(self):

@@ -3,7 +3,7 @@
 scriptdir=`dirname "$BASH_SOURCE"`
 python ${scriptdir}/benchmark_imageview.py
 
-python ${scriptdir}/benchmark_plotwidget.py scatter 5000
-python ${scriptdir}/benchmark_plotwidget.py line 5000
-python ${scriptdir}/benchmark_plotwidget.py bar 300
-python ${scriptdir}/benchmark_plotwidget.py errorbar 500
+python ${scriptdir}/benchmark_graphview.py curve 5000
+python ${scriptdir}/benchmark_graphview.py scatter 5000
+python ${scriptdir}/benchmark_graphview.py bar 300
+python ${scriptdir}/benchmark_graphview.py errorbar 500
