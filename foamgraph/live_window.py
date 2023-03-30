@@ -6,10 +6,12 @@ Author: Jun Zhu
 """
 import abc
 from collections import deque
+from typing import Optional
 from weakref import WeakKeyDictionary
 
 from .version import __version__
-from .backend.QtCore import QObject, Qt
+from .backend.QtGui import QCloseEvent
+from .backend.QtCore import QObject, Qt, QTimer
 from .backend.QtWidgets import QMainWindow, QWidget
 from .graph_view import GraphicsView
 
@@ -33,7 +35,7 @@ class LiveWindow(QMainWindow, metaclass=_LiveWindowMeta):
         self.statusBar().showMessage(f"foamgraph {__version__}")
 
         self._ctrl_widgets = WeakKeyDictionary()
-        self._graphics_view = WeakKeyDictionary()  # book-keeping plot widgets
+        self._graphics_views = WeakKeyDictionary()
 
         self._cw = QWidget()
         self.setCentralWidget(self._cw)
@@ -42,7 +44,13 @@ class LiveWindow(QMainWindow, metaclass=_LiveWindowMeta):
 
         self._queue = deque(maxlen=self._QUEUE_SIZE)
 
+        self._timer: Optional[QTimer] = None
+
     def init(self):
+        """Initialization of the window.
+
+        Should be called by the __init__ method of the child class.
+        """
         self.initUI()
         self.initConnections()
 
@@ -75,27 +83,40 @@ class LiveWindow(QMainWindow, metaclass=_LiveWindowMeta):
         del self._ctrl_widgets[instance]
 
     def registerGraphicsView(self, instance: GraphicsView):
-        self._graphics_view[instance] = 1
+        self._graphics_views[instance] = 1
 
     def unregisterGraphicsView(self, instance: GraphicsView):
-        del self._graphics_view[instance]
+        del self._graphics_views[instance]
 
-    def updateWidgetsF(self):
-        """Update all the graphics widgets."""
+    def updateGraphicsViews(self):
+        """Update all the graphics views."""
         if len(self._queue) == 0:
             return
 
         data = self._queue.pop()
-        for widget in self._graphics_view:
-            widget.updateF(data)
+        for view in self._graphics_views:
+            view.updateF(data)
 
-    def reset(self):
-        """Reset data in all the widgets."""
-        for widget in self._graphics_view:
-            widget.reset()
+    def start(self, update_interval: int = 10) -> None:
+        """Start updating all the graphics views.
 
-    def closeEvent(self, QCloseEvent):
+        :param update_interval: time interval in milliseconds for updating
+            all the graphics views if there is new data received. The actual
+            interval can be longer if updating takes time longer than the
+            interval.
+        """
+        self._timer = QTimer()
+        self._timer.timeout.connect(self.updateGraphicsViews)
+        self._timer.start(update_interval)
+
+    def reset(self) -> None:
+        """Reset data in all the graphics views."""
+        for view in self._graphics_views:
+            view.reset()
+
+    def closeEvent(self, ev: QCloseEvent):
+        """Override."""
         parent = self.parent()
         if parent is not None:
             parent.unregisterWindow(self)
-        super().closeEvent(QCloseEvent)
+        super().closeEvent(ev)

@@ -5,7 +5,6 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QGridLayout
 from foamgraph import (
     LiveWindow, FColor, mkQApp, GraphView, TimedGraphView
@@ -213,10 +212,6 @@ class PlotGalleryWindow(LiveWindow):
 
         self.init()
 
-        self._timer = QTimer()
-        self._timer.timeout.connect(self.updateWidgetsF)
-        self._timer.start(100)
-
     def initUI(self):
         """Override."""
         layout = QGridLayout()
@@ -239,9 +234,10 @@ class PlotGalleryWindow(LiveWindow):
 
 
 if __name__ == "__main__":
-    win = PlotGalleryWindow()
+    gui = PlotGalleryWindow()
+    consumer = Consumer(gui.queue)
 
-    consumer = Consumer(win.queue)
+    gui.start()
     consumer.start()
 
     app.exec()

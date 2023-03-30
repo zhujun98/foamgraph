@@ -7,7 +7,6 @@ Author: Jun Zhu
 """
 import numpy as np
 
-from foamgraph.backend.QtCore import QTimer
 from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 from foamgraph import (
     LiveWindow, ImageView, mkQApp, GraphView
@@ -68,10 +67,6 @@ class ImageAnalysisWindow(LiveWindow):
 
         self.init()
 
-        self._timer = QTimer()
-        self._timer.timeout.connect(self.updateWidgetsF)
-        self._timer.start(100)
-
     def initUI(self):
         """Override."""
         h_layout = QHBoxLayout()
@@ -96,9 +91,10 @@ class ImageAnalysisWindow(LiveWindow):
 
 
 if __name__ == "__main__":
-    win = ImageAnalysisWindow()
+    gui = ImageAnalysisWindow()
+    consumer = Consumer(gui.queue)
 
-    consumer = Consumer(win.queue)
+    gui.start()
     consumer.start()
 
     app.exec()
