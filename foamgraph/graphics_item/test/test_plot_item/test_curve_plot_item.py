@@ -43,22 +43,19 @@ class TestSimpleCurvePlotItem:
         processEvents()
 
     def test_log_mode(self, view, item):
-        x = np.arange(10).astype(np.float32)
-        y = x * 1.5
+        x = np.arange(11).astype(np.float64)
+        y = x * 10.
         item.setData(x, y)
         processEvents()
 
         # test log mode
         view._cw._onLogXScaleToggled(True)
         processEvents()
-        assert item.boundingRect() == QRectF(0, 0, 1.0, 13.5)
+        assert item.boundingRect() == QRectF(-1., 0., 2., 100.)
 
         view._cw._onLogYScaleToggled(True)
         processEvents()
-
-        assert item.boundingRect().topLeft() == QPointF(0, 0)
-        assert item.boundingRect().bottomRight().x() == 1.0
-        assert 1.2 > item.boundingRect().bottomRight().y() > 1.1
+        assert item.boundingRect() == QRectF(-1., -1., 2., 3.)
 
     def test_bounding_rect_1(self, view, item_type):
         item = item_type()

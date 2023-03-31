@@ -113,7 +113,7 @@ class TestGraphView:
         for i, plot in enumerate(plot_items):
             x = np.arange(20)
             y = np.random.rand(20)
-            # TODO: CI will report segfault with the following line
+            # TODO: CI for PyQt6 will report segfault with the following line
             #       because of ScatterPlotItem.
             # y[-i-1:-1] = np.nan
             if isinstance(plot, ErrorbarPlotItem):

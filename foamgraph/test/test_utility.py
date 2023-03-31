@@ -5,7 +5,8 @@ import math
 import numpy as np
 
 from foamgraph.utility import (
-    normalize_angle, parse_boundary, parse_id, parse_slice, parse_slice_inv
+    array_to_log_scale, normalize_angle, parse_boundary, parse_id,
+    parse_slice, parse_slice_inv
 )
 
 
@@ -110,3 +111,29 @@ def test_normalize_angle():
     assert normalize_angle(-720) == 0
     assert normalize_angle(540) == 180
     assert normalize_angle(181) == -179
+
+
+def test_array_to_log_scale():
+    arr = np.array([0, 1, 10], dtype=np.int64)
+    ret = array_to_log_scale(arr)
+    np.testing.assert_array_equal(ret, [0, 0, 1])
+    assert ret.dtype == np.float64
+    np.testing.assert_array_equal(arr, [0, 1, 10])
+
+    arr = np.array([0, 1, 10], dtype=np.int64)
+    array_to_log_scale(arr, inplace=True)
+    np.testing.assert_array_equal(arr, [0, 1, 10])  # inplace ignored for integer type
+
+    arr = np.array([0, 1, 10], dtype=np.float32)
+    ret = array_to_log_scale(arr)
+    np.testing.assert_array_equal(ret, [-1, 0, 1])
+    np.testing.assert_array_equal(arr, [0, 1, 10])
+    assert ret.dtype == np.float32
+
+    arr = np.array([0, 1, 10], dtype=np.float32)
+    array_to_log_scale(arr, inplace=True)
+    np.testing.assert_array_equal(arr, [-1, -0, 1])
+
+    arr = np.array([-1e-8, 0, 1e-8, 1e-4, 10], dtype=np.float32)
+    ret = array_to_log_scale(arr)
+    np.testing.assert_array_almost_equal(ret, [-9, -9, -8, -4, 1])

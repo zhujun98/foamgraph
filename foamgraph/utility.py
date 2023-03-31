@@ -219,11 +219,19 @@ def normalize_angle(angle: float) -> float:
     return angle
 
 
-def array_to_log_scale(arr: np.ndarray, epsilon: Optional[float] = None)\
-        -> np.ndarray:
+def array_to_log_scale(arr: np.ndarray, epsilon: Optional[float] = None,
+                       *, inplace=False) -> np.ndarray:
     """Convert array result to logarithmic scale."""
-    ret = np.nan_to_num(arr)
-    if epsilon is None:
-        epsilon = 1e-3
+    if arr.dtype.kind in 'iu':
+        ret = arr.astype(np.float64)
+        if epsilon is None:
+            epsilon = 1
+    else:
+        ret = np.nan_to_num(arr, copy=not inplace)
+        if epsilon is None:
+            # make it easy to distinguish between artificial value and
+            # the minimum positive value in the array
+            epsilon = np.min(ret, where=ret > 0, initial=1.) / 10.
+
     ret[ret <= epsilon] = epsilon
-    return np.log10(ret)
+    return np.log10(ret, out=ret)
