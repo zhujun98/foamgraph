@@ -259,7 +259,7 @@ class ErrorbarPlot(GraphViewDemoBase):
         super().__init__(*args, **kwargs)
 
         self.setTitle("Errorbar Plot")
-        self._plot = self.addErrorbarPlot(label="errorbar")
+        self._plot = self.addErrorbarPlot(beam=1, label="errorbar")
 
         data = np.random.normal(size=1000)
         hist, _ = np.histogram(data, bins=40)
@@ -273,7 +273,7 @@ class ErrorbarPlot(GraphViewDemoBase):
             x[:10] = np.nan
         if self._nan_y:
             y[:10] = np.nan
-        self._plot.setData(x, y, y-0.1, y+0.1)
+        self._plot.setData(x, y, y-1., y+1.)
 
 
 class CandlestickPlotControl(GraphControlBase):

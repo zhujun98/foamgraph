@@ -5,6 +5,8 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from typing import Optional
+
 from ...backend.QtGui import QPainter, QPainterPath, QPicture
 from ...backend.QtCore import QPointF, QRectF, Qt
 from ...aesthetics import FColor
@@ -105,3 +107,13 @@ class CandlestickPlotItem(PlotItem):
         if self._graph is None:
             self._prepareGraph()
         self._graph.play(p)
+
+    def drawSample(self, p: Optional[QPainter] = None) -> bool:
+        """Override."""
+        if p is not None:
+            p.setBrush(self._brush)
+            p.setPen(self._pen)
+            # Legend sample has a bounding box of (0, 0, 20, 20)
+            p.drawLine(8, 0, 8, 20)
+            p.drawRect(QRectF(4, 4, 8, 12))
+        return True
