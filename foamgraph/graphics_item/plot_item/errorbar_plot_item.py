@@ -10,6 +10,7 @@ from typing import Optional
 from ...backend.QtCore import QRectF
 from ...backend.QtGui import QPainter, QPainterPath
 from ...aesthetics import FColor
+from ...utility import array_to_log_scale
 from .plot_item import PlotItem
 
 
@@ -80,8 +81,8 @@ class ErrorbarPlotItem(PlotItem):
 
     def transformedData(self) -> tuple:
         """Override."""
-        y_min = self.toLogScale(self._y_min) if self._log_y_mode else self._y_min
-        y_max = self.toLogScale(self._y_max) if self._log_y_mode else self._y_max
+        y_min = array_to_log_scale(self._y_min) if self._log_y_mode else self._y_min
+        y_max = array_to_log_scale(self._y_max) if self._log_y_mode else self._y_max
         return super().transformedData() + (y_min, y_max)
 
     def _prepareGraph(self) -> None:

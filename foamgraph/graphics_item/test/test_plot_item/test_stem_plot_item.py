@@ -39,7 +39,7 @@ def test_plot(item):
 
 
 def test_log_mode(view, item):
-    x = np.arange(10).astype(float)
+    x = np.arange(10).astype(np.float64)
     y = x * 1.5
     item.setData(x, y)
     processEvents()

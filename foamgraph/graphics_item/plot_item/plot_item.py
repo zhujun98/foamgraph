@@ -14,6 +14,7 @@ import numpy as np
 from ...backend.QtGui import QPainter, QPolygonF, QTransform
 from ...backend.QtCore import pyqtSignal, QPointF, QRectF, Qt
 from ...backend.QtWidgets import QGraphicsObject, QGraphicsView
+from ...utility import array_to_log_scale
 
 
 class _PlotItemMeta(type(QGraphicsObject), ABCMeta):
@@ -129,15 +130,8 @@ class PlotItem(QGraphicsObject, metaclass=_PlotItemMeta):
         Child class should re-implement this method if it has a
         different internal data structure.
         """
-        return (self.toLogScale(self._x) if self._log_x_mode else self._x,
-                self.toLogScale(self._y) if self._log_y_mode else self._y)
-
-    @staticmethod
-    def toLogScale(arr: np.ndarray, policy=None) -> np.ndarray:
-        """Convert array result to logarithmic scale."""
-        ret = np.nan_to_num(arr)
-        ret[ret < 0] = 0
-        return np.log10(ret + 1)
+        return (array_to_log_scale(self._x) if self._log_x_mode else self._x,
+                array_to_log_scale(self._y) if self._log_y_mode else self._y)
 
     def label(self) -> str:
         """Label displayed in :class:`LegendWidget`."""

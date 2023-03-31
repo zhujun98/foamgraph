@@ -12,6 +12,7 @@ import numpy as np
 from ...backend.QtGui import QPainter, QPainterPath
 from ...backend.QtCore import QRectF, Qt
 from ...aesthetics import FColor
+from ...utility import array_to_log_scale
 from .plot_item import PlotItem
 
 
@@ -61,8 +62,8 @@ class SimpleCurvePlotItem(PlotItem):
         # inf/nans completely prevent the plot from being displayed starting on
         # Qt version 5.12.3
         # we do not expect to have nan in x
-        return (self.toLogScale(self._x) if self._log_x_mode else self._x,
-                self.toLogScale(self._y)
+        return (array_to_log_scale(self._x) if self._log_x_mode else self._x,
+                array_to_log_scale(self._y)
                 if self._log_y_mode else np.nan_to_num(self._y))
 
     def _prepareGraph(self) -> None:

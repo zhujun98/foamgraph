@@ -12,6 +12,7 @@ import numpy as np
 from ...backend.QtGui import QPainter, QPainterPath, QPolygonF
 from ...backend.QtCore import QPointF, QRectF, Qt
 from ...aesthetics import FColor
+from ...utility import array_to_log_scale
 from .plot_item import PlotItem
 
 
@@ -71,9 +72,9 @@ class ShadedPlotItem(PlotItem):
         # Qt version 5.12.3
         # we do not expect to have nan in x
         return (
-            self.toLogScale(self._x) if self._log_x_mode else self._x,
-            self.toLogScale(self._y1) if self._log_y_mode else np.nan_to_num(self._y1),
-            self.toLogScale(self._y2) if self._log_y_mode else np.nan_to_num(self._y2)
+            array_to_log_scale(self._x) if self._log_x_mode else self._x,
+            array_to_log_scale(self._y1) if self._log_y_mode else np.nan_to_num(self._y1),
+            array_to_log_scale(self._y2) if self._log_y_mode else np.nan_to_num(self._y2)
         )
 
     def _prepareGraph(self) -> None:

@@ -24,7 +24,7 @@ class AxisWidget(GraphicsWidget):
         """
         super().__init__(parent=parent)
 
-        self._range = [0, 1]
+        self._range = (0, 1)
 
         self._label = QGraphicsTextItem(self)
         self._picture = None
@@ -41,10 +41,7 @@ class AxisWidget(GraphicsWidget):
         self._tick_text_offset = (5, 2)  # reserved spacing between text and axis in px
         self._tick_text_width = 30  # Horizontal space reserved for tick text in px
         self._tick_text_height = 10  # Vertical space reserved for tick text in px
-        # Automatically expand text space if the tick strings become too long.
-        self._auto_expand_text_space = True
-        self._tick_font = None  # the font used for tick values. Use None for the default font.
-        self._show_values = True  # indicates whether text is displayed adjacent to ticks.
+
         self._max_tick_level = 2
         self._max_text_level = 2
         # (list of (tick #, % fill) tuples). This structure
@@ -60,20 +57,10 @@ class AxisWidget(GraphicsWidget):
                 (6, 0.2),    # If we already have 6 ticks with text, fill no more than 20% of the axis
                 ]
 
-        self.textWidth = 30  # Keeps track of maximum width / height of tick text
-        self.textHeight = 18
+        self._text_width = 30  # Keeps track of maximum width / height of tick text
+        self._text_height = 18
 
-        # If the user specifies a width / height, remember that setting
-        # indefinitely.
-        self.fixedWidth = None
-        self.fixedHeight = None
-
-        self.labelText = ""
         self._log_scale = False
-
-        self._tickLevels = None  # used to override the automatic ticking system with explicit ticks
-        self._tickSpacing = None  # used to override default tickSpacing method
-        self.scale = 1.0
 
         self.showLabel(False)
 
@@ -83,7 +70,7 @@ class AxisWidget(GraphicsWidget):
         self._tick_label_pen = None
         self.setTickLabelPen(FColor.mkPen('foreground'))
 
-        self._vb = None
+        self._canvas = None
 
         self._menu = self.initMenu()
         self._auto_range_act = self.getMenuAction("AutoRange")
@@ -130,17 +117,6 @@ class AxisWidget(GraphicsWidget):
         self._picture = None
         self.update()
 
-    def setTickFont(self, font):
-        """
-        (QFont or None) Determines the font used for tick values.
-        Use None for the default font.
-        """
-        self._tick_font = font
-        self._picture = None
-        self.prepareGeometryChange()
-
-        self.update()
-
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent) -> None:
         """Override."""
         nudge = 5
@@ -176,7 +152,6 @@ class AxisWidget(GraphicsWidget):
         """Set the text displayed adjacent to the axis."""
         show_label = False
         if text is not None:
-            self.labelText = text
             show_label = True
         if show_label:
             self.showLabel()
@@ -190,17 +165,15 @@ class AxisWidget(GraphicsWidget):
         # changed; we use this to decide whether the item needs to be resized
         # to accomodate.
         if self._orientation == Qt.Orientation.Vertical:
-            mx = max(self.textWidth, x)
-            if mx > self.textWidth or mx < self.textWidth-10:
-                self.textWidth = mx
-                if self._auto_expand_text_space:
-                    self._updateWidth()
+            mx = max(self._text_width, x)
+            if mx > self._text_width or mx < self._text_width - 10:
+                self._text_width = mx
+                self._updateWidth()
         else:
-            mx = max(self.textHeight, x)
-            if mx > self.textHeight or mx < self.textHeight-10:
-                self.textHeight = mx
-                if self._auto_expand_text_space:
-                    self._updateHeight()
+            mx = max(self._text_height, x)
+            if mx > self._text_height or mx < self._text_height - 10:
+                self._text_height = mx
+                self._updateHeight()
 
     def _adjustSize(self):
         if self._orientation == Qt.Orientation.Vertical:
@@ -208,63 +181,30 @@ class AxisWidget(GraphicsWidget):
         else:
             self._updateHeight()
 
-    def setHeight(self, h=None):
-        """Set the height of this axis reserved for ticks and tick labels.
-        The height of the axis label is automatically added.
-
-        If *height* is None, then the value will be determined automatically
-        based on the size of the tick text."""
-        self.fixedHeight = h
-        self._updateHeight()
-
     def _updateHeight(self):
         if not self.isVisible():
             h = 0
         else:
-            if self.fixedHeight is None:
-                if not self._show_values:
-                    h = 0
-                elif self._auto_expand_text_space is True:
-                    h = self.textHeight
-                else:
-                    h = self._tick_text_height
-                h += self._tick_text_offset[1] if self._show_values else 0
-                h += max(0, self._tick_length)
-                if self._label.isVisible():
-                    h += self._label.boundingRect().height() * 0.8
-            else:
-                h = self.fixedHeight
+            h = self._text_height
+
+            h += self._tick_text_offset[1]
+            h += max(0, self._tick_length)
+            if self._label.isVisible():
+                h += self._label.boundingRect().height() * 0.8
 
         self.setMaximumHeight(h)
         self.setMinimumHeight(h)
         self._picture = None
 
-    def setWidth(self, w=None):
-        """Set the width of this axis reserved for ticks and tick labels.
-        The width of the axis label is automatically added.
-
-        If *width* is None, then the value will be determined automatically
-        based on the size of the tick text."""
-        self.fixedWidth = w
-        self._updateWidth()
-
     def _updateWidth(self):
         if not self.isVisible():
             w = 0
         else:
-            if self.fixedWidth is None:
-                if not self._show_values:
-                    w = 0
-                elif self._auto_expand_text_space is True:
-                    w = self.textWidth
-                else:
-                    w = self._tick_text_width
-                w += self._tick_text_offset[0] if self._show_values else 0
-                w += max(0, self._tick_length)
-                if self._label.isVisible():
-                    w += self._label.boundingRect().height() * 0.8  # bounding rect is usually an overestimate
-            else:
-                w = self.fixedWidth
+            w = self._text_width
+            w += self._tick_text_offset[0]
+            w += max(0, self._tick_length)
+            if self._label.isVisible():
+                w += self._label.boundingRect().height() * 0.8  # bounding rect is usually an overestimate
 
         self.setMaximumWidth(w)
         self.setMinimumWidth(w)
@@ -284,17 +224,17 @@ class AxisWidget(GraphicsWidget):
 
     def setRange(self, vmin: float, vmax: float) -> None:
         """Set the range of values displayed by the axis."""
-        self._range = [vmin, vmax]
+        self._range = (vmin, vmax)
         self._picture = None
         self.update()
 
     def linkToCanvas(self, canvas: "Canvas"):
         """Link the axis to a Canvas."""
-        if self._vb is not None:
+        if self._canvas is not None:
             raise RuntimeError(
                 "The axis has already been linked to a Canvas.")
 
-        self._vb = canvas
+        self._canvas = canvas
         if self._orientation == Qt.Orientation.Vertical:
             self._auto_range_act.triggered.connect(
                 lambda s: canvas.enableAutoRangeY(s))
@@ -319,7 +259,7 @@ class AxisWidget(GraphicsWidget):
         self._auto_range_act.triggered.emit(True)
 
     def onCanvasChanged(self) -> None:
-        rect = self._vb.viewRect()
+        rect = self._canvas.viewRect()
         if self._orientation == Qt.Orientation.Vertical:
             vmin, vmax = rect.top(), rect.bottom()
         else:
@@ -332,7 +272,7 @@ class AxisWidget(GraphicsWidget):
 
     def boundingRect(self) -> QRectF:
         """Override."""
-        canvas = self._vb
+        canvas = self._canvas
         if canvas is None or not self._show_grid_act.isChecked():
             rect = self.mapRectFromParent(self.geometry())
             # extend rect if ticks go in negative direction
@@ -357,8 +297,6 @@ class AxisWidget(GraphicsWidget):
             try:
                 picture = QPicture()
                 painter = QPainter(picture)
-                if self._tick_font:
-                    painter.setFont(self._tick_font)
                 specs = self.generateDrawSpecs(painter)
                 if specs is not None:
                     self.drawPicture(painter, *specs)
@@ -383,10 +321,6 @@ class AxisWidget(GraphicsWidget):
                 ...
             ]
         """
-        # First check for override tick spacing
-        if self._tickSpacing is not None:
-            return self._tickSpacing
-
         dif = abs(maxVal - minVal)
         if dif == 0:
             return []
@@ -435,9 +369,6 @@ class AxisWidget(GraphicsWidget):
         """
         minVal, maxVal = sorted((minVal, maxVal))
 
-        minVal *= self.scale
-        maxVal *= self.scale
-
         ticks = []
         tickLevels = self.tickSpacing(minVal, maxVal, size)
         allValues = np.array([])
@@ -448,13 +379,13 @@ class AxisWidget(GraphicsWidget):
             start = (np.ceil((minVal-offset) / spacing) * spacing) + offset
             # determine number of ticks
             num = int((maxVal-start) / spacing) + 1
-            values = (np.arange(num) * spacing + start) / self.scale
+            values = (np.arange(num) * spacing + start)
             # remove any ticks that were present in higher levels
             # we assume here that if the difference between a tick value and a previously seen tick value
             # is less than spacing/100, then they are 'equal' and we can ignore the new tick.
-            values = list(filter(lambda x: all(np.abs(allValues-x) > spacing/self.scale*0.01), values))
+            values = list(filter(lambda x: all(np.abs(allValues-x) > spacing * 0.01), values))
             allValues = np.concatenate([allValues, values])
-            ticks.append((spacing/self.scale, values))
+            ticks.append((spacing, values))
 
         if self._log_scale:
             return self.logTickValues(minVal, maxVal, size, ticks)
@@ -482,7 +413,7 @@ class AxisWidget(GraphicsWidget):
             ticks.append((None, minor))
         return ticks
 
-    def tickStrings(self, values, scale, spacing):
+    def tickStrings(self, values, spacing):
         """Return the strings that should be placed next to ticks. This method is called
         when redrawing the axis and is a good method to override in subclasses.
         The method is called with a list of tick values, a scaling factor (see below), and the
@@ -496,12 +427,12 @@ class AxisWidget(GraphicsWidget):
         thus the tick should display 0.001 * 1000 = 1.
         """
         if self._log_scale:
-            return self.logTickStrings(values, scale, spacing)
+            return self.logTickStrings(values, spacing)
 
-        places = max(0, np.ceil(-np.log10(spacing*scale)))
+        places = max(0, np.ceil(-np.log10(spacing)))
         strings = []
         for v in values:
-            vs = v * scale
+            vs = v
             if abs(vs) < .001 or abs(vs) >= 10000:
                 vstr = "%g" % vs
             else:
@@ -509,8 +440,8 @@ class AxisWidget(GraphicsWidget):
             strings.append(vstr)
         return strings
 
-    def logTickStrings(self, values, scale, spacing):
-        estrings = ["%0.1g"%x for x in 10 ** np.array(values).astype(float) * np.array(scale)]
+    def logTickStrings(self, values, spacing):
+        estrings = ["%0.1g"%x for x in 10 ** np.array(values).astype(float)]
 
         convdict = {"0": "⁰",
                     "1": "¹",
@@ -544,11 +475,9 @@ class AxisWidget(GraphicsWidget):
         be drawn, then generates from this a set of drawing commands to be
         interpreted by drawPicture().
         """
-        if self._tick_font is not None:
-            p.setFont(self._tick_font)
         bounds = self.mapRectFromParent(self.geometry())
 
-        canvas = self._vb
+        canvas = self._canvas
         if canvas is None or not self._show_grid_act.isChecked():
             tickBounds = bounds
         else:
@@ -588,21 +517,8 @@ class AxisWidget(GraphicsWidget):
             return
 
         # Determine major / minor / subminor axis ticks
-        if self._tickLevels is None:
-            tickLevels = self.tickValues(self._range[0], self._range[1], lengthInPixels)
-            tickStrings = None
-        else:
-            # parse self.tickLevels into the formats returned by tickLevels() and tickStrings()
-            tickLevels = []
-            tickStrings = []
-            for level in self._tickLevels:
-                values = []
-                strings = []
-                tickLevels.append((None, values))
-                tickStrings.append(strings)
-                for val, strn in level:
-                    values.append(val)
-                    strings.append(strn)
+        tickLevels = self.tickValues(self._range[0], self._range[1], lengthInPixels)
+        tickStrings = None
 
         # determine mapping between tick values and local coordinates
         dif = self._range[1] - self._range[0]
@@ -664,15 +580,11 @@ class AxisWidget(GraphicsWidget):
         textRects = []
         textSpecs = []  # list of draw
 
-        # If values are hidden, return early
-        if not self._show_values:
-            return axisSpec, tickSpecs, textSpecs
-
         for i in range(min(len(tickLevels), self._max_text_level + 1)):
             # Get the list of strings to display for this level
             if tickStrings is None:
                 spacing, values = tickLevels[i]
-                strings = self.tickStrings(values, self.scale, spacing)
+                strings = self.tickStrings(values, spacing)
             else:
                 strings = tickStrings[i]
 
@@ -770,8 +682,6 @@ class AxisWidget(GraphicsWidget):
             p.drawLine(p1, p2)
 
         # Draw all text
-        if self._tick_font is not None:
-            p.setFont(self._tick_font)
         p.setPen(self._tick_label_pen)
         for rect, flags, text in textSpecs:
             p.drawText(rect, int(flags), text)
@@ -797,19 +707,19 @@ class AxisWidget(GraphicsWidget):
 
     def wheelEvent(self, ev: QGraphicsSceneWheelEvent) -> None:
         """Override."""
-        s = self._vb.wheelMovementToScaleFactor(ev.delta())
+        s = self._canvas.wheelMovementToScaleFactor(ev.delta())
         if self._orientation == Qt.Orientation.Vertical:
-            self._vb.scaleYBy(s, ev.pos().y())
+            self._canvas.scaleYBy(s, ev.pos().y())
         else:
-            self._vb.scaleXBy(s, ev.pos().x())
+            self._canvas.scaleXBy(s, ev.pos().x())
         ev.accept()
 
     def mouseDragEvent(self, ev: MouseDragEvent) -> None:
         delta = ev.lastPos() - ev.pos()
         if self._orientation == Qt.Orientation.Vertical:
-            self._vb.translateYBy(delta.y())
+            self._canvas.translateYBy(delta.y())
         else:
-            self._vb.translateXBy(delta.x())
+            self._canvas.translateXBy(delta.x())
         ev.accept()
 
     def mouseClickEvent(self, ev: MouseClickEvent):

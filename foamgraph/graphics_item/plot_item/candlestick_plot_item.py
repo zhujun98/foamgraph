@@ -8,6 +8,7 @@ Author: Jun Zhu
 from ...backend.QtGui import QPainter, QPainterPath, QPicture
 from ...backend.QtCore import QPointF, QRectF, Qt
 from ...aesthetics import FColor
+from ...utility import array_to_log_scale
 from .plot_item import PlotItem
 
 
@@ -86,11 +87,11 @@ class CandlestickPlotItem(PlotItem):
     def transformedData(self) -> tuple:
         """Override."""
         return (
-            self.toLogScale(self._x) if self._log_x_mode else self._x,
-            self.toLogScale(self._y_start) if self._log_y_mode else self._y_start,
-            self.toLogScale(self._y_end) if self._log_y_mode else self._y_end,
-            self.toLogScale(self._y_min) if self._log_y_mode else self._y_min,
-            self.toLogScale(self._y_max) if self._log_y_mode else self._y_max
+            array_to_log_scale(self._x) if self._log_x_mode else self._x,
+            array_to_log_scale(self._y_start) if self._log_y_mode else self._y_start,
+            array_to_log_scale(self._y_end) if self._log_y_mode else self._y_end,
+            array_to_log_scale(self._y_min) if self._log_y_mode else self._y_min,
+            array_to_log_scale(self._y_max) if self._log_y_mode else self._y_max
         )
 
     def boundingRect(self) -> QRectF:

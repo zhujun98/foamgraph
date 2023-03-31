@@ -50,17 +50,15 @@ def test_plot(item):
 
 
 def test_log_mode(view, item):
-    x = y = np.arange(10)
-    item.setData(x, y, y_min=y-1, y_max=y+1)
+    x = y = np.arange(11).astype(np.float64)
+    item.setData(x, y, y_min=y/10, y_max=y*10)
     item.setBeam(1)
     processEvents()
 
     # test log mode
     view._cw._onLogXScaleToggled(True)
     processEvents()
-    assert item.boundingRect() == QRectF(-0.5, -1.0, 2.0, 11.0)
+    assert item.boundingRect() == QRectF(-1.5, 0., 3., 100.)
     view._cw._onLogYScaleToggled(True)
     processEvents()
-    assert item.boundingRect().topLeft() == QPointF(-0.5, 0.0)
-    assert 1.5, item.boundingRect().bottomRight().x()
-    assert 1.0 < item.boundingRect().bottomRight().y() < 1.1
+    assert item.boundingRect() == QRectF(-1.5, -2., 3., 4.)
