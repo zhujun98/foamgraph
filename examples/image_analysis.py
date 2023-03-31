@@ -9,7 +9,7 @@ import numpy as np
 
 from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 from foamgraph import (
-    LiveWindow, ImageView, mkQApp, GraphView
+    FColor, LiveWindow, ImageView, mkQApp, GraphView
 )
 from foamgraph.algorithm import extract_rect_roi
 
@@ -36,7 +36,7 @@ class RoiProjectionMonitor(GraphView):
         self._roi = roi
         self.setTitle(roi.name())
 
-        self._plot = self.addCurvePlot(pen=roi.pen())
+        self._plot = self.addCurvePlot(pen=FColor.mkPen(roi.color()))
 
     def updateF(self, data):
         """override."""
