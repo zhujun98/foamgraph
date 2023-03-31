@@ -34,6 +34,7 @@ class LinearRegionItem(GraphicsObject):
         self._p1 = p1
         self._p2 = p2
         self._bounding_rect = None
+        self._log_scale = False
 
         self._draggable = True
         self._edge_fraction = 0.3
@@ -65,6 +66,10 @@ class LinearRegionItem(GraphicsObject):
     def setRegion(self, p1: float, p2: float) -> None:
         self._p1 = p1
         self._p2 = p2
+        self._updateRegion()
+
+    def setLogScale(self, state: bool) -> None:
+        self._log_scale = state
         self._updateRegion()
 
     @abstractmethod
