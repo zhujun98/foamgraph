@@ -701,14 +701,17 @@ class AxisWidget(GraphicsWidget):
         else:
             self._updateHeight()
 
+    def _onMouseDClickEvent(self):
+        if self._orientation == Qt.Orientation.Vertical:
+            self._canvas.setTargetRangeToYView()
+        else:
+            self._canvas.setTargetRangeToXView()
+
     def mouseDoubleClickEvent(self, ev: QGraphicsSceneMouseEvent):
         """Override."""
         if ev.button() == Qt.MouseButton.LeftButton:
             ev.accept()
-            if self._orientation == Qt.Orientation.Vertical:
-                self._canvas.setTargetRangeToYView()
-            else:
-                self._canvas.setTargetRangeToXView()
+            self._onMouseDClickEvent()
 
     def close(self) -> None:
         """Override."""
