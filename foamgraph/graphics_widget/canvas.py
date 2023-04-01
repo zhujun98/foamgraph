@@ -421,6 +421,20 @@ class Canvas(QGraphicsWidget):
         if state:
             self.updateAutoRange()
 
+    def setTargetRangeToFullView(self) -> None:
+        self.setTargetRange(
+            self._proxy.graphRect(), disable_auto_range=True)
+
+    def setTargetRangeToXView(self) -> None:
+        rect = self._proxy.graphRect()
+        self.setTargetXRange(
+            rect.left(), rect.right(), disable_auto_range=True)
+
+    def setTargetRangeToYView(self) -> None:
+        rect = self._proxy.graphRect()
+        self.setTargetYRange(
+            rect.top(), rect.bottom(), disable_auto_range=True)
+
     def linkXTo(self, canvas: "Canvas"):
         """Make X-axis change as X-axis of the given canvas changes."""
         if self._linked_x is not None:
@@ -695,8 +709,7 @@ class Canvas(QGraphicsWidget):
         """Override."""
         if ev.button() == Qt.MouseButton.LeftButton:
             ev.accept()
-            self.setTargetRange(
-                self._proxy.graphRect(), disable_auto_range=True)
+            self.setTargetRangeToFullView()
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""

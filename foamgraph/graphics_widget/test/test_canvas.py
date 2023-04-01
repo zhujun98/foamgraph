@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import numpy as np
 
-from foamgraph.backend.QtTest import QTest
 from foamgraph.backend.QtCore import QPoint, QRectF, Qt
 from foamgraph.graph_view import GraphView, ImageView
 from foamgraph.graphics_widget import Canvas
@@ -91,11 +90,11 @@ class TestGraphViewCanvas:
         assert canvas.viewRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
         assert canvas.targetRect() == QRectF(-0.1, -0.1, 10.2, 1.2)
 
-        # FIXME
-        # QTest.mouseClick(view, Qt.MouseButton.LeftButton)
-        # assert canvas.viewRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
-        # # target rect does not change until setTargetRange is called
-        # assert canvas.targetRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
+        # FIXME: cannot simulate a double-click event
+        canvas.setTargetRangeToFullView()
+        assert canvas.viewRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
+        # target rect does not change until setTargetRange is called
+        assert canvas.targetRect() == QRectF(-0.1, -4.6, 10.2, 10.2)
 
     def test_enable_auto_range(self, canvas):
         with patch.object(canvas, "updateAutoRange") as patched:
@@ -155,8 +154,3 @@ class TestImageViewCanvas:
         processEvents()
         assert canvas.viewRect() == QRectF(-2.2, -2.7, 8.4, 8.4)
         assert canvas.targetRect() == QRectF(-0.1, -2.7, 4.2, 8.4)
-
-        # FIXME
-        # QTest.mouseClick(view, Qt.MouseButton.LeftButton)
-        # processEvents()
-        # assert canvas.viewRect() == QRectF(-0.1, -0.6, 4.2, 4.2)
