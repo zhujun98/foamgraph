@@ -7,9 +7,11 @@ Author: Jun Zhu
 """
 import numpy as np
 
-from foamgraph.backend.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
+from foamgraph.backend.QtWidgets import (
+    QFrame, QHBoxLayout, QSizePolicy, QVBoxLayout
+)
 from foamgraph import (
-    LiveWindow, ImageView, mkQApp, GraphView
+    FColor, LiveWindow, ImageView, mkQApp, GraphView, Section
 )
 from foamgraph.algorithm import extract_rect_roi
 
@@ -18,7 +20,7 @@ from consumer import Consumer
 app = mkQApp()
 
 
-class ImageAnalysis(ImageView):
+class ImageViewWithROIs(ImageView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -36,7 +38,7 @@ class RoiProjectionMonitor(GraphView):
         self._roi = roi
         self.setTitle(roi.name())
 
-        self._plot = self.addCurvePlot(pen=roi.pen())
+        self._plot = self.addCurvePlot(pen=FColor.mkPen(roi.color()))
 
     def updateF(self, data):
         """override."""
@@ -56,26 +58,26 @@ class ImageAnalysisWindow(LiveWindow):
     def __init__(self):
         super().__init__("Image Analysis")
 
-        self._image = ImageAnalysis(parent=self)
-        roi1 = self._image.addRectROI(0, 0, 100, 100)
-        roi2 = self._image.addEllipseROI(10, 10, 100, 100)
+        self._view = ImageViewWithROIs(parent=self)
 
-        self._plots = [
-            RoiProjectionMonitor(roi1, parent=self),
-            RoiProjectionMonitor(roi2, parent=self)
-        ]
+        roi1 = self._view.addRectROI(0, 0, 100, 100)
+        roi2 = self._view.addEllipseROI(10, 10, 100, 100)
+        self._section = Section(parent=self)
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        for roi in [roi1, roi2]:
+            layout.addWidget(RoiProjectionMonitor(roi, parent=self))
+        self._section.setLayout(layout)
 
         self.init()
 
     def initUI(self):
         """Override."""
-        h_layout = QHBoxLayout()
-        for mon in self._plots:
-            h_layout.addWidget(mon)
-
         layout = QVBoxLayout()
-        layout.addWidget(self._image, 5)
-        layout.addLayout(h_layout, 2)
+        layout.addWidget(self._view)
+        layout.addWidget(self._section)
+        layout.setSpacing(0)
 
         self._cw = QFrame()
         self._cw.setLayout(layout)
@@ -87,7 +89,14 @@ class ImageAnalysisWindow(LiveWindow):
 
     def initConnections(self):
         """Override."""
-        ...
+        self._section.collapse_toggled_sgn.connect(
+            self._onSectionToggled)
+
+    def _onSectionToggled(self, state: bool):
+        layout = self._cw.layout()
+        stretches = (0, 0) if state else (2, 1)
+        for i, s in enumerate(stretches):
+            layout.setStretch(i, s)
 
 
 if __name__ == "__main__":

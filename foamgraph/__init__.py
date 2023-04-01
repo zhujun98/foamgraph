@@ -16,4 +16,5 @@ from .ctrl_widgets import (
     SmartLineEdit, SmartStringLineEdit, SmartBoundaryLineEdit,
     SmartIdLineEdit, SmartSliceLineEdit
 )
+from .widgets import Section
 from .version import __version__

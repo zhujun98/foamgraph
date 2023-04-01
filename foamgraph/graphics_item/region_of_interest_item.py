@@ -9,7 +9,9 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Optional, Union
 
-from ..backend.QtGui import QIntValidator, QPainter, QPainterPath, QPen
+from ..backend.QtGui import (
+    QColor, QIntValidator, QPainter, QPainterPath, QPen
+)
 from ..backend.QtCore import pyqtSignal, QPointF, QRect, QRectF, QSize, Qt
 from ..backend.QtWidgets import (
     QAbstractGraphicsShapeItem, QFrame, QGraphicsEllipseItem, QGridLayout,
@@ -197,13 +199,13 @@ class ROIBase(GraphicsObject):
         self._pen = pen
         self.update()
 
-    def pen(self) -> QPen():
-        return self._pen
-
     def setHoverPen(self, pen: QPen) -> None:
         """Set the QPen used to draw the ROI when the mouse is hovering."""
         self._hover_pen = pen
         self.update()
+
+    def color(self) -> QColor:
+        return self._pen.color()
 
     def rect(self) -> tuple[int, int, int, int]:
         """Return the bounding region in parent's coordinate system."""
