@@ -61,8 +61,6 @@ class AxisWidget(GraphicsWidget):
         self._text_width = 30  # Keeps track of maximum width / height of tick text
         self._text_height = 18
 
-        self._log_scale = False
-
         self.showLabel(False)
 
         self._tick_pen = None
@@ -74,7 +72,6 @@ class AxisWidget(GraphicsWidget):
         self._canvas = None
 
         self._menu = self.initMenu()
-        self._auto_range_act = self.getMenuAction("AutoRange")
         self._invert_axis_act = self.getMenuAction("InvertAxis")
         self._show_grid_act = self.getMenuAction("ShowGrid")
         self._log_scale_act = self.getMenuAction("LogScale")
@@ -105,7 +102,7 @@ class AxisWidget(GraphicsWidget):
         return self._menu.findChild(QAction, name)
 
     def logScale(self) -> bool:
-        return self._log_scale
+        return self._log_scale_act.isChecked()
 
     def onShowGridToggled(self):
         self._picture = None
@@ -113,7 +110,6 @@ class AxisWidget(GraphicsWidget):
         self.update()
 
     def onLogScaleToggled(self, state: bool):
-        self._log_scale = state
         self.log_Scale_toggled_sgn.emit(state)
         self._picture = None
         self.update()
@@ -236,28 +232,29 @@ class AxisWidget(GraphicsWidget):
                 "The axis has already been linked to a Canvas.")
 
         self._canvas = canvas
+        auto_range_act = self.getMenuAction("AutoRange")
         if self._orientation == Qt.Orientation.Vertical:
-            self._auto_range_act.triggered.connect(
+            auto_range_act.triggered.connect(
                 lambda s: canvas.enableAutoRangeY(s))
             self._invert_axis_act.triggered.connect(canvas.invertY)
 
             canvas.auto_range_y_toggled_sgn.connect(
-                self._auto_range_act.setChecked)
+                auto_range_act.setChecked)
             canvas.y_link_state_toggled_sgn.connect(
-                self._auto_range_act.setEnabled)
+                auto_range_act.setEnabled)
             canvas.y_range_changed_sgn.connect(self.onCanvasChanged)
 
         else:
-            self._auto_range_act.triggered.connect(
+            auto_range_act.triggered.connect(
                 lambda s: canvas.enableAutoRangeX(s))
             self._invert_axis_act.triggered.connect(canvas.invertX)
 
-            canvas.auto_range_x_toggled_sgn.connect(self._auto_range_act.setChecked)
-            canvas.x_link_state_toggled_sgn.connect(self._auto_range_act.setEnabled)
+            canvas.auto_range_x_toggled_sgn.connect(auto_range_act.setChecked)
+            canvas.x_link_state_toggled_sgn.connect(auto_range_act.setEnabled)
             canvas.x_range_changed_sgn.connect(self.onCanvasChanged)
 
-        self._auto_range_act.setChecked(True)
-        self._auto_range_act.triggered.emit(True)
+        auto_range_act.setChecked(True)
+        auto_range_act.triggered.emit(True)
 
     def onCanvasChanged(self) -> None:
         rect = self._canvas.viewRect()
@@ -388,7 +385,7 @@ class AxisWidget(GraphicsWidget):
             allValues = np.concatenate([allValues, values])
             ticks.append((spacing, values))
 
-        if self._log_scale:
+        if self._log_scale_act.isChecked():
             return self.logTickValues(minVal, maxVal, size, ticks)
 
         return ticks
@@ -427,7 +424,7 @@ class AxisWidget(GraphicsWidget):
         be accompanied by a scale value of 1000. This indicates that the label is displaying 'mV', and
         thus the tick should display 0.001 * 1000 = 1.
         """
-        if self._log_scale:
+        if self._log_scale_act.isChecked():
             return self.logTickStrings(values, spacing)
 
         places = max(0, np.ceil(-np.log10(spacing)))
