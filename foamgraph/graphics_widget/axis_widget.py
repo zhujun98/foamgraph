@@ -3,8 +3,9 @@ import numpy as np
 from ..backend.QtCore import pyqtSignal, QLineF, QPointF, QRectF, Qt
 from ..backend.QtGui import QAction, QPen, QPicture, QPainter
 from ..backend.QtWidgets import (
-    QCheckBox, QGraphicsSceneResizeEvent, QGraphicsSceneWheelEvent,
-    QGridLayout, QMenu, QGraphicsTextItem, QWidget, QWidgetAction
+    QCheckBox, QGraphicsSceneMouseEvent, QGraphicsSceneResizeEvent,
+    QGraphicsSceneWheelEvent, QGridLayout, QMenu, QGraphicsTextItem,
+    QWidget, QWidgetAction
 )
 
 from ..aesthetics import FColor
@@ -699,6 +700,15 @@ class AxisWidget(GraphicsWidget):
             self._updateWidth()
         else:
             self._updateHeight()
+
+    def mouseDoubleClickEvent(self, ev: QGraphicsSceneMouseEvent):
+        """Override."""
+        if ev.button() == Qt.MouseButton.LeftButton:
+            ev.accept()
+            if self._orientation == Qt.Orientation.Vertical:
+                self._canvas.setTargetRangeToYView()
+            else:
+                self._canvas.setTargetRangeToXView()
 
     def close(self) -> None:
         """Override."""
