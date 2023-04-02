@@ -78,23 +78,20 @@ class AxisWidget(GraphicsWidget):
 
     def initMenu(self):
         menu = QMenu()
-        action = menu.addAction("Auto Range")
-        action.setObjectName("AutoRange")
-        action.setCheckable(True)
 
-        action = menu.addAction("Invert Axis")
-        action.setObjectName("InvertAxis")
+        action = menu.addAction("Log Scale")
+        action.setObjectName("LogScale")
         action.setCheckable(True)
+        action.toggled.connect(self.onLogScaleToggled)
 
         action = menu.addAction("Show Grid")
         action.setObjectName("ShowGrid")
         action.setCheckable(True)
         action.toggled.connect(self.onShowGridToggled)
 
-        action = menu.addAction("Log Scale")
-        action.setObjectName("LogScale")
+        action = menu.addAction("Invert Axis")
+        action.setObjectName("InvertAxis")
         action.setCheckable(True)
-        action.toggled.connect(self.onLogScaleToggled)
 
         return menu
 
@@ -232,29 +229,13 @@ class AxisWidget(GraphicsWidget):
                 "The axis has already been linked to a Canvas.")
 
         self._canvas = canvas
-        auto_range_act = self.getMenuAction("AutoRange")
         if self._orientation == Qt.Orientation.Vertical:
-            auto_range_act.triggered.connect(
-                lambda s: canvas.enableAutoRangeY(s))
             self._invert_axis_act.triggered.connect(canvas.invertY)
-
-            canvas.auto_range_y_toggled_sgn.connect(
-                auto_range_act.setChecked)
-            canvas.y_link_state_toggled_sgn.connect(
-                auto_range_act.setEnabled)
             canvas.y_range_changed_sgn.connect(self.onCanvasChanged)
 
         else:
-            auto_range_act.triggered.connect(
-                lambda s: canvas.enableAutoRangeX(s))
             self._invert_axis_act.triggered.connect(canvas.invertX)
-
-            canvas.auto_range_x_toggled_sgn.connect(auto_range_act.setChecked)
-            canvas.x_link_state_toggled_sgn.connect(auto_range_act.setEnabled)
             canvas.x_range_changed_sgn.connect(self.onCanvasChanged)
-
-        auto_range_act.setChecked(True)
-        auto_range_act.triggered.emit(True)
 
     def onCanvasChanged(self) -> None:
         rect = self._canvas.viewRect()
@@ -700,9 +681,9 @@ class AxisWidget(GraphicsWidget):
 
     def _onMouseDClickEvent(self):
         if self._orientation == Qt.Orientation.Vertical:
-            self._canvas.setTargetRangeToYView()
+            self._canvas.enableAutoYRange(True)
         else:
-            self._canvas.setTargetRangeToXView()
+            self._canvas.enableAutoXRange(True)
 
     def mouseDoubleClickEvent(self, ev: QGraphicsSceneMouseEvent):
         """Override."""

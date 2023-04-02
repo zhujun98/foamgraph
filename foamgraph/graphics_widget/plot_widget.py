@@ -27,6 +27,8 @@ class PlotWidget(GraphicsWidget):
     It contains a :class:`Canvas`, up to four :class:`AxisItem`s,
     a :class"`LabelWidget` for displaying the title and
     a :class:`MouseCursorItem`.
+
+    This is a base class and should not be used alone.
     """
 
     _TITLE_LOC = (0, 1)
@@ -43,14 +45,16 @@ class PlotWidget(GraphicsWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding,
                            QSizePolicy.Policy.Expanding)
 
-        self._canvas = Canvas(parent=self)
-
         self._axes = {}
         self._title = LabelWidget('')
 
         self._layout = QGraphicsGridLayout()
 
         self._mouse_cursor = None
+
+        self._canvas = Canvas(parent=self)
+
+        # Caveat: Don't do any init here
 
     def _initUI(self) -> None:
         layout = self._layout

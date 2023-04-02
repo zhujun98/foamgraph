@@ -19,9 +19,9 @@ class Section(QWidget):
         super().__init__(parent=parent)
         btn = QToolButton()
         btn.setStyleSheet("QToolButton { border: none; }")
-        btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        btn.setArrowType(Qt.RightArrow)
-        btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        btn.setArrowType(Qt.ArrowType.RightArrow)
+        btn.setSizePolicy(QSizePolicy.Policy.Minimum,
+                          QSizePolicy.Policy.Minimum)
         btn.setCheckable(True)
         self._toggle_btn = btn
 
@@ -44,7 +44,8 @@ class Section(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.setSizePolicy(QSizePolicy.Policy.Minimum,
+                           QSizePolicy.Policy.Minimum)
 
     def _initConnections(self):
         self._toggle_btn.clicked.connect(
@@ -55,7 +56,8 @@ class Section(QWidget):
 
     def _onToggleButtonTriggered(self):
         checked = self._toggle_btn.isChecked()
-        arrow_type = Qt.DownArrow if checked else Qt.RightArrow
+        arrow_type = Qt.ArrowType.DownArrow \
+            if checked else Qt.ArrowType.RightArrow
         self._cw.setVisible(checked)
         self._toggle_btn.setArrowType(arrow_type)
         self.collapse_toggled_sgn.emit(not checked)

@@ -45,6 +45,8 @@ class Canvas(QGraphicsWidget):
 
             self._items = set()
 
+            self._graph_rect = None
+
         def addItem(self, item: QGraphicsItem, ignore_bounds: bool):
             if item in self.childItems():
                 raise RuntimeError(f"Item {item} already exists!")
@@ -66,14 +68,17 @@ class Canvas(QGraphicsWidget):
                 self.parentItem().updateAutoRange()
             return ret
 
-        def graphRect(self) -> QRectF:
-            rect = QRectF()
-            for item in self._items:
-                if not item.isVisible():
-                    continue
-                rect = rect.united(
-                    self.mapRectFromItem(item, item.boundingRect()))
-            return rect
+        def graphRect(self, cached=False) -> QRectF:
+            if self._graph_rect is None or not cached:
+                rect = QRectF()
+                for item in self._items:
+                    if not item.isVisible():
+                        continue
+                    rect = rect.united(
+                        self.mapRectFromItem(item, item.boundingRect()))
+                self._graph_rect = rect
+            # return a copy
+            return QRectF(self._graph_rect)
 
         def boundingRect(self) -> QRectF:
             """Override."""
@@ -348,7 +353,7 @@ class Canvas(QGraphicsWidget):
         self._view_rect = QRectF(self._target_rect)
 
         if disable_auto_range:
-            self.enableAutoRangeX(False)
+            self.enableAutoXRange(False)
 
         if update:
             self._updateAll()
@@ -369,7 +374,7 @@ class Canvas(QGraphicsWidget):
         self._view_rect = QRectF(self._target_rect)
 
         if disable_auto_range:
-            self.enableAutoRangeY(False)
+            self.enableAutoYRange(False)
 
         if update:
             self._updateAll()
@@ -403,37 +408,43 @@ class Canvas(QGraphicsWidget):
 
         self._updateAll()
 
-    def enableAutoRangeX(self, state: bool = True) -> None:
+    def enableAutoRange(self, state: bool = True) -> None:
+        if self._auto_range_x_locked or self._auto_range_y_locked:
+            return
+
+        if self._auto_range_x ^ state:
+            self._auto_range_x = state
+            self.auto_range_x_toggled_sgn.emit(state)
+
+        if self._auto_range_y ^ state:
+            self._auto_range_y = state
+            self.auto_range_y_toggled_sgn.emit(state)
+
+    def enableAutoRange(self, state: bool = True):
+        self.enableAutoXRange(state, update=False)
+        self.enableAutoYRange(state, update=False)
+        if state:
+            self.updateAutoRange()
+
+    def enableAutoXRange(
+            self, state: bool = True, update: bool = True) -> None:
         if self._auto_range_x_locked:
             return
         if self._auto_range_x ^ state:
             self._auto_range_x = state
             self.auto_range_x_toggled_sgn.emit(state)
-        if state:
+        if state and update:
             self.updateAutoRange()
 
-    def enableAutoRangeY(self, state: bool = True) -> None:
+    def enableAutoYRange(
+            self, state: bool = True, update: bool = True) -> None:
         if self._auto_range_y_locked:
             return
         if self._auto_range_y ^ state:
             self._auto_range_y = state
             self.auto_range_y_toggled_sgn.emit(state)
-        if state:
+        if state and update:
             self.updateAutoRange()
-
-    def setTargetRangeToFullView(self) -> None:
-        self.setTargetRange(
-            self._proxy.graphRect(), disable_auto_range=True)
-
-    def setTargetRangeToXView(self) -> None:
-        rect = self._proxy.graphRect()
-        self.setTargetXRange(
-            rect.left(), rect.right(), disable_auto_range=True)
-
-    def setTargetRangeToYView(self) -> None:
-        rect = self._proxy.graphRect()
-        self.setTargetYRange(
-            rect.top(), rect.bottom(), disable_auto_range=True)
 
     def linkXTo(self, canvas: "Canvas"):
         """Make X-axis change as X-axis of the given canvas changes."""
@@ -442,7 +453,7 @@ class Canvas(QGraphicsWidget):
         canvas.x_range_changed_sgn.connect(self.linkedXChanged)
         self._linked_x = canvas
 
-        self.enableAutoRangeX(False)
+        self.enableAutoXRange(False)
         canvas.x_range_changed_sgn.emit()
 
     def linkYTo(self, canvas: "Canvas"):
@@ -452,20 +463,20 @@ class Canvas(QGraphicsWidget):
         canvas.y_range_changed_sgn.connect(self.linkedYChanged)
         self._linked_y = canvas
 
-        self.enableAutoRangeY(False)
+        self.enableAutoYRange(False)
         canvas.y_range_changed_sgn.emit()
 
     def linkedXChanged(self):
-        rect = self._linked_x.targetRect()
+        rect = self._linked_x.viewRect()
         self.setTargetXRange(rect.left(), rect.right())
 
     def linkedYChanged(self):
-        rect = self._linked_y.targetRect()
+        rect = self._linked_y.viewRect()
         self.setTargetYRange(rect.top(), rect.bottom())
 
-    def updateAutoRange(self) -> None:
+    def updateAutoRange(self) -> bool:
         if not self._auto_range_x and not self._auto_range_y:
-            return
+            return False
 
         rect = self._proxy.graphRect()
         if self._auto_range_x and self._auto_range_y:
@@ -495,6 +506,8 @@ class Canvas(QGraphicsWidget):
                                  update=False)
 
         self._updateAll()
+
+        return True
 
     def invertX(self, inverted: bool = True) -> None:
         self._x_inverted = inverted
@@ -709,11 +722,16 @@ class Canvas(QGraphicsWidget):
         """Override."""
         if ev.button() == Qt.MouseButton.LeftButton:
             ev.accept()
-            self.setTargetRangeToFullView()
+            self.enableAutoRange(True)
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""
+        if self.updateAutoRange():
+            return
+
         if self._aspect_ratio_locked:
+            # By this mean, the target rect is cached if there is no
+            # calls to setTarget(X/Y)Range.
             self._view_rect = QRectF(self._target_rect)
             self._maybeAdjustAspectRatio(self._view_rect)
         self._updateAll()
