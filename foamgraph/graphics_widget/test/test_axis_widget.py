@@ -35,7 +35,7 @@ def axis_right(view):
     return view._cw._axes['right']
 
 
-def test_context_menu(view, axis_left, axis_bottom, axis_right):
+def test_log_scale(view, axis_left, axis_bottom, axis_right):
     canvas = view._cw._canvas
 
     action = axis_bottom.getMenuAction("LogScale")
@@ -92,14 +92,14 @@ def test_mouse_double_click(view, axis_left, axis_bottom, axis_right):
     canvas = view._cw._canvas
     canvas_y2 = view._cw._canvas_y2
 
-    with patch.object(canvas, "setTargetYRange") as patched:
+    with patch.object(canvas, "enableAutoYRange") as patched:
         axis_left._onMouseDClickEvent()
-        patched.assert_called_once()
+        patched.assert_called_once_with(True)
 
-    with patch.object(canvas, "setTargetXRange") as patched:
+    with patch.object(canvas, "enableAutoXRange") as patched:
         axis_bottom._onMouseDClickEvent()
-        patched.assert_called_once()
+        patched.assert_called_once_with(True)
 
-    with patch.object(canvas_y2, "setTargetYRange") as patched:
+    with patch.object(canvas_y2, "enableAutoYRange") as patched:
         axis_right._onMouseDClickEvent()
-        patched.assert_called_once()
+        patched.assert_called_once_with(True)
