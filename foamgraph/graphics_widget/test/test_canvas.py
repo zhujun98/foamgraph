@@ -99,21 +99,21 @@ class TestGraphViewCanvas:
     def test_enable_auto_range(self, canvas):
         with patch.object(canvas, "updateAutoRange") as patched:
             assert canvas._auto_range_x
-            canvas.enableAutoRangeX(False)
+            canvas.enableAutoXRange(False)
             patched.assert_not_called()
             assert not canvas._auto_range_x
 
-            canvas.enableAutoRangeX(True)
+            canvas.enableAutoXRange(True)
             patched.assert_called_once()
             assert canvas._auto_range_y
 
         with patch.object(canvas, "updateAutoRange") as patched:
             assert canvas._auto_range_y
-            canvas.enableAutoRangeY(False)
+            canvas.enableAutoYRange(False)
             patched.assert_not_called()
             assert not canvas._auto_range_y
 
-            canvas.enableAutoRangeY(True)
+            canvas.enableAutoYRange(True)
             patched.assert_called_once()
             assert canvas._auto_range_y
 

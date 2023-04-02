@@ -353,7 +353,7 @@ class Canvas(QGraphicsWidget):
         self._view_rect = QRectF(self._target_rect)
 
         if disable_auto_range:
-            self.enableAutoRangeX(False)
+            self.enableAutoXRange(False)
 
         if update:
             self._updateAll()
@@ -374,7 +374,7 @@ class Canvas(QGraphicsWidget):
         self._view_rect = QRectF(self._target_rect)
 
         if disable_auto_range:
-            self.enableAutoRangeY(False)
+            self.enableAutoYRange(False)
 
         if update:
             self._updateAll()
@@ -421,12 +421,12 @@ class Canvas(QGraphicsWidget):
             self.auto_range_y_toggled_sgn.emit(state)
 
     def enableAutoRange(self, state: bool = True):
-        self.enableAutoRangeX(state, update=False)
-        self.enableAutoRangeY(state, update=False)
+        self.enableAutoXRange(state, update=False)
+        self.enableAutoYRange(state, update=False)
         if state:
             self.updateAutoRange()
 
-    def enableAutoRangeX(
+    def enableAutoXRange(
             self, state: bool = True, update: bool = True) -> None:
         if self._auto_range_x_locked:
             return
@@ -436,7 +436,7 @@ class Canvas(QGraphicsWidget):
         if state and update:
             self.updateAutoRange()
 
-    def enableAutoRangeY(
+    def enableAutoYRange(
             self, state: bool = True, update: bool = True) -> None:
         if self._auto_range_y_locked:
             return
@@ -446,20 +446,6 @@ class Canvas(QGraphicsWidget):
         if state and update:
             self.updateAutoRange()
 
-    def setTargetRangeToFullView(self) -> None:
-        self.setTargetRange(
-            self._proxy.graphRect(cached=True), disable_auto_range=True)
-
-    def setTargetRangeToXView(self) -> None:
-        rect = self._proxy.graphRect(cached=True)
-        self.setTargetXRange(
-            rect.left(), rect.right(), disable_auto_range=True)
-
-    def setTargetRangeToYView(self) -> None:
-        rect = self._proxy.graphRect(cached=True)
-        self.setTargetYRange(
-            rect.top(), rect.bottom(), disable_auto_range=True)
-
     def linkXTo(self, canvas: "Canvas"):
         """Make X-axis change as X-axis of the given canvas changes."""
         if self._linked_x is not None:
@@ -467,7 +453,7 @@ class Canvas(QGraphicsWidget):
         canvas.x_range_changed_sgn.connect(self.linkedXChanged)
         self._linked_x = canvas
 
-        self.enableAutoRangeX(False)
+        self.enableAutoXRange(False)
         canvas.x_range_changed_sgn.emit()
 
     def linkYTo(self, canvas: "Canvas"):
@@ -477,7 +463,7 @@ class Canvas(QGraphicsWidget):
         canvas.y_range_changed_sgn.connect(self.linkedYChanged)
         self._linked_y = canvas
 
-        self.enableAutoRangeY(False)
+        self.enableAutoYRange(False)
         canvas.y_range_changed_sgn.emit()
 
     def linkedXChanged(self):
@@ -736,7 +722,7 @@ class Canvas(QGraphicsWidget):
         """Override."""
         if ev.button() == Qt.MouseButton.LeftButton:
             ev.accept()
-            self.setTargetRangeToFullView()
+            self.enableAutoRange(True)
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""
@@ -754,12 +740,3 @@ class Canvas(QGraphicsWidget):
         """Override."""
         self._proxy.cleanUp()
         super().close()
-
-
-class ImageCanvas(Canvas):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def setTargetRangeToFullView(self) -> None:
-        """Override."""
-        self.enableAutoRange(True)

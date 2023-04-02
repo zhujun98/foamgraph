@@ -14,7 +14,6 @@ from ..graphics_item import (
     EllipseROI, ImageItem, MouseCursorStyle, ROIBase, RectROI
 )
 from .axis_widget import AxisWidget
-from .canvas import ImageCanvas
 from .colormap_controller import ColormapController
 from .plot_widget import PlotWidget
 
@@ -31,8 +30,6 @@ class ImageWidget(PlotWidget):
 
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
-
-        self._canvas = ImageCanvas(parent=self)
 
         self._image_item = ImageItem()
         self.addItem(self._image_item)

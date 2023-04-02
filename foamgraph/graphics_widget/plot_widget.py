@@ -52,7 +52,7 @@ class PlotWidget(GraphicsWidget):
 
         self._mouse_cursor = None
 
-        self._canvas: Optional[Canvas] = None
+        self._canvas = Canvas(parent=self)
 
         # Caveat: Don't do any init here
 

@@ -1,5 +1,5 @@
 from .axis_widget import AxisWidget
-from .canvas import Canvas, ImageCanvas
+from .canvas import Canvas
 from .colorbar_widget import ColorbarWidget
 from .graph_widget import GraphWidget
 from .graphics_widget import GraphicsWidget
