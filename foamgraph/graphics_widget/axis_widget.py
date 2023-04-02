@@ -79,19 +79,19 @@ class AxisWidget(GraphicsWidget):
     def initMenu(self):
         menu = QMenu()
 
-        action = menu.addAction("Invert Axis")
-        action.setObjectName("InvertAxis")
+        action = menu.addAction("Log Scale")
+        action.setObjectName("LogScale")
         action.setCheckable(True)
+        action.toggled.connect(self.onLogScaleToggled)
 
         action = menu.addAction("Show Grid")
         action.setObjectName("ShowGrid")
         action.setCheckable(True)
         action.toggled.connect(self.onShowGridToggled)
 
-        action = menu.addAction("Log Scale")
-        action.setObjectName("LogScale")
+        action = menu.addAction("Invert Axis")
+        action.setObjectName("InvertAxis")
         action.setCheckable(True)
-        action.toggled.connect(self.onLogScaleToggled)
 
         return menu
 

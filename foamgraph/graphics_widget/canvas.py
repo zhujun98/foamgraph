@@ -28,7 +28,7 @@ from ..graphics_scene import (
 )
 
 
-_DEBUG_CANVAS = True
+_DEBUG_CANVAS = False
 
 
 class Canvas(QGraphicsWidget):
