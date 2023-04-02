@@ -24,6 +24,8 @@ class GraphWidget(PlotWidget):
     def __init__(self, *, parent = None):
         super().__init__(parent=parent)
 
+        self._canvas = Canvas(parent=self)
+
         self._plot_items = OrderedDict()  # PlotItem: None
         self._plot_items_y2 = OrderedDict()  # PlotItem: None
         self._canvas_y2 = None

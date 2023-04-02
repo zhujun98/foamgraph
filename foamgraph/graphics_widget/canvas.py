@@ -28,7 +28,7 @@ from ..graphics_scene import (
 )
 
 
-_DEBUG_CANVAS = False
+_DEBUG_CANVAS = True
 
 
 class Canvas(QGraphicsWidget):
@@ -44,6 +44,8 @@ class Canvas(QGraphicsWidget):
             self.setFlag(self.GraphicsItemFlag.ItemClipsChildrenToShape)
 
             self._items = set()
+
+            self._graph_rect = None
 
         def addItem(self, item: QGraphicsItem, ignore_bounds: bool):
             if item in self.childItems():
@@ -66,14 +68,17 @@ class Canvas(QGraphicsWidget):
                 self.parentItem().updateAutoRange()
             return ret
 
-        def graphRect(self) -> QRectF:
-            rect = QRectF()
-            for item in self._items:
-                if not item.isVisible():
-                    continue
-                rect = rect.united(
-                    self.mapRectFromItem(item, item.boundingRect()))
-            return rect
+        def graphRect(self, cached=False) -> QRectF:
+            if self._graph_rect is None or not cached:
+                rect = QRectF()
+                for item in self._items:
+                    if not item.isVisible():
+                        continue
+                    rect = rect.united(
+                        self.mapRectFromItem(item, item.boundingRect()))
+                self._graph_rect = rect
+            # return a copy
+            return QRectF(self._graph_rect)
 
         def boundingRect(self) -> QRectF:
             """Override."""
@@ -403,35 +408,55 @@ class Canvas(QGraphicsWidget):
 
         self._updateAll()
 
-    def enableAutoRangeX(self, state: bool = True) -> None:
+    def enableAutoRange(self, state: bool = True) -> None:
+        if self._auto_range_x_locked or self._auto_range_y_locked:
+            return
+
+        if self._auto_range_x ^ state:
+            self._auto_range_x = state
+            self.auto_range_x_toggled_sgn.emit(state)
+
+        if self._auto_range_y ^ state:
+            self._auto_range_y = state
+            self.auto_range_y_toggled_sgn.emit(state)
+
+    def enableAutoRange(self, state: bool = True):
+        self.enableAutoRangeX(state, update=False)
+        self.enableAutoRangeY(state, update=False)
+        if state:
+            self.updateAutoRange()
+
+    def enableAutoRangeX(
+            self, state: bool = True, update: bool = True) -> None:
         if self._auto_range_x_locked:
             return
         if self._auto_range_x ^ state:
             self._auto_range_x = state
             self.auto_range_x_toggled_sgn.emit(state)
-        if state:
+        if state and update:
             self.updateAutoRange()
 
-    def enableAutoRangeY(self, state: bool = True) -> None:
+    def enableAutoRangeY(
+            self, state: bool = True, update: bool = True) -> None:
         if self._auto_range_y_locked:
             return
         if self._auto_range_y ^ state:
             self._auto_range_y = state
             self.auto_range_y_toggled_sgn.emit(state)
-        if state:
+        if state and update:
             self.updateAutoRange()
 
     def setTargetRangeToFullView(self) -> None:
         self.setTargetRange(
-            self._proxy.graphRect(), disable_auto_range=True)
+            self._proxy.graphRect(cached=True), disable_auto_range=True)
 
     def setTargetRangeToXView(self) -> None:
-        rect = self._proxy.graphRect()
+        rect = self._proxy.graphRect(cached=True)
         self.setTargetXRange(
             rect.left(), rect.right(), disable_auto_range=True)
 
     def setTargetRangeToYView(self) -> None:
-        rect = self._proxy.graphRect()
+        rect = self._proxy.graphRect(cached=True)
         self.setTargetYRange(
             rect.top(), rect.bottom(), disable_auto_range=True)
 
@@ -456,16 +481,16 @@ class Canvas(QGraphicsWidget):
         canvas.y_range_changed_sgn.emit()
 
     def linkedXChanged(self):
-        rect = self._linked_x.targetRect()
+        rect = self._linked_x.viewRect()
         self.setTargetXRange(rect.left(), rect.right())
 
     def linkedYChanged(self):
-        rect = self._linked_y.targetRect()
+        rect = self._linked_y.viewRect()
         self.setTargetYRange(rect.top(), rect.bottom())
 
-    def updateAutoRange(self) -> None:
+    def updateAutoRange(self) -> bool:
         if not self._auto_range_x and not self._auto_range_y:
-            return
+            return False
 
         rect = self._proxy.graphRect()
         if self._auto_range_x and self._auto_range_y:
@@ -495,6 +520,8 @@ class Canvas(QGraphicsWidget):
                                  update=False)
 
         self._updateAll()
+
+        return True
 
     def invertX(self, inverted: bool = True) -> None:
         self._x_inverted = inverted
@@ -713,7 +740,12 @@ class Canvas(QGraphicsWidget):
 
     def resizeEvent(self, ev: QGraphicsSceneResizeEvent):
         """Override."""
+        if self.updateAutoRange():
+            return
+
         if self._aspect_ratio_locked:
+            # By this mean, the target rect is cached if there is no
+            # calls to setTarget(X/Y)Range.
             self._view_rect = QRectF(self._target_rect)
             self._maybeAdjustAspectRatio(self._view_rect)
         self._updateAll()
@@ -722,3 +754,12 @@ class Canvas(QGraphicsWidget):
         """Override."""
         self._proxy.cleanUp()
         super().close()
+
+
+class ImageCanvas(Canvas):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def setTargetRangeToFullView(self) -> None:
+        """Override."""
+        self.enableAutoRange(True)
