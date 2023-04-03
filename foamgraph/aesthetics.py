@@ -74,6 +74,8 @@ class QualitativeColor:
 
     @classmethod
     def mkColor(cls, c, *, alpha=255):
+        if isinstance(c, Qt.GlobalColor):
+            return QColor(c)
         return QColor(*getattr(cls, c), alpha)
 
     @classmethod

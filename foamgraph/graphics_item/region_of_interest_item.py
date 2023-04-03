@@ -5,22 +5,29 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import Optional, Union
 
+import numpy as np
+
 from ..backend.QtGui import (
-    QColor, QIntValidator, QPainter, QPainterPath, QPen
+    QBrush, QColor, QDrag, QIntValidator, QPainter, QPainterPath, QPen,
+    QPixmap
 )
-from ..backend.QtCore import pyqtSignal, QPointF, QRect, QRectF, QSize, Qt
+from ..backend.QtCore import (
+    pyqtSignal, QMimeData, QPointF, QRect, QRectF, QSize, Qt
+)
 from ..backend.QtWidgets import (
     QAbstractGraphicsShapeItem, QFrame, QGraphicsEllipseItem, QGridLayout,
     QGraphicsRectItem, QGraphicsTextItem, QLabel, QMenu, QWidgetAction,
 )
 
 from ..aesthetics import FColor
-from ..graphics_scene import MouseClickEvent, MouseDragEvent
+from ..algorithm import intersection
 from ..ctrl_widgets import SmartLineEdit
+from ..data_model import DataItemBase, ROIDataItem
+from ..graphics_scene import MouseClickEvent, MouseDragEvent
 from .graphics_item import GraphicsObject
 
 
@@ -139,7 +146,30 @@ class RoiCtrlWidget(QFrame):
             w.setDisabled(not editable)
 
 
-class ROIBase(GraphicsObject):
+class _ROIMeta(type(GraphicsObject), ABCMeta):
+    ...
+
+
+class DroppableItem(metaclass=ABCMeta):
+    @abstractmethod
+    def name(self) -> str:
+        ...
+
+    @abstractmethod
+    def pen(self) -> QPen:
+        ...
+
+    @abstractmethod
+    def brush(self) -> QBrush:
+        ...
+
+    @abstractmethod
+    def extract(self, data) -> DataItemBase:
+        ...
+
+
+class ROIBase(GraphicsObject, DroppableItem, metaclass=_ROIMeta):
+    """Base class for all region-of-interest graphics item."""
 
     class Moving(Enum):
         NONE = 0
@@ -174,6 +204,7 @@ class ROIBase(GraphicsObject):
 
         self._pen = FColor.mkPen("k")
         self._hover_pen = FColor.mkPen("w")
+        self._brush = FColor.mkBrush()
 
         self._menu = self._createContextMenu()
 
@@ -192,7 +223,16 @@ class ROIBase(GraphicsObject):
         return root
 
     def name(self) -> str:
+        """Override."""
         return self._name
+
+    def pen(self) -> QPen:
+        """Override."""
+        return self._pen
+
+    def brush(self) -> QBrush:
+        """Override."""
+        return self._brush
 
     def setPen(self, pen: QPen) -> None:
         """Set the QPen used to draw the ROI."""
@@ -245,11 +285,45 @@ class ROIBase(GraphicsObject):
         else:
             self._moving = self.Moving.BODY
 
+    def _moveByOffset(self, offset):
+        if self._moving == self.Moving.BODY:
+            self.moveBy(offset.x(), offset.y())
+        elif self._moving == self.Moving.RIGHT:
+            w = self._ref_rect.width() + offset.x()
+            self._item.setRect(
+                0, 0, 1 if w < 1 else w, self._ref_rect.height())
+        elif self._moving == self.Moving.LEFT:
+            self.moveBy(offset.x(), 0)
+            rect = self._item.rect()
+            w = rect.width() - int(offset.x())
+            self._item.setRect(0, 0, 1 if w < 1 else w, rect.height())
+        elif self._moving == self.Moving.BOTTOM:
+            h = self._ref_rect.height() + offset.y()
+            self._item.setRect(
+                0, 0, self._ref_rect.width(), 1 if h < 1 else h)
+        else:  # self._moving == self.Moving.TOP:
+            self.moveBy(0, offset.y())
+            rect = self._item.rect()
+            h = rect.height() - int(offset.y())
+            self._item.setRect(0, 0, rect.width(), 1 if h < 1 else h)
+
+    @abstractmethod
+    def draggingSample(self) -> QPixmap:
+        """Generate a pixmap shown when the item is being dragging."""
+        ...
+
     def mouseDragEvent(self, ev: MouseDragEvent) -> None:
         if ev.button() != Qt.MouseButton.LeftButton:
             return
-
         ev.accept()
+
+        if ev.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            drag = QDrag(self)
+            mime = QMimeData()
+            drag.setMimeData(mime)
+            drag.setPixmap(self.draggingSample())
+            drag.exec(Qt.DropAction.MoveAction)
+            return
 
         if ev.entering():
             pos = ev.buttonDownPos()
@@ -261,33 +335,15 @@ class ROIBase(GraphicsObject):
             self._ref_cursor = pos
             self._ref_rect = self._item.rect()
 
-        offset = ev.pos() - self._ref_cursor
-        ref_rect = self._ref_rect
-        if self._moving == self.Moving.BODY:
-            self.moveBy(offset.x(), offset.y())
-        elif self._moving == self.Moving.RIGHT:
-            w = ref_rect.width() + offset.x()
-            self._item.setRect(0, 0, 1 if w < 1 else w, ref_rect.height())
-        elif self._moving == self.Moving.LEFT:
-            self.moveBy(offset.x(), 0)
-            rect = self._item.rect()
-            w = rect.width() - int(offset.x())
-            self._item.setRect(0, 0, 1 if w < 1 else w, rect.height())
-        elif self._moving == self.Moving.BOTTOM:
-            h = ref_rect.height() + offset.y()
-            self._item.setRect(0, 0, ref_rect.width(), 1 if h < 1 else h)
-        else:  # self._moving == self.Moving.TOP:
-            self.moveBy(0, offset.y())
-            rect = self._item.rect()
-            h = rect.height() - int(offset.y())
-            self._item.setRect(0, 0, rect.width(), 1 if h < 1 else h)
+        if self._moving != self.Moving.NONE:
+            self._moveByOffset(ev.pos() - self._ref_cursor)
 
-        if ev.exiting() and self._moving != self.Moving.NONE:
-            self.stateChanged(finish=True)
-            self._moving = self.Moving.NONE
-            return
+            if ev.exiting():
+                self.stateChanged(finish=True)
+                self._moving = self.Moving.NONE
+                return
 
-        self.stateChanged(finish=False)
+            self.stateChanged(finish=False)
 
     def stateChanged(self, finish: bool = True) -> None:
         """Process changes to the state of the ROI."""
@@ -323,27 +379,74 @@ class ROIBase(GraphicsObject):
 
 
 class RectROI(ROIBase):
-    """Rectangular ROI widget."""
+    """Rectangular ROI graphics item."""
 
     item_type = QGraphicsRectItem
 
-    def __init__(self, x: float, y: float, w: float, h: float, *,
+    def __init__(self, w: float, h: float, x: float = 0., y: float = 0., *,
                  name: str = "", parent=None):
         super().__init__(x, y, QRectF(0, 0, w, h),
                          name=name, parent=parent)
 
     def region(self) -> tuple:
         return self.rect()
+
+    def extract(self, data: np.ndarray) -> ROIDataItem:
+        """Override."""
+        ret = ROIDataItem()
+        if self.isVisible():
+            x, y, w, h = intersection((
+                0, 0, data.shape[1], data.shape[0]), self.region())
+            if w > 0 and h > 0:
+                ret.setData(data[y:y+h, x:x+w])
+        return ret
+
+    def draggingSample(self) -> QPixmap:
+        """Override."""
+        w, h = 50, 50
+        pixmap = QPixmap(w, h)
+        pixmap.fill(FColor.mkColor(Qt.GlobalColor.transparent))
+        p = QPainter(pixmap)
+        p.setPen(self._pen)
+        pw = self._pen.width()
+        p.drawRect(pw, pw, w - 2 * pw, h - 2 * pw)
+        p.end()
+        return pixmap
 
 
 class EllipseROI(ROIBase):
+    """Ellipse ROI graphics item."""
 
     item_type = QGraphicsEllipseItem
 
-    def __init__(self, x: float, y: float, w: float, h: float, *,
+    def __init__(self, w: float, h: float, x: float = 0., y: float = 0., *,
                  name: str = "", parent=None):
         super().__init__(x, y, QRectF(0, 0, w, h),
                          name=name, parent=parent)
 
     def region(self) -> tuple:
         return self.rect()
+
+    def extract(self, data: np.ndarray) -> ROIDataItem:
+        """Override."""
+        ret = ROIDataItem()
+        if self.isVisible():
+            # FIXME
+            x, y, w, h = intersection((
+                0, 0, data.shape[1], data.shape[0]), self.region())
+            if w > 0 and h > 0:
+                ret.setData(data[y:y+h, x:x+w])
+        return ret
+
+    def draggingSample(self) -> QPixmap:
+        """Override."""
+        w, h = 50, 50
+        pixmap = QPixmap(w, h)
+        pixmap.fill(FColor.mkColor(Qt.GlobalColor.transparent))
+        p = QPainter(pixmap)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setPen(self._pen)
+        pw = self._pen.width()
+        p.drawEllipse(pw, pw, w - 2 * pw, h - 2 * pw)
+        p.end()
+        return pixmap

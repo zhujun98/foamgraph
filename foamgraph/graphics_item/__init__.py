@@ -11,4 +11,6 @@ from .plot_item import (
     ErrorbarPlotItem, PlotItem, ScatterPlotItem, ShadedPlotItem,
     SimpleCurvePlotItem, StemPlotItem
 )
-from .region_of_interest_item import EllipseROI, RectROI, ROIBase
+from .region_of_interest_item import (
+    DroppableItem, EllipseROI, RectROI, ROIBase
+)

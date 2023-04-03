@@ -5,15 +5,10 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
-import numpy as np
-
 from foamgraph.backend.QtWidgets import (
     QFrame, QHBoxLayout, QSizePolicy, QVBoxLayout
 )
-from foamgraph import (
-    FColor, LiveWindow, ImageView, mkQApp, GraphView, Section
-)
-from foamgraph.algorithm import extract_rect_roi
+from foamgraph import LiveWindow, ImageView, mkQApp, SmartView, Section
 
 from consumer import Consumer
 
@@ -31,43 +26,19 @@ class ImageViewWithROIs(ImageView):
         self.setImage(data['image']['data'])
 
 
-class RoiProjectionMonitor(GraphView):
-    def __init__(self, roi, *, parent=None):
-        super().__init__(parent=parent)
-
-        self._roi = roi
-        self.setTitle(roi.name())
-
-        self._plot = self.addCurvePlot(pen=FColor.mkPen(roi.color()))
-
-    def updateF(self, data):
-        """override."""
-        if not self._roi.isVisible():
-            self._plot.setData(None, None)
-            return
-
-        data = extract_rect_roi(data['image']['data'], self._roi.region())
-        if data is None:
-            self._plot.clearData()
-        else:
-            proj = np.mean(data, axis=0)
-            self._plot.setData(np.arange(len(proj)), proj)
-
-
 class ImageAnalysisWindow(LiveWindow):
     def __init__(self):
         super().__init__("Image Analysis")
 
         self._view = ImageViewWithROIs(parent=self)
 
-        roi1 = self._view.addRectROI(0, 0, 100, 100)
-        roi2 = self._view.addEllipseROI(10, 10, 100, 100)
+        self._view.addRectROI(100, 100, name="ROI1")
+        self._view.addEllipseROI(100, 100, name="ROI2")
         self._section = Section(parent=self)
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        for roi in [roi1, roi2]:
-            layout.addWidget(RoiProjectionMonitor(roi, parent=self))
+        layout.addWidget(SmartView(parent=self))
         self._section.setLayout(layout)
 
         self.init()
