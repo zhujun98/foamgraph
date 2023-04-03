@@ -115,7 +115,8 @@ python examples/plot_gallery.py
 python examples/image_analysis.py
 ```
 
-<img src="https://github.com/zhujun98/foam-demo/blob/main/foamgraph/image_analysis.gif" width="640"/>
+<img src="https://github.com/zhujun98/foam-demo/blob/main/foamgraph/image_analysis-1.gif" width="320"/> <img src="https://github.com/zhujun98/foam-demo/blob/main/foamgraph/image_analysis-2.gif" width="320"/>
+
 
 
 ## Benchmarks
