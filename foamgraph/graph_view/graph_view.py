@@ -8,18 +8,33 @@ Author: Jun Zhu
 import abc
 from typing import final, Optional, Union
 
-from ..backend.QtCore import QTimer
+from ..backend.QtCore import Qt, QTimer
 
 from ..graphics_item import (
-    AnnotationItem, BarPlotItem, CandlestickPlotItem, SimpleCurvePlotItem,
-    CurvePlotItem, ErrorbarPlotItem, ScatterPlotItem, ShadedPlotItem,
-    StemPlotItem
+    AnnotationItem, BarPlotItem, BarPlotItemManager, CandlestickPlotItem,
+    SimpleCurvePlotItem, CurvePlotItem, ErrorbarPlotItem,
+    ScatterPlotItem, ShadedPlotItem, StemPlotItem
 )
 from ..graphics_widget import GraphWidget
 from .graphics_view import GraphicsView
 
 
-class GraphView(GraphicsView):
+class GraphViewBase(GraphicsView):
+
+    def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):
+        self._cw.setLabel("bottom", x)
+        self._cw.setLabel("left", y)
+        if y2 is not None:
+            self._cw.setLabel("right", y2)
+
+    def addLegend(self, *args, **kwargs):
+        self._cw.addLegend(*args, **kwargs)
+
+    def showLegend(self, *args, **kwargs):
+        self._cw.showLegend(*args, **kwargs)
+
+
+class GraphView(GraphViewBase):
     """QGraphicsView for displaying graphs.
 
     This is normally used as a base class.
@@ -28,6 +43,8 @@ class GraphView(GraphicsView):
 
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
+
+        self._bp_manager = BarPlotItemManager()
 
     def addCurvePlot(self, *args, simple=False, y2=False, **kwargs)\
             -> Union[CurvePlotItem, SimpleCurvePlotItem]:
@@ -49,11 +66,25 @@ class GraphView(GraphicsView):
         self._cw.addItem(item, y2=y2)
         return item
 
-    def addBarPlot(self, *args, y2=False, **kwargs) -> BarPlotItem:
+    def setBarPlotStackOrientation(self, orientation: str = 'v') -> None:
+        if orientation.lower() in ['v', 'vertical']:
+            self._bp_manager.setStackOrientation(Qt.Orientation.Vertical)
+        else:
+            self._bp_manager.setStackOrientation(Qt.Orientation.Horizontal)
+
+    def addBarPlot(self, *args,
+                   y2=False,
+                   **kwargs) -> BarPlotItem:
         """Add and return a :class:`BarPlotItem`."""
         item = BarPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
+        self._bp_manager.addItem(item)
         return item
+
+    def removeItem(self, item):
+        if isinstance(item, BarPlotItem):
+            self._bp_manager.removeItem(item)
+        super().removeItem(item)
 
     def addErrorbarPlot(self, *args, y2=False, **kwargs) -> ErrorbarPlotItem:
         """Add and return an :class:`ErrorbarPlotItem`."""
@@ -85,18 +116,6 @@ class GraphView(GraphicsView):
         item = StemPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
-
-    def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):
-        self._cw.setLabel("bottom", x)
-        self._cw.setLabel("left", y)
-        if y2 is not None:
-            self._cw.setLabel("right", y2)
-
-    def addLegend(self, *args, **kwargs):
-        self._cw.addLegend(*args, **kwargs)
-
-    def showLegend(self, *args, **kwargs):
-        self._cw.showLegend(*args, **kwargs)
 
 
 class TimedGraphView(GraphView):

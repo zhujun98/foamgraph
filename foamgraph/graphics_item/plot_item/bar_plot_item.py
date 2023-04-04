@@ -23,13 +23,11 @@ class BarPlotItem(PlotItem):
         self._x = None
         self._y = None
 
-        if width > 1.0 or width <= 0:
-            width = 1.0
-        self._width = width
+        self._width = max(min(1.0, width), 0.1)
 
         if pen is None and brush is None:
-            self._pen = FColor.mkPen()
-            self._brush = FColor.mkBrush('b')
+            self._pen = FColor.mkPen('b')
+            self._brush = FColor.mkBrush('b', alpha=100)
         else:
             self._pen = FColor.mkPen() if pen is None else pen
             self._brush = FColor.mkBrush() if brush is None else brush
@@ -72,6 +70,8 @@ class BarPlotItem(PlotItem):
         else:
             width = self._width
 
+        width *= self._scale
+
         for px, py in zip(x, y):
             p.drawRect(QRectF(px - width/2, 0, width, py))
 
@@ -97,3 +97,29 @@ class BarPlotItem(PlotItem):
             # Legend sample has a bounding box of (0, 0, 20, 20)
             p.drawRect(QRectF(2, 2, 18, 18))
         return True
+
+
+class BarGroupPlotItem(BarPlotItem):
+    def __init__(self):
+        self._items = []
+
+        self._orientation = Qt.Orientation.Vertical
+
+    def addItem(self, item: BarPlotItem) -> None:
+        self._items.append(item)
+        if self._orientation == Qt.Orientation.Horizontal:
+            for item in self._items:
+                item.setWidthScale(1. / len(self._items))
+
+    def removeItem(self, item: BarPlotItem) -> None:
+        self._items.remove(item)
+        for item in self._items:
+            item.setWidthScale(1. / len(self._items))
+
+    def setStackOrientation(self, orientation: Qt.Orientation) -> None:
+        self._orientation = orientation
+        for item in self._items:
+            if orientation == Qt.Orientation.Vertical:
+                item.setWidthScale(1.0)
+            else:
+                item.setWidthScale(1./len(self._items))

@@ -11,10 +11,10 @@ from ..aesthetics import FColor
 from ..backend.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
 from ..graphics_item import CurvePlotItem, DroppableItem
 from ..graphics_widget import SmartGraphWidget
-from .graphics_view import GraphicsView
+from .graph_view import GraphViewBase
 
 
-class SmartView(GraphicsView):
+class SmartView(GraphViewBase):
     """SmartView class.
 
     SmartView only accepts a single type of plot.
@@ -70,15 +70,3 @@ class SmartView(GraphicsView):
             return
         self.addDataItem(item)
         ev.acceptProposedAction()
-
-    def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):
-        self._cw.setLabel("bottom", x)
-        self._cw.setLabel("left", y)
-        if y2 is not None:
-            self._cw.setLabel("right", y2)
-
-    def addLegend(self, *args, **kwargs):
-        self._cw.addLegend(*args, **kwargs)
-
-    def showLegend(self, *args, **kwargs):
-        self._cw.showLegend(*args, **kwargs)

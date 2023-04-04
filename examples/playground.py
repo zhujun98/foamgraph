@@ -222,6 +222,19 @@ class BarPlotControl(GraphControlBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self._num_bars = QComboBox()
+        self._num_bars.currentTextChanged.connect(self._view.setNumDatasets)
+        self._num_bars.addItems(["1", "2", "3", "4"])
+
+        self._stack_orientation = QComboBox()
+        self._stack_orientation.currentTextChanged.connect(self._view.setStackOrientation)
+        self._stack_orientation.addItems(["Vertical", "Horizontal"])
+
+        self._layout.addWidget(QLabel("Number of datasets: "))
+        self._layout.addWidget(self._num_bars)
+        self._layout.addWidget(QLabel("Stack orientation: "))
+        self._layout.addWidget(self._stack_orientation)
+
         self.init()
 
 
@@ -230,21 +243,42 @@ class BarPlot(GraphViewDemoBase):
         super().__init__(*args, **kwargs)
 
         self.setTitle("Bar Plot")
-        self._plot = self.addBarPlot(label="bar")
+        self._plots = []
 
-        data = np.random.normal(size=1000)
-        hist, _ = np.histogram(data, bins=40)
-        self._data = [
-            (np.arange(40).astype(np.float64), hist.astype(np.float64))
-        ]
+        self._num_datasets = 1
+
+        self._data = []
+        for _ in range(4):
+            data = np.random.normal(size=1000)
+            hist, _ = np.histogram(data, bins=40)
+            self._data.append(
+                (np.arange(40).astype(np.float64), hist.astype(np.float64))
+            )
+
+    def setNumDatasets(self, num: str):
+        self._num_datasets = int(num)
+
+        for plot in self._plots:
+            self.removeItem(plot)
+        self._plots.clear()
+
+        for i in range(self._num_datasets):
+            self._plots.append(self.addBarPlot(label=f"bar{i+1}"))
+
+        self.setData()
+
+    def setStackOrientation(self, orientation: str):
+        self.setBarPlotStackOrientation(orientation)
+        self.setData()
 
     def setData(self):
-        x, y = self.getData()
-        if self._nan_x:
-            x[:10] = np.nan
-        if self._nan_y:
-            y[:10] = np.nan
-        self._plot.setData(x, y)
+        for i, plot in enumerate(self._plots):
+            x, y = [d.copy() for d in self._data[i]]
+            if self._nan_x:
+                x[:10] = np.nan
+            if self._nan_y:
+                y[:10] = np.nan
+            plot.setData(x, y)
 
 
 class ErrorbarPlotControl(GraphControlBase):

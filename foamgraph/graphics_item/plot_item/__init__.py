@@ -1,5 +1,5 @@
 from .annotation_item import AnnotationItem
-from .bar_plot_item import BarPlotItem
+from .bar_plot_item import BarPlotItem, BarPlotItemManager
 from .candlestick_plot_item import CandlestickPlotItem
 from .curve_plot_item import CurvePlotItem, SimpleCurvePlotItem
 from .errorbar_plot_item import ErrorbarPlotItem
