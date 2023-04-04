@@ -71,6 +71,30 @@ class ScatterPlotData:
         }
 
 
+class BarPlotData:
+    def __init__(self, n: int):
+        self._x = np.arange(n)
+        size = 100
+        self._y1 = np.random.random(size * n).reshape(size, n)
+        self._y2 = np.random.random(size * n).reshape(size, n)
+        self._y3 = np.random.random(size * n).reshape(size, n)
+
+        self._counter = 0
+        self._stack_vertical = False
+
+    def next(self):
+        if self._counter == len(self._y1) - 1:
+            self._counter = 0
+            self._stack_vertical = not self._stack_vertical
+        self._counter += 1
+
+        return {"x": self._x,
+                "y1": self._y1[self._counter],
+                "y2": self._y2[self._counter],
+                "y3": self._y3[self._counter],
+                'stack_vertical': self._stack_vertical}
+
+
 class ErrorBarPlotData:
     def __init__(self, n: int):
         self._x = np.arange(n)
@@ -242,6 +266,7 @@ if __name__ == "__main__":
 
     line_plot_data = ShadePlotData(500)
     scatter_plot_data = ScatterPlotData(400)
+    bar_plot_data = BarPlotData(30)
     errorbar_plot_data = ErrorBarPlotData(50)
     multi_line_plot_data = MultiLinePlotData(600)
     double_y_plot_data = DoubleYPlotData(100)
@@ -254,10 +279,7 @@ if __name__ == "__main__":
         data = {
             "line": line_plot_data.next(),
             "scatter": scatter_plot_data.next(),
-            "bar": {
-                "x": np.arange(50),
-                "y": 100 * np.random.random(50)
-            },
+            "bar": bar_plot_data.next(),
             "errorbar": errorbar_plot_data.next(),
             "multi-line": multi_line_plot_data.next(),
             "double-y": double_y_plot_data.next(),

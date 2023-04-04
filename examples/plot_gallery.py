@@ -65,14 +65,29 @@ class BarPlot(GraphView):
 
         self.setTitle('Bar plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
+        self.addLegend()
 
-        self._plot = self.addBarPlot(pen=FColor.mkPen('ForestGreen'),
-                                     brush=FColor.mkBrush('DodgerBlue'))
+        self._plot1 = self.addBarPlot(
+            width=0.9, label="bar1", brush=FColor.mkBrush("b"))
+        self._plot2 = self.addBarPlot(
+            width=0.9, label="bar2", brush=FColor.mkBrush('DodgerBlue'))
+        self._plot3 = self.addBarPlot(
+            width=0.9, label="bar3", brush=FColor.mkBrush('ForestGreen'))
+
+        self._stack_vertical = False
 
     def updateF(self, data):
         """Override."""
         data = data['bar']
-        self._plot.setData(data['x'], data['y'])
+        if self._stack_vertical ^ data['stack_vertical']:
+            self._stack_vertical = data['stack_vertical']
+            if self._stack_vertical:
+                self.setBarPlotStackOrientation('v')
+            else:
+                self.setBarPlotStackOrientation('h')
+        self._plot1.setData(data['x'], data['y1'])
+        self._plot2.setData(data['x'], data['y2'])
+        self._plot3.setData(data['x'], data['y3'])
 
 
 class ErrorbarPlot(TimedGraphView):
