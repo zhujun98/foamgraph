@@ -7,3 +7,5 @@ from .colormap_controller import ColormapController
 from .image_widget import ImageWidget
 from .label_widget import LabelWidget
 from .legend_widget import LegendWidget
+from .plot_widget import PlotWidget
+from .smart_graph_widget import SmartGraphWidget

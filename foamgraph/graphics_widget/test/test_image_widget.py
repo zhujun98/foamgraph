@@ -34,9 +34,9 @@ def test_mouse_cursor_context_menu(iwidget):
 
 
 def test_roi(iwidget):
-    roi1 = iwidget.addRectROI(0, 0, 10, 10, name="ROI")
+    roi1 = iwidget.addRectROI(10, 10, name="ROI")
     # name in context menu will be automatically generated
-    roi2 = iwidget.addEllipseROI(1, 1, 10, 10)
+    roi2 = iwidget.addEllipseROI(10, 10, 1, 1)
 
     action1 = iwidget._canvas.getMenuAction("ROI_ROI")
     assert not action1.isChecked()

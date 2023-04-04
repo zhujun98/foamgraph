@@ -19,12 +19,10 @@ class ImageView(GraphicsView):
 
     This is normally used as a base class.
     """
-    def __init__(self, *, parent=None):
-        """Initialization."""
-        super().__init__(parent=parent)
+    _central_widget_type = ImageWidget
 
-        self._cw = ImageWidget()
-        self.setCentralWidget(self._cw)
+    def __init__(self, *, parent=None):
+        super().__init__(parent=parent)
 
     def addRectROI(self, *args, **kwargs):
         return self._cw.addRectROI(*args, **kwargs)

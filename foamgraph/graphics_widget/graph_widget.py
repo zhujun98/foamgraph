@@ -21,7 +21,7 @@ from .plot_widget import PlotWidget
 class GraphWidget(PlotWidget):
     """PlotWidget for displaying graphs."""
 
-    def __init__(self, *, parent = None):
+    def __init__(self, *, parent=None):
         super().__init__(parent=parent)
 
         self._plot_items = OrderedDict()  # PlotItem: None

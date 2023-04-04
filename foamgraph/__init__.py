@@ -10,7 +10,7 @@ from .backend import QtCore, QtGui, QtWidgets, mkQApp
 from .live_window import LiveWindow
 from .aesthetics import FColor, createIconButton
 from .graph_view import (
-    GraphView, ImageView, TimedGraphView, TimedImageView
+    GraphView, ImageView, SmartView, TimedGraphView, TimedImageView
 )
 from .ctrl_widgets import (
     SmartLineEdit, SmartStringLineEdit, SmartBoundaryLineEdit,

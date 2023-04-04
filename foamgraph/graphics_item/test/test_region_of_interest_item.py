@@ -1,5 +1,7 @@
 import pytest
 
+import numpy as np
+
 from foamgraph.backend.QtCore import QRectF
 from foamgraph.backend.QtGui import QAction
 from foamgraph.backend.QtWidgets import QWidgetAction
@@ -20,7 +22,7 @@ def iwidget():
 
 @pytest.fixture(params=[EllipseROI, RectROI])
 def roi(iwidget, request):
-    item = iwidget._addROI(request.param, 5, 10, 100, 200)
+    item = iwidget._addROI(request.param, 100, 200, 5, 10, )
     processEvents()
     return item
 
@@ -47,3 +49,11 @@ def test_context_menu(roi):
     assert roi.rect() == (0, 10, 150, 100)
     widget._py_le.setText("-5")
     assert roi.rect() == (0, -5, 150, 100)
+
+
+def test_extract():
+    assert RectROI(15, 15, -10, -10).extract(np.ones((10, 10)))._data.shape == (5, 5)
+    assert RectROI(5, 5, -10, -10).extract(np.ones((100, 100)))._data is None
+
+    assert EllipseROI(15, 15, -10, -10).extract(np.ones((10, 10)))._data.shape == (5, 5)
+    assert EllipseROI(5, 5, -10, -10).extract(np.ones((100, 100)))._data is None

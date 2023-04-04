@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 from foamgraph.algorithm import (
-    extract_rect_roi, quick_min_max, intersection
+    quick_min_max, intersection
 )
 
 
@@ -51,8 +51,3 @@ def test_intersection():
 
     assert intersection((0, 0, 10, 20), (2, -2, 4, 24)) == (2, 0, 4, 20)
     assert intersection((2, -2, 4, 24), (0, 0, 10, 20)) == (2, 0, 4, 20)
-
-
-def test_extract_rect_roi():
-    assert extract_rect_roi(np.ones((10, 10)), (-10, -10, 15, 15)).shape == (5, 5)
-    assert extract_rect_roi(np.ones((100, 100)), (-10, -10, 5, 5)) is None
