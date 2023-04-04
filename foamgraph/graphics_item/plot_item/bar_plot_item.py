@@ -24,6 +24,9 @@ class BarPlotItem(PlotItem):
         self._y = None
 
         self._width = max(min(1.0, width), 0.1)
+        self._scale = 1.0
+        self._shift = 0.0
+        self.setShift()
 
         if pen is None and brush is None:
             self._pen = FColor.mkPen('b')
@@ -33,6 +36,16 @@ class BarPlotItem(PlotItem):
             self._brush = FColor.mkBrush() if brush is None else brush
 
         self.setData(x, y)
+
+    def setScale(self, scale) -> None:
+        self._scale = scale
+        self._graph = None
+
+    def setShift(self, shift: Optional[float] = None) -> None:
+        if shift is None:
+            shift = -self._width / 2.
+        self._shift = shift
+        self._graph = None
 
     def _parseInputData(self, x, **kwargs):
         """Override."""
@@ -72,8 +85,9 @@ class BarPlotItem(PlotItem):
 
         width *= self._scale
 
+        shift = self._shift
         for px, py in zip(x, y):
-            p.drawRect(QRectF(px - width/2, 0, width, py))
+            p.drawRect(QRectF(px + shift, 0, width, py))
 
         p.end()
 
@@ -99,7 +113,7 @@ class BarPlotItem(PlotItem):
         return True
 
 
-class BarGroupPlotItem(BarPlotItem):
+class BarPlotItemManager:
     def __init__(self):
         self._items = []
 
@@ -107,19 +121,26 @@ class BarGroupPlotItem(BarPlotItem):
 
     def addItem(self, item: BarPlotItem) -> None:
         self._items.append(item)
-        if self._orientation == Qt.Orientation.Horizontal:
-            for item in self._items:
-                item.setWidthScale(1. / len(self._items))
+        self.setStackOrientation(self._orientation)
 
     def removeItem(self, item: BarPlotItem) -> None:
         self._items.remove(item)
         for item in self._items:
-            item.setWidthScale(1. / len(self._items))
+            item.setScale(1. / len(self._items))
 
     def setStackOrientation(self, orientation: Qt.Orientation) -> None:
         self._orientation = orientation
         for item in self._items:
             if orientation == Qt.Orientation.Vertical:
-                item.setWidthScale(1.0)
+                item.setScale(1.0)
+                item.setShift()
             else:
-                item.setWidthScale(1./len(self._items))
+                total_width = 0
+                for item in self._items:
+                    total_width += item._width
+                scale = 1. / len(self._items)
+                shift = - total_width * scale / 2.
+                for item in self._items:
+                    item.setScale(scale)
+                    item.setShift(shift)
+                    shift += item._width * scale

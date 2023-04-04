@@ -13,7 +13,7 @@ from foamgraph.backend.QtWidgets import (
     QCheckBox, QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QMainWindow,
     QPushButton, QTabWidget, QVBoxLayout
 )
-from foamgraph import mkQApp, GraphView, ImageView
+from foamgraph import FColor, mkQApp, GraphView, ImageView
 from foamgraph.version import __version__
 
 app = mkQApp()
@@ -224,7 +224,7 @@ class BarPlotControl(GraphControlBase):
 
         self._num_bars = QComboBox()
         self._num_bars.currentTextChanged.connect(self._view.setNumDatasets)
-        self._num_bars.addItems(["1", "2", "3", "4"])
+        self._num_bars.addItems(["1", "2", "3"])
 
         self._stack_orientation = QComboBox()
         self._stack_orientation.currentTextChanged.connect(self._view.setStackOrientation)
@@ -248,7 +248,7 @@ class BarPlot(GraphViewDemoBase):
         self._num_datasets = 1
 
         self._data = []
-        for _ in range(4):
+        for _ in range(3):
             data = np.random.normal(size=1000)
             hist, _ = np.histogram(data, bins=40)
             self._data.append(
@@ -262,8 +262,15 @@ class BarPlot(GraphViewDemoBase):
             self.removeItem(plot)
         self._plots.clear()
 
+        pens = [FColor.mkPen('b'),
+                FColor.mkPen('FireBrick'),
+                FColor.mkPen('ForestGreen')]
+        brushes = [FColor.mkBrush('b', alpha=100),
+                   FColor.mkBrush('FireBrick', alpha=100),
+                   FColor.mkBrush('ForestGreen', alpha=100)]
         for i in range(self._num_datasets):
-            self._plots.append(self.addBarPlot(label=f"bar{i+1}"))
+            self._plots.append(self.addBarPlot(
+                label=f"bar{i+1}", width=0.9, pen=pens[i], brush=brushes[i]))
 
         self.setData()
 
