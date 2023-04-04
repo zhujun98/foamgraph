@@ -15,12 +15,15 @@ from ..backend.QtWidgets import (
 
 from ..aesthetics import FColor
 from ..graphics_scene import GraphicsScene
+from ..graphics_widget import PlotWidget
 
 
 class GraphicsView(QGraphicsView):
 
     device_range_changed_sgn = pyqtSignal(object, object)
     device_transform_changed_sgn = pyqtSignal(object)
+
+    _central_widget_type: type(PlotWidget) = None
 
     def __init__(self, *, parent=None):
         """Initialization."""
@@ -52,18 +55,16 @@ class GraphicsView(QGraphicsView):
 
         self.setMouseTracking(True)
 
-        self._cw = None
-
-        self._range = QRectF(0, 0, 1, 1)
-        self.updateMatrix()
+        self._cw = self._setCentralWidget()
+        self.resizeEvent(None)
 
         if parent is not None and hasattr(parent, 'registerGraphicsView'):
             parent.registerGraphicsView(self)
 
-    def setCentralWidget(self, widget: QGraphicsWidget) -> None:
-        self._cw = widget
-        self.scene().addItem(widget)
-        self.resizeEvent(None)
+    def _setCentralWidget(self) -> PlotWidget:
+        cw = self._central_widget_type()
+        self.scene().addItem(cw)
+        return cw
 
     def updateMatrix(self):
         self.setSceneRect(self._range)

@@ -24,12 +24,10 @@ class GraphView(GraphicsView):
 
     This is normally used as a base class.
     """
-    def __init__(self, *, parent=None):
-        """Initialization."""
-        super().__init__(parent=parent)
+    _central_widget_type = GraphWidget
 
-        self._cw = GraphWidget()
-        self.setCentralWidget(self._cw)
+    def __init__(self, *, parent=None):
+        super().__init__(parent=parent)
 
     def addCurvePlot(self, *args, simple=False, y2=False, **kwargs)\
             -> Union[CurvePlotItem, SimpleCurvePlotItem]:

@@ -5,19 +5,23 @@ The full license is in the file LICENSE, distributed with this software.
 
 Author: Jun Zhu
 """
+from typing import Optional
+
 from ..aesthetics import FColor
 from ..backend.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
-from ..graph_view import GraphView
-from ..graphics_item import DroppableItem
+from ..graphics_item import CurvePlotItem, DroppableItem
+from ..graphics_widget import SmartGraphWidget
+from .graphics_view import GraphicsView
 
 
-class SmartView(GraphView):
+class SmartView(GraphicsView):
     """SmartView class.
 
     SmartView only accepts a single type of plot.
     """
+    _central_widget_type = SmartGraphWidget
+
     def __init__(self, *, parent=None):
-        """Initialization."""
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
 
@@ -26,7 +30,9 @@ class SmartView(GraphView):
 
     def _addPlot(self, *args, **kwargs):
         if self._plot_type == "curve":
-            return self.addCurvePlot(*args, **kwargs)
+            item = CurvePlotItem(*args, **kwargs)
+            self._cw.addItem(item)
+            return item
 
     def addDataItem(self, item: DroppableItem) -> None:
         if item not in self._data_items:
@@ -64,3 +70,15 @@ class SmartView(GraphView):
             return
         self.addDataItem(item)
         ev.acceptProposedAction()
+
+    def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):
+        self._cw.setLabel("bottom", x)
+        self._cw.setLabel("left", y)
+        if y2 is not None:
+            self._cw.setLabel("right", y2)
+
+    def addLegend(self, *args, **kwargs):
+        self._cw.addLegend(*args, **kwargs)
+
+    def showLegend(self, *args, **kwargs):
+        self._cw.showLegend(*args, **kwargs)
