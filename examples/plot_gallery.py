@@ -137,7 +137,7 @@ class DoubleYPlot(GraphView):
         super().__init__(parent=parent)
 
         self.setTitle('Double-y plot')
-        self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arg. u.)")
+        self.setXYLabels("x (arb. u.)", "y (arb. u.)", y2="y2 (arb. u.)")
 
         self._plot = self.addCurvePlot(pen=FColor.mkPen('Brown'))
         self._plot1 = self.addScatterPlot(

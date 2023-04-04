@@ -70,11 +70,11 @@ class GraphicsView(QGraphicsView):
         self.setSceneRect(self._range)
         self.resetTransform()
 
-    def addItem(self, *args, **kwargs):
-        self._cw.addItem(*args, **kwargs)
+    def addItem(self, item):
+        self._cw.addItem(item)
 
-    def removeItem(self, *args, **kwargs):
-        self._cw.removeItem(*args, **kwargs)
+    def removeItem(self, item):
+        self._cw.removeItem(item)
 
     def setTitle(self, *args, **kwargs):
         self._cw.setTitle(*args, **kwargs)

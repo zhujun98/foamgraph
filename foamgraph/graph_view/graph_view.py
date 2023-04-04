@@ -67,24 +67,30 @@ class GraphView(GraphViewBase):
         return item
 
     def setBarPlotStackOrientation(self, orientation: str = 'v') -> None:
-        if orientation.lower() in ['v', 'vertical']:
-            self._bp_manager.setStackOrientation(Qt.Orientation.Vertical)
-        else:
-            self._bp_manager.setStackOrientation(Qt.Orientation.Horizontal)
+        """Set the stack orientation when there are multiple :class:`BarPlotItem`s.
 
-    def addBarPlot(self, *args,
-                   y2=False,
-                   **kwargs) -> BarPlotItem:
-        """Add and return a :class:`BarPlotItem`."""
+        :param orientation: Stack orientation which can be either vertical
+            ('v', 'vertical') or horizontal ('h', 'horizontal').
+        """
+        orientation = orientation.lower()
+        if orientation in ['v', 'vertical']:
+            self._bp_manager.setStackOrientation(Qt.Orientation.Vertical)
+        elif orientation in ['h', 'horizontal']:
+            self._bp_manager.setStackOrientation(Qt.Orientation.Horizontal)
+        else:
+            raise ValueError(f"Unknown orientation: {orientation}")
+
+    def addBarPlot(self, *args, y2=False, **kwargs) -> BarPlotItem:
+        """Add and return a :class:`BarPlotItem`.
+
+        If there are more than one :class:`BarPlotItem`, they will stack
+        vertically by default. To change the stacking orientation, see
+        :meth:`GraphView.setBarPlotStackOrientation`.
+        """
         item = BarPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         self._bp_manager.addItem(item)
         return item
-
-    def removeItem(self, item):
-        if isinstance(item, BarPlotItem):
-            self._bp_manager.removeItem(item)
-        super().removeItem(item)
 
     def addErrorbarPlot(self, *args, y2=False, **kwargs) -> ErrorbarPlotItem:
         """Add and return an :class:`ErrorbarPlotItem`."""
@@ -116,6 +122,12 @@ class GraphView(GraphViewBase):
         item = StemPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
         return item
+
+    def removeItem(self, item):
+        """Override."""
+        if isinstance(item, BarPlotItem):
+            self._bp_manager.removeItem(item)
+        super().removeItem(item)
 
 
 class TimedGraphView(GraphView):
