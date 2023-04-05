@@ -32,6 +32,11 @@ def test_input_data_parsing(view):
     with pytest.raises(ValueError, match="different lengths"):
         item.setData(right, right, y_min=right, y_max=wrong)
 
+    # test beam
+    item = ErrorbarPlotItem(beam=1.1)
+    assert item._beam == 1.0
+    item = ErrorbarPlotItem(beam=-0.1)
+    assert item._beam == 0.0
 
 @pytest.fixture
 def item(view):
@@ -49,16 +54,34 @@ def test_plot(item):
     processEvents()
 
 
+def test_bounding_rect(view):
+    x = [-0.1, 0, 0.1, 0.2]
+    y = np.array([1, 2, 2, 1]).astype(np.float64)
+    y_min = y - 0.1
+    y_max = y + 0.1
+
+    item = view.addErrorbarPlot()
+    item.setData(x, y, y_min, y_max)
+    processEvents()
+    # default beam = 0.9, -0.145 = -0.1 - 0.1 * 0.9 / 2
+    assert item.boundingRect() == QRectF(-0.145, 0.9, 0.39, 1.2)
+
+    item = view.addErrorbarPlot(beam=0)
+    item.setData(x, y, y_min, y_max)
+    processEvents()
+    # default beam = 0.9, -0.145 = -0.1 - 0.1 * 0.9 / 2
+    assert item.boundingRect() == QRectF(-0.1, 0.9, 0.3, 1.2)
+
+
 def test_log_mode(view, item):
-    x = y = np.arange(11).astype(np.float64)
-    item.setData(x, y, y_min=y/10, y_max=y*10)
-    item.setBeam(1)
+    x = y = 0.1 * np.arange(11).astype(np.float64)
+    item.setData(x, y, y_min=y/10, y_max=y*10, beam=1.)
     processEvents()
 
     # test log mode
     view._cw._onLogXScaleToggled(True)
     processEvents()
-    assert item.boundingRect() == QRectF(-1.5, 0., 3., 100.)
+    assert item.boundingRect() == QRectF(-2.5, 0., 3., 10.)
     view._cw._onLogYScaleToggled(True)
     processEvents()
-    assert item.boundingRect() == QRectF(-1.5, -2., 3., 4.)
+    assert item.boundingRect() == QRectF(-2.5, -3., 3., 4.)
