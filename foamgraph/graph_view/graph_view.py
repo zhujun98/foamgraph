@@ -8,18 +8,33 @@ Author: Jun Zhu
 import abc
 from typing import final, Optional, Union
 
-from ..backend.QtCore import QTimer
+from ..backend.QtCore import Qt, QTimer
 
 from ..graphics_item import (
-    AnnotationItem, BarPlotItem, CandlestickPlotItem, SimpleCurvePlotItem,
-    CurvePlotItem, ErrorbarPlotItem, ScatterPlotItem, ShadedPlotItem,
-    StemPlotItem
+    AnnotationItem, BarPlotItem, BarPlotItemManager, CandlestickPlotItem,
+    SimpleCurvePlotItem, CurvePlotItem, ErrorbarPlotItem,
+    ScatterPlotItem, ShadedPlotItem, StemPlotItem
 )
 from ..graphics_widget import GraphWidget
 from .graphics_view import GraphicsView
 
 
-class GraphView(GraphicsView):
+class GraphViewBase(GraphicsView):
+
+    def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):
+        self._cw.setLabel("bottom", x)
+        self._cw.setLabel("left", y)
+        if y2 is not None:
+            self._cw.setLabel("right", y2)
+
+    def addLegend(self, *args, **kwargs):
+        self._cw.addLegend(*args, **kwargs)
+
+    def showLegend(self, *args, **kwargs):
+        self._cw.showLegend(*args, **kwargs)
+
+
+class GraphView(GraphViewBase):
     """QGraphicsView for displaying graphs.
 
     This is normally used as a base class.
@@ -28,6 +43,8 @@ class GraphView(GraphicsView):
 
     def __init__(self, *, parent=None):
         super().__init__(parent=parent)
+
+        self._bp_manager = BarPlotItemManager()
 
     def addCurvePlot(self, *args, simple=False, y2=False, **kwargs)\
             -> Union[CurvePlotItem, SimpleCurvePlotItem]:
@@ -49,10 +66,30 @@ class GraphView(GraphicsView):
         self._cw.addItem(item, y2=y2)
         return item
 
+    def setBarPlotStackOrientation(self, orientation: str = 'v') -> None:
+        """Set the stack orientation when there are multiple :class:`BarPlotItem`s.
+
+        :param orientation: Stack orientation which can be either vertical
+            ('v', 'vertical') or horizontal ('h', 'horizontal').
+        """
+        orientation = orientation.lower()
+        if orientation in ['v', 'vertical']:
+            self._bp_manager.setStackOrientation(Qt.Orientation.Vertical)
+        elif orientation in ['h', 'horizontal']:
+            self._bp_manager.setStackOrientation(Qt.Orientation.Horizontal)
+        else:
+            raise ValueError(f"Unknown orientation: {orientation}")
+
     def addBarPlot(self, *args, y2=False, **kwargs) -> BarPlotItem:
-        """Add and return a :class:`BarPlotItem`."""
+        """Add and return a :class:`BarPlotItem`.
+
+        If there are more than one :class:`BarPlotItem`, they will stack
+        vertically by default. To change the stacking orientation, see
+        :meth:`GraphView.setBarPlotStackOrientation`.
+        """
         item = BarPlotItem(*args, **kwargs)
         self._cw.addItem(item, y2=y2)
+        self._bp_manager.addItem(item)
         return item
 
     def addErrorbarPlot(self, *args, y2=False, **kwargs) -> ErrorbarPlotItem:
@@ -86,17 +123,11 @@ class GraphView(GraphicsView):
         self._cw.addItem(item, y2=y2)
         return item
 
-    def setXYLabels(self, x: str, y: str, *, y2: Optional[str] = None):
-        self._cw.setLabel("bottom", x)
-        self._cw.setLabel("left", y)
-        if y2 is not None:
-            self._cw.setLabel("right", y2)
-
-    def addLegend(self, *args, **kwargs):
-        self._cw.addLegend(*args, **kwargs)
-
-    def showLegend(self, *args, **kwargs):
-        self._cw.showLegend(*args, **kwargs)
+    def removeItem(self, item):
+        """Override."""
+        if isinstance(item, BarPlotItem):
+            self._bp_manager.removeItem(item)
+        super().removeItem(item)
 
 
 class TimedGraphView(GraphView):

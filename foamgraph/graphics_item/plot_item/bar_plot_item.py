@@ -23,18 +23,28 @@ class BarPlotItem(PlotItem):
         self._x = None
         self._y = None
 
-        if width > 1.0 or width <= 0:
-            width = 1.0
-        self._width = width
+        self._width = max(min(1.0, width), 0.1)
+        self._scale = 1.0
+        self._shift = 0.0
+        self._setBarTransform(1.0, 0.0)
 
         if pen is None and brush is None:
-            self._pen = FColor.mkPen()
-            self._brush = FColor.mkBrush('b')
+            self._pen = FColor.mkPen('b')
+            self._brush = FColor.mkBrush('b', alpha=100)
         else:
             self._pen = FColor.mkPen() if pen is None else pen
             self._brush = FColor.mkBrush() if brush is None else brush
 
         self.setData(x, y)
+
+    def _setBarTransform(self, scale: float, shift: Optional[float] = None) -> None:
+        self._scale = max(min(1.0, scale), 0.01)
+
+        if shift is None:
+            shift = -self._width / 2.
+        self._shift = shift
+
+        self._graph = None
 
     def _parseInputData(self, x, **kwargs):
         """Override."""
@@ -72,8 +82,11 @@ class BarPlotItem(PlotItem):
         else:
             width = self._width
 
+        width *= self._scale
+
+        shift = self._shift
         for px, py in zip(x, y):
-            p.drawRect(QRectF(px - width/2, 0, width, py))
+            p.drawRect(QRectF(px + shift, 0, width, py))
 
         p.end()
 
@@ -81,6 +94,7 @@ class BarPlotItem(PlotItem):
         """Override."""
         if self._graph is None:
             self._prepareGraph()
+        # TODO: investigate how pen width affects the boundingRect
         return QRectF(self._graph.boundingRect())
 
     def paint(self, p: QPainter, *args) -> None:
@@ -97,3 +111,41 @@ class BarPlotItem(PlotItem):
             # Legend sample has a bounding box of (0, 0, 20, 20)
             p.drawRect(QRectF(2, 2, 18, 18))
         return True
+
+
+class BarPlotItemManager:
+    """A proxy for stacking multiple :class:`BarPlotItem`s together."""
+    def __init__(self):
+        self._items = []
+
+        self._orientation = Qt.Orientation.Vertical
+
+    def addItem(self, item: BarPlotItem) -> None:
+        self._items.append(item)
+        self._updateItems()
+
+    def removeItem(self, item: BarPlotItem) -> None:
+        self._items.remove(item)
+        self._updateItems()
+
+    def _updateItems(self):
+        for item in self._items:
+            if self._orientation == Qt.Orientation.Vertical:
+                item._setBarTransform(1.0)
+            else:
+                total_width = 0
+                for item in self._items:
+                    total_width += item._width
+                scale = 1. / len(self._items)
+                shift = - total_width * scale / 2.
+                for item in self._items:
+                    item._setBarTransform(scale, shift)
+                    shift += item._width * scale
+
+            item.updateGraph()
+
+    def setStackOrientation(self, orientation: Qt.Orientation) -> None:
+        if self._orientation == orientation:
+            return
+        self._orientation = orientation
+        self._updateItems()

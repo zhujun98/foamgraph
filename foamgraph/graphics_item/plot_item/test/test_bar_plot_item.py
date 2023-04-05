@@ -4,6 +4,7 @@ import numpy as np
 
 from foamgraph.backend.QtCore import QRectF
 from foamgraph.graphics_item import BarPlotItem
+from foamgraph import FColor
 
 from foamgraph.test import processEvents
 
@@ -52,3 +53,48 @@ def test_log_mode(view, item):
     view._cw._onLogYScaleToggled(True)
     processEvents()
     assert item.boundingRect() == QRectF(-2.0, -1.0, 4.0, 3.0)
+
+
+@pytest.mark.parametrize("orientation", ['v', 'h'])
+def test_stacking(view, orientation):
+    view.setBarPlotStackOrientation(orientation)
+
+    items = []
+    for i, c in zip(range(3), ['r', 'g', 'b']):
+        items.append(view.addBarPlot(label=f"Bar{i}", brush=FColor.mkBrush(c)))
+    view.addLegend()
+
+    x = np.arange(10).astype(np.float64)
+    for item in items:
+        item.setData(x, np.random.random(10))
+    processEvents()
+
+    view.removeItem(items[1])
+    processEvents()
+
+    view.removeItem(items[0])
+    processEvents()
+
+
+def test_switch_stacking(view):
+    x = np.arange(10).astype(np.float64)
+    items = []
+    for i, c in zip(range(3), ['r', 'g', 'b']):
+        items.append(view.addBarPlot(label=f"Bar{i}", brush=FColor.mkBrush(c)))
+        items[-1].setData(x, np.random.random(10))
+    view.addLegend()
+    processEvents()
+
+    view.setBarPlotStackOrientation('h')
+    processEvents()
+
+
+def test_bounding_rect(view):
+    item1 = view.addBarPlot()
+
+    x = np.array([0, 1, 2, 3, 4])
+    y = np.array([-4, -2, 0, 2, 4])
+
+    item1.setData(x, y)
+    rect = item1.boundingRect()
+    assert rect == QRectF(-1.0, -4.0, 6.0, 8.0)
