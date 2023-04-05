@@ -97,10 +97,8 @@ class BarPlotData:
 
 class ErrorBarPlotData:
     def __init__(self, n: int):
-        self._x = np.arange(n)
-        size = 2000
-        self._data = np.random.randn(size * n).reshape(n, size)
-        self._scale = np.random.random(n)
+        self._x = np.linspace(-8, 10, n)
+        self._y = 2 * np.exp(-self._x**2 / 4) + np.exp(-(self._x - 4.)**2 / 2)
 
         self._counter = 0
 
@@ -109,9 +107,8 @@ class ErrorBarPlotData:
             self._counter = 0
         self._counter += 1
 
-        data_slice = self._data[:, :self._counter]
-        y = np.mean(data_slice, axis=1)
-        err = np.std(data_slice, axis=1) * self._scale
+        err = 0.2 * np.random.random(len(self._y))
+        y = self._y + err
         return {"x": self._x,
                 "y": y,
                 "y_min": y - err,

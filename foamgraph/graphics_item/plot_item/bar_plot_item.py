@@ -16,14 +16,17 @@ from .plot_item import PlotItem
 class BarPlotItem(PlotItem):
     """BarPlotItem"""
     def __init__(self, x=None, y=None, *,
-                 width=1.0, pen=None, brush=None, label=None):
+                 width=None, pen=None, brush=None, label=None):
         """Initialization."""
         super().__init__(label=label)
 
         self._x = None
         self._y = None
 
-        self._width = max(min(1.0, width), 0.1)
+        if width is None:
+            self._width = 1.0
+        else:
+            self._width = max(min(1.0, width), 0.1)
         self._scale = 1.0
         self._shift = 0.0
         self._setBarTransform(1.0, 0.0)

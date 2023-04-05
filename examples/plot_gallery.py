@@ -97,10 +97,8 @@ class ErrorbarPlot(TimedGraphView):
         self.setTitle('Timed error-bar plot')
         self.setXYLabels("x (arb. u.)", "y (arb. u.)")
 
-        self._plot1 = self.addErrorbarPlot(
-            beam=1, pen=FColor.mkPen('Orange'))
-        self._plot2 = self.addCurvePlot(
-            pen=FColor.mkPen('Orange', width=2))
+        self._plot1 = self.addErrorbarPlot(pen=FColor.mkPen('ForestGreen'))
+        self._plot2 = self.addScatterPlot(brush=FColor.mkBrush('DodgerBlue'), size=6)
 
     def refresh(self):
         """Override."""

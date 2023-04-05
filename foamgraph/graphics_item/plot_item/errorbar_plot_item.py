@@ -30,7 +30,11 @@ class ErrorbarPlotItem(PlotItem):
         self._y_min = None
         self._y_max = None
 
-        self._beam = 0.0 if beam is None else beam
+        if beam is None:
+            self._beam = 0.9
+        else:
+            self._beam = max(min(1.0, beam), 0.0)
+
         self._line = line
         self._pen = FColor.mkPen('m') if pen is None else pen
 
@@ -66,9 +70,6 @@ class ErrorbarPlotItem(PlotItem):
         """Override."""
         return self._x, self._y, self._y_min, self._y_max
 
-    def setBeam(self, width: float) -> None:
-        self._beam = width
-
     def drawSample(self, p: Optional[QPainter] = None) -> bool:
         """Override."""
         if p is not None:
@@ -89,7 +90,12 @@ class ErrorbarPlotItem(PlotItem):
         p = QPainterPath()
 
         x, y, y_min, y_max = self.transformedData()
-        beam = self._beam
+
+        if len(x) > 1:
+            beam = self._beam * (x[1] - x[0])
+        else:
+            beam = self._beam
+
         for px, u, l in zip(x, y_min, y_max):
             # plot the lower horizontal lines
             p.moveTo(px - beam / 2., l)
