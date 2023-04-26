@@ -29,7 +29,6 @@ class ColormapController(GraphicsWidget):
         self._cbar = ColorbarWidget(parent=self)
         self._lri = LinearVRegionItem(0, 1)
         self._hist = SimpleCurvePlotItem(pen=FColor.mkPen('k'))
-        self._hist.setRotation(90)
 
         self._auto_levels = True
 
@@ -38,10 +37,12 @@ class ColormapController(GraphicsWidget):
         canvas.setMinimumWidth(45)
         canvas.addItem(self._hist)
         canvas.addItem(self._lri, ignore_bounds=True)
+        canvas.invertX(True)
         self._canvas = canvas
 
         self._axis = AxisWidget(Qt.Edge.LeftEdge, parent=self)
         self._axis.linkToCanvas(self._canvas)
+        self._axis.log_Scale_toggled_sgn.connect(self._onLogScaleToggled)
 
         self._auto_levels_action = None
 
@@ -81,6 +82,10 @@ class ColormapController(GraphicsWidget):
     def _onAutoLevelsToggled(self, state: bool) -> None:
         self._auto_levels = state
 
+    def _onLogScaleToggled(self, state: bool) -> None:
+        self._hist.setLogY(state)
+        self._canvas.updateAutoRange()
+
     def onColorMapChanged(self):
         self._image_item.setColorMap(self._cbar.colorMap())
 
@@ -95,7 +100,8 @@ class ColormapController(GraphicsWidget):
             self._hist.clearData()
             return
 
-        self._hist.setData(bin_centers, hist)
+        # we need a normal curve plot rotated by 90 degrees
+        self._hist.setData(hist, bin_centers)
 
         if self._auto_levels:
             lower, upper = bin_centers[0], bin_centers[-1]
